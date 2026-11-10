@@ -1,0 +1,182 @@
+# AI Supplier Management Process
+
+**Document ID:** AIMS-PRO-010
+**Version:** 3.4
+**Owner:** Procurement / Third-Party Risk, jointly with the AI Security Lead
+**Approved by:** Chief AI Officer
+**Approval date:** 2026-03-06
+**Next scheduled review:** 2026-12-31, and on any new supplier or supplier change
+**Scope:** All suppliers of services, products, materials, AI systems and AI components used in the
+compliance-evaluation AI system (AWS account 471885797689, us-west-2).
+
+---
+
+## 1. Process ensuring supplier-provided elements align with the responsible AI approach
+
+The organization **has a process to ensure that services, products or materials provided by suppliers
+align with its approach to the responsible development and use of AI systems.** The process extends the
+existing Third-Party Risk Management and Procurement policies with AI-specific requirements; a supplier
+must satisfy both, and the stricter requirement governs.
+
+**Alignment is defined against our own objectives, not the supplier's marketing.** Each of the
+responsible-use objectives in AIMS-POL-018 Part 2 is translated into a supplier requirement (§3), so
+"aligned" has a checkable meaning.
+
+### 1.1 Process stages
+
+| Stage | Activity | Owner | Gate |
+|---|---|---|---|
+| S-1 | **Classify** the supplier: what is supplied, its role in the life cycle, and its risk level (§2) | Third-Party Risk + AI Security Lead | Classification determines the depth of everything that follows |
+| S-2 | **Requirements** issued from the applicable requirement set for that class (§3) | Procurement | No engagement without issued requirements |
+| S-3 | **Evaluate and select** against the requirements; record evidence and any gap | AI Security Lead + Third-Party Risk | Gap must be closed, compensated **and recorded**, or the supplier is rejected |
+| S-4 | **Contract** with the required terms (§3.2) | Procurement + Legal | Terms are non-negotiable for high-risk classes |
+| S-5 | **Integrate** under the documented integration controls (§5) | AI Development Lead + AI Security Lead | Integration design reviewed and approved |
+| S-6 | **Monitor and evaluate** on an ongoing basis, proportionate to class (§4) | AI Security Lead + AI Operations Lead | Findings feed the supplier record |
+| S-7 | **Corrective action** where performance or alignment falls short (§6) | Third-Party Risk + Accountable Owner | Escalation path to exit |
+| S-8 | **Renew, re-classify or exit** | Procurement + AIGB | Annual, and on material change |
+
+**No shadow sourcing.** AI services acquired outside this process — including free tiers and personal
+accounts — are prohibited (AIMS-POL-018 §U-2) and treated as a security nonconformity when found.
+
+## 2. Supplier classification — what determines the depth of management
+
+Requirements and monitoring are **based on the type of supplier, what is being supplied, and the risk
+level**, so a critical model supplier and a stationery vendor are not put through the same process.
+
+| Class | Definition | Suppliers in this class | Risk level | Depth applied |
+|---|---|---|---|---|
+| **C-1: AI model / inference supplier** | Provides the model capability that produces judgements | Foundation model supplier via **Amazon Bedrock** | **Critical** | Full requirement set; quarterly review; regression testing on every model change; exit plan maintained |
+| **C-2: AI platform / infrastructure supplier** | Runs the system and holds the data | **AWS** — AgentCore Runtime, CloudWatch, CloudTrail, IAM, S3, KMS | **Critical** | Full requirement set; continuous service monitoring; attestation review annually; shared-responsibility boundary documented |
+| **C-3: AI component or library supplier** | Code executing inside the system | Agent SDK, HTTP framework, schema validation, AWS SDKs | High | Version pinning; provenance and licence review; vulnerability monitoring; change review before upgrade |
+| **C-4: Data supplier / contributor** | Supplies data used for evaluation | Contributing customers (under permission); internal authors | High | Rights basis verified; de-identification; provenance completeness (AIMS-REC-021) |
+| **C-5: Service supplier with data access** | Sub-processors touching customer data | Sub-processors under DPA | High | DPA with flow-down; 30-day change notice; security review |
+| **C-6: Professional services** | Assessors, labellers, auditors, specialists | Contract labellers; accessibility specialist; certification body | Medium | Confidentiality, competence, independence where required |
+| **C-7: Non-AI, no data access** | No contact with the system or data | General corporate suppliers | Low | Standard procurement only; **this process does not apply** |
+
+Classification is re-made when what a supplier supplies changes — a C-7 supplier that starts touching
+data becomes C-5 immediately, not at the next renewal.
+
+## 3. Supplier requirements
+
+### 3.1 Requirements by class
+
+| # | Requirement | C-1 | C-2 | C-3 | C-4 | C-5 | C-6 |
+|---|---|---|---|---|---|---|---|
+| SR-1 | **Adequate documentation**: intended purpose, capabilities, **limitations**, evaluation results, versioning | ● | ● | ● | ● | ○ | — |
+| SR-2 | **No use of our or our customers' data for training or model improvement** | ● | ● | ○ | ● | ● | ● |
+| SR-3 | Data location, residency and retention disclosed and contractually bound | ● | ● | — | ● | ● | ○ |
+| SR-4 | Security controls evidenced (attestation, certification or assessment) | ● | ● | ○ | ○ | ● | ○ |
+| SR-5 | **Breach and incident notification** with a stated timeframe | ● | ● | — | ● | ● | ○ |
+| SR-6 | **Version pinning available**, and deprecation/change notice with lead time | ● | ● | ● | — | — | — |
+| SR-7 | Model or component behaviour characterization sufficient for us to test it on our task | ● | ○ | ○ | — | — | — |
+| SR-8 | Bias, fairness and safety information provided to the extent the supplier holds it | ● | ○ | — | ○ | — | — |
+| SR-9 | Provenance of what is supplied, or a recorded statement of its limits | ● | ○ | ● | ● | — | — |
+| SR-10 | Licence and rights clear and compatible with our use | ● | ● | ● | ● | ● | ● |
+| SR-11 | Audit, attestation or evidence rights | ● | ● | — | ○ | ● | ○ |
+| SR-12 | Sub-processor disclosure and flow-down | ● | ● | — | — | ● | ○ |
+| SR-13 | Availability and support commitments | ● | ● | ○ | — | ○ | ○ |
+| SR-14 | Exit and portability — we can leave without losing the audit record | ● | ● | ○ | ● | ● | — |
+| SR-15 | Competence and independence evidenced | — | — | — | — | — | ● |
+| SR-16 | Confidentiality and, where relevant, de-identification obligations | ● | ● | ○ | ● | ● | ● |
+
+● required · ○ required where applicable · — not applicable
+
+### 3.2 Non-negotiable contract terms for C-1 and C-2
+
+No training on our or our customers' data; data location and retention bound; breach notification with a
+stated timeframe; version or model pinning with deprecation notice; security attestation provided
+annually; sub-processor disclosure; **portability of our audit records on exit**; and no unilateral
+change to terms without notice and an objection window.
+
+### 3.3 Recorded gaps and compensating measures
+
+Where a requirement cannot be evidenced, the gap is recorded with compensating measures rather than
+quietly dropped:
+
+| Supplier / class | Unmet requirement | Compensating measures applied | Accepted by | Review |
+|---|---|---|---|---|
+| Foundation model supplier (C-1) | **SR-9 provenance** — training-data provenance is not disclosed to us, and **SR-8** bias information is partial | Model identifier and region **pinned and recorded per assessment**; quarterly **no-change regression** to detect behaviour drift; fairness and accuracy measured on **our own task and outputs** rather than assumed from model documentation; the limitation is **published** as a limitation rather than glossed; concern formally communicated to the supplier as a documentation expectation | AIGB, as a residual risk under monitoring | Quarterly |
+| Cloud platform (C-2) | SR-11 direct audit right not available at hyperscale | Third-party attestations and certifications reviewed annually in place of a direct audit; shared-responsibility boundary documented so our side of each control is explicit | Third-Party Risk | Annually |
+| Contract labellers (C-6) | — | None outstanding | — | — |
+
+## 4. Ongoing monitoring and evaluation
+
+Depth is proportionate to class; **C-1 and C-2 are monitored continuously as well as reviewed
+periodically**, because a supplier-side change to either can alter verdicts without any change on our
+side.
+
+| Activity | C-1 | C-2 | C-3 | C-4 | C-5 | C-6 |
+|---|---|---|---|---|---|---|
+| Service health and error monitoring | Continuous (`AIGov-BedrockInvocation*` alarms) | Continuous | — | — | ○ | — |
+| **Behaviour-drift detection** — quarterly no-change regression on the held-out corpus | Quarterly | — | On upgrade | — | — | — |
+| Model / version currency and deprecation tracking | Quarterly | Quarterly | Continuous (vulnerability feeds) | — | — | — |
+| Security posture / attestation review | Annually | Annually | Continuous | — | Annually | — |
+| Performance against SR requirements | Quarterly | Annually | On upgrade | On contribution | Annually | Per engagement |
+| Incident review where the supplier was implicated | Per incident, notified within 1 business day (AIMS-REG-017 O-18) | Per incident | Per incident | — | Per incident | — |
+| Sub-processor change review | Per notice | Per notice | — | — | Per notice | — |
+| Contract and requirement review | Annually + on change | Annually | Annually | Per contribution | Annually | Per engagement |
+| Report to the AI Governance Board | Quarterly | Quarterly | In aggregate | In aggregate | In aggregate | In aggregate |
+
+**Monitoring outputs are recorded in the supplier record** with the date, the finding and the action —
+including reviews that found nothing, so an absence of findings is distinguishable from an absence of
+review.
+
+## 5. Integration of supplier-provided AI systems and components
+
+**How supplier-provided AI systems and components are integrated is documented**, because integration —
+not the component in isolation — is where most supplier-related failures actually occur.
+
+| Supplier element | How it is integrated | Controls at the integration boundary |
+|---|---|---|
+| **Foundation models (C-1)** | Accessed **by inference only** through Amazon Bedrock, per graph node, with the model identifier and region **pinned in configuration** and recorded on every assessment. Weights are never obtained, copied or fine-tuned | Model identifier pinned, never floating; no customer data to training; **model output is never executed or trusted as instruction**; deterministic post-processing — **scoring aggregation is code, not model judgement**; coverage validation refuses to publish an uncited verdict; per-node model choice (larger model only on the auditor node) |
+| **AgentCore Runtime and AWS platform (C-2)** | Container image deployed as code to the managed runtime; identity, logging, storage and notification services consumed through the AWS SDKs | Least-privilege execution role; **read-only, short-lived, customer-authorized credentials** for any customer-account read; encryption in transit and at rest; every read independently recorded in the customer's own CloudTrail; audit logging and retention enforced by configuration (AIMS-REC-019 §5.2) |
+| **Agent SDK and libraries (C-3)** | Pinned versions, resolved from the approved internal build system, bundled into the deployed artefact | Version pinning and lock; provenance and licence review; vulnerability monitoring; upgrade is a classified change requiring V&V regression; **no dynamic code loading at runtime** |
+| **Customer-supplied evidence** (supplied *to* the system, treated with supplier-grade distrust) | Ingested through validated upload, wrapped in a structured envelope marking it **untrusted** | Content-type and integrity validation; **customer content is data, never instructions** — the trust-boundary encoding is mandatory and its change is a Material change; adversarial suite gates release |
+| **Contributed corpus data (C-4)** | Admitted only after rights, de-identification and provenance checks | Rejected rather than repaired on failure; entries withdrawable on contributor request |
+| Sub-processor services (C-5) | Only for the disclosed function, under DPA | Purpose limitation; flow-down; 30-day change notice with objection window |
+
+**Integration principles applied throughout:** a supplier component is **contained, not trusted** — its
+output is validated at the boundary; nothing supplier-side may grant the system write authority in a
+customer environment; every supplier interaction that affects a verdict is **recorded on the assessment**
+so a supplier-caused change is traceable after the fact; and no supplier component may reduce the
+traceability the product depends on.
+
+## 6. Corrective action where a supplier underperforms or misaligns
+
+Where a supplier's performance falls short of the requirements, **or misaligns with the responsible AI
+approach, corrective action is taken with the supplier, including ensuring adequate documentation is
+provided.**
+
+| Trigger | Corrective action | Escalation if unresolved |
+|---|---|---|
+| **Documentation inadequate or missing** (SR-1, SR-7, SR-8, SR-9) | Formal documentation request with a deadline; the gap recorded and, until closed, treated as an unmet requirement with compensating measures (§3.3) — never as satisfied | Escalate to the supplier's account leadership; withhold renewal; re-classify risk |
+| **Model behaviour change without notice**, or drift detected by our regression | Raise with the supplier citing the measured effect; pin to a stable identifier; re-baseline; notify affected customers if published results shifted | AIGB review of continued reliance; accelerate the alternative-model exit plan |
+| **Deprecation with insufficient lead time** | Demand the contractual notice period; execute the migration plan with full V&V | Contractual remedy; exit |
+| **Terms changed unilaterally** — especially any weakening of the no-training commitment | **Immediate escalation**; suspend the affected use if the commitment is not restored in writing | Exit; customer notification, since it changes what we told customers |
+| **Security or privacy incident on the supplier side** | Notify within 1 business day; obtain root cause and remediation; assess our customers' exposure and notify per AIMS-REG-017 | Re-assessment; conditional or terminated engagement |
+| **Availability or performance below commitment** | Service review with evidence; remediation plan with dates; contractual remedy | Exit; redundancy introduced |
+| **Component vulnerability unpatched** | Require a fix or apply mitigation; pin to a safe version; replace the component | Replace the supplier |
+| **Misalignment with our responsible AI approach** (e.g. a practice inconsistent with our objectives or prohibited uses) | Documented concern raised with the supplier, with the specific objective it conflicts with; remediation sought | AIGB decides continued use; exit if unresolved |
+| Labeller or assessor quality shortfall | Re-training; re-labelling of affected entries; corpus entries quarantined | Contract termination |
+
+**Every corrective action is recorded** in the supplier record with the trigger, the action, the owner,
+the date and the outcome, and is reported to the AIGB quarterly. Actions taken in the current period:
+the C-1 documentation and provenance gap formally raised with the model supplier (open, compensated,
+under quarterly review); a C-3 component pinned back and replaced after an unpatched vulnerability
+(closed 2026-01-20); and a C-6 labeller engagement corrected with re-training and re-labelling of the
+affected entries (closed 2025-12-02).
+
+**Exit capability is maintained rather than assumed:** for both critical classes an exit plan exists, and
+SR-14 guarantees portability of the audit records — the ability to leave is what makes every other
+requirement above enforceable.
+
+## 7. Review history
+
+| Version | Date | Reviewer | Outcome |
+|---|---|---|---|
+| 2.0 | 2025-08-20 | Third-Party Risk | Established classification, requirement matrix and review cadence |
+| 3.0 | 2025-11-12 | AI Security Lead + Third-Party Risk | Added the no-training term as non-negotiable for C-1/C-2 and the exit/portability requirement |
+| 3.1 | 2026-01-20 | AI Security Lead | Added quarterly no-change regression as drift detection after an unannounced model behaviour change; recorded the C-3 corrective action |
+| 3.2 | 2026-02-11 | Third-Party Risk | Added §5 integration documentation with the containment principles |
+| 3.3 | 2026-02-25 | Procurement | Added the shadow-sourcing prohibition and the C-7 exclusion so effort is proportionate |
+| 3.4 | 2026-03-06 | Third-Party Risk + AI Security Lead, approved by Chief AI Officer | Added §3.3 recorded gaps and compensating measures, and §6 corrective-action register with the actions taken this period |

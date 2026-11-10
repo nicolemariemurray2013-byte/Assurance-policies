@@ -1,0 +1,208 @@
+# AI System Operation and Monitoring Runbook
+
+**Document ID:** AIMS-PRO-007
+**Version:** 4.2
+**Owner:** AI Operations Lead (SRE)
+**Approved by:** AI System Accountable Owner
+**Approval date:** 2026-03-08
+**Next scheduled review:** 2026-12-31
+**Scope:** Ongoing operation of the compliance-evaluation AI system in AWS account 471885797689
+(us-west-2) — the Bedrock agent and Bedrock AgentCore runtime.
+
+---
+
+## 1. Necessary elements for ongoing operation
+
+The organization defines the following as the minimum elements required to operate this AI system.
+Each has a named owner and a defined mechanism.
+
+| Element | Mechanism | Owner |
+|---|---|---|
+| **System monitoring** | Health checks, availability, error rate, throttling, dependency health, invocation lock health (§2) | AI Operations Lead |
+| **Performance monitoring** | Latency, throughput, inference cost, verdict distribution, accuracy proxies, drift indicators (§2, §3) | AI Operations Lead |
+| **Repairs** | Incident response and error/failure repair process (§4) | AI Operations Lead / on-call |
+| **Updates** | Change classes, update schedule and user communication (§5) | AI Development Lead |
+| **Support** | Support channels, issue and incident reporting, service levels (§6) | Support Lead |
+| Event logging and traceability | AIMS-STD-013 event logging standard | AI Operations Lead |
+| Human oversight in operation | Analyst review and override of published verdicts | Responsible AI Lead |
+| Capacity and cost management | Concurrency and cost budgets, reviewed monthly | AI Operations Lead |
+| Security monitoring in operation | CloudTrail API activity, GuardDuty findings, adversarial-input signals (§7) | AI Security Lead |
+
+## 2. Monitoring: errors, failures, and performing as expected on production data
+
+Monitoring covers both **general errors and failures** and whether the system **performs as expected
+with production data** and against **commitments, customer requirements and legal requirements**.
+
+### 2.1 Errors and failures
+
+| Signal | Alarm threshold | Response |
+|---|---|---|
+| Health endpoint failure | 2 consecutive failures | Page on-call immediately |
+| Assessment run failure rate | > 2% over 15 minutes | Page on-call |
+| Unhandled exception in any graph node | Any occurrence | Ticket; page if sustained |
+| Model invocation throttling or capacity error | > 5% of calls over 10 minutes | Page; consider documented fallback model |
+| Credential vending failure | > 1% over 15 minutes | Page; check environment records and role trust |
+| Dependency error (evidence store, assessment records, messaging) | > 1% over 15 minutes | Page on-call |
+| Assessment stuck in progress | Beyond the stale-lock takeover window | Automatic lock takeover; alarm if repeated |
+| Warning-level log volume | Statistically abnormal increase | Investigate within one business day |
+
+### 2.2 Performing as expected with production data
+
+Because a compliance verdict has no immediate ground truth in production, expected behaviour is
+monitored through **distribution and consistency**, not per-verdict correctness:
+
+| Signal | What it detects |
+|---|---|
+| Verdict distribution per framework and control, compared with the trailing baseline | A systematic shift in strictness or leniency after a release or a supplier-side model change |
+| Rate of `unable_to_assess` outcomes | Rising read failures — a collection problem, not a customer compliance problem |
+| Rate of zero-scoring and full-scoring controls | Evaluation collapsing toward a constant verdict |
+| Rationale-citation completeness | Verdicts published without cited evidence (RD-1 breach) |
+| Repeat-assessment consistency on unchanged scope | Instability in judgement |
+| Scan coverage per assessment (resources read vs in scope) | Silent loss of environment visibility |
+| Analyst override rate and direction | The strongest available proxy for accuracy in production; a rising override rate triggers §3 |
+| Assessment latency and inference cost | Performance and cost regression (RD-8) |
+
+### 2.3 Against commitments, customer requirements and legal requirements
+
+| Obligation | Monitored as |
+|---|---|
+| Assessment turnaround commitment | Latency percentiles per assessment and per framework-level run |
+| Availability commitment | Monthly availability against the published service level |
+| No customer data used for training | Architectural invariant, re-verified each release; inference-only APIs |
+| Tenant isolation | Zero cross-tenant access; any occurrence is a Severity 1 security incident |
+| Evidence retention and deletion obligations | Retention job success; deletion requests closed within the contractual window |
+| Event-log retention (organizational and legal) | Log retention configuration audited monthly (AIMS-STD-013) |
+| Audit-record integrity | Historical results never retroactively rewritten; verified by integrity checks |
+
+## 3. Drift, continuous learning and continued fitness for design goals
+
+The system performs **no continuous learning** — no weights are updated by operation, which removes
+the most common drift mechanism by design. Three drift risks remain, and monitoring exists to
+determine whether the system **continues to meet its design goals**:
+
+| Drift type | Mechanism | Detection | Corrective action |
+|---|---|---|---|
+| **Supplier-side model drift** | The provider updates the model behind a model identifier, or deprecates it | Quarterly re-run of the V&V regression suite (M-4, M-5, M-7) with no change on our side; verdict-distribution monitoring | Pin or move to a validated identifier; re-run full regression; roll back the model configuration if agreement falls below RC-2 |
+| **Concept drift** — frameworks, control text and regulatory interpretation change | Standards are revised; auditor expectations move | Framework catalogue version tracking; analyst override themes; quarterly review with compliance analysts | Update rubrics and requirement mappings; re-label affected corpus entries; treat as a Standard change requiring full V&V |
+| **Data drift** — the population of customer evidence and environments shifts (new AWS services, new document styles, new languages) | Newer services appear in scanned accounts; unfamiliar evidence formats arrive | Scan-coverage metrics; rate of `unable_to_assess`; distribution of evidence types and languages | Extend scan support; rebalance the regression corpus; add a fairness stratum; route out-of-domain evidence to human review |
+
+**Retraining is not an available response** (nothing is trained). The equivalent corrective actions are
+prompt/rubric revision, corpus rebalancing, scan-coverage extension, model-identifier change, or
+narrowing the documented domain of use — each governed as a change under AIMS-POL-006 §4, each
+requiring the V&V suite to pass before deployment. A drift finding that cannot be corrected within
+one release cycle is escalated to the AIGB with a compensating control (typically mandatory human
+review for the affected class).
+
+## 4. Responding to and repairing errors and failures
+
+| Severity | Definition | Acknowledge | Mitigate | Repair |
+|---|---|---|---|---|
+| **Sev 1** | Wrong verdicts reaching customers; cross-tenant exposure; total unavailability | 15 min | 1 hour | 5 business days |
+| **Sev 2** | Elevated failure rate; a framework or control unassessable; major latency regression | 30 min | 4 hours | 10 business days |
+| **Sev 3** | Single-assessment failure; degraded scan coverage | 1 business day | 3 business days | 30 business days |
+| **Sev 4** | Cosmetic or documentation defect | 3 business days | — | Next release |
+
+**Process.** Detect (alarm, support ticket, or analyst report) → triage and assign severity → mitigate
+(roll back the runtime version, suspend the affected control or framework, or fail the assessment
+cleanly rather than publish a doubtful verdict) → identify root cause → repair → verify with the V&V
+suite → close. **Bias to safety:** where correctness is in doubt, the system fails the assessment
+visibly instead of publishing a verdict; a missing result is recoverable, a wrong published verdict may
+already have been acted upon.
+
+**Repair mechanisms available in operation:** roll back to the previous runtime version; revert the
+model identifier to the last validated one; disable a specific control or framework; re-run affected
+assessments after repair; withdraw and re-issue affected results with customer notification;
+automatic stale-lock takeover so a crashed run self-heals and the assessment resumes.
+
+Every Sev 1 and Sev 2 gets a written retrospective within 5 business days, with corrective actions
+tracked to closure in the AIMS corrective-action log. Where an incident reveals a specification gap,
+AIMS-POL-006 §6.5 requires the requirements to be revisited.
+
+## 5. Updates and operational changes
+
+**Change classes, approvals and regression requirements** are defined in AIMS-POL-006 §4 (Minor,
+Standard, Material, Emergency). Affected components and deployment ordering are in AIMS-PLAN-008 §4.
+
+### 5.1 Update schedule
+
+| Change class | Schedule |
+|---|---|
+| Minor / Standard | Weekly release train, Tuesdays, promoted through alpha → beta → gamma → production |
+| Material | Scheduled with at least 10 business days' customer notice; never during a customer change freeze |
+| Model identifier change | Only after full regression; announced as Material if verdict-affecting |
+| Emergency fix | Immediately, any time, with retrospective within 5 business days |
+| Dependency and security patching | Monthly, or within the security SLA for critical vulnerabilities |
+| Infrastructure change | Ahead of dependent code, on its own reviewed change |
+
+Deployments are avoided outside business hours and during change freezes unless emergency, which
+requires AI Operations Lead approval.
+
+### 5.2 Communication to users about updates and operational changes
+
+| Change | Audience | Channel | Timing |
+|---|---|---|---|
+| Verdict-affecting change (scoring semantics, rubric, model family) | Customers, compliance analysts | Release note + direct customer notice, stating the effective date and expected effect | ≥ 10 business days before |
+| New framework or control support | Customers | Release note and product changelog | On release |
+| Planned maintenance affecting availability | Customers | Status page and account notification | ≥ 5 business days before |
+| Unplanned incident affecting results or availability | Affected customers | Direct notification, then a public incident summary | Within 24 hours of confirmation |
+| Withdrawal or re-issue of a published result | Affected customers | Direct notification naming the affected assessments | Immediately on decision |
+| Minor internal change with no user-visible effect | Internal | Changelog | On release |
+
+**Rule:** assessments already in flight complete on the version that started them, and published
+historical results are never retroactively rewritten — a re-issue is always a new, dated record.
+
+## 6. Support
+
+| Aspect | Definition |
+|---|---|
+| **How users obtain help** | In-product help; the support portal; a named technical account contact for enterprise customers; internal analysts raise issues directly to the operations queue |
+| **How issues and incidents are reported** | Support portal ticket, email to the support address, or the status-page incident form. AI-specific concerns — bias, wrong verdicts, oversight failures — may additionally be raised through AIMS-PRO-004, including anonymously |
+| **Triage** | Tickets triaged within one business day and mapped to the severity scale in §4; a ticket alleging a wrong verdict is treated as at least Sev 2 until disproven |
+| **Escalation** | Support → AI Operations Lead → AI System Accountable Owner → AIGB. Any customer may request escalation |
+| **Service levels** | First response: 4 business hours (enterprise), 1 business day (standard). Sev 1 acknowledgement 15 minutes, 24/7. Availability target 99.5% monthly |
+| **Support metrics managed** | First-response and resolution time against target, backlog age, reopen rate, escalation rate, and the proportion of tickets alleging incorrect verdicts — reported monthly to the AI System Accountable Owner and quarterly to the AIGB |
+| **Feedback loop** | Ticket themes feed the AI Risk Register and the quarterly rubric review; a verdict-quality complaint always results in an analyst review of the specific assessment, and the customer receives the outcome |
+
+## 7. Use outside intended purpose, and AI-specific security threats in operation
+
+### 7.1 Use outside the intended purpose
+
+The documented intended purpose is **automated assessment of an organization's compliance with a
+supported managed control framework**, from that organization's own evidence and authorized read-only
+observation of its own cloud environment. Foreseeable out-of-purpose uses are considered and
+addressed:
+
+| Out-of-purpose use | Consideration | Control in operation |
+|---|---|---|
+| Treating a score as a certification or attestation | Highest-likelihood misuse; a percentage looks more authoritative than it is | Results state they are an assessment aid, not a certification; the human oversight point and analyst review are documented in the output |
+| Assessing an unsupported framework, or in an unsupported language | Accuracy is not characterized outside the documented domain | Unsupported frameworks are not offered; out-of-domain evidence is routed to human review and the limitation is published |
+| Using verdicts to evaluate individual employees | Out of scope and a human-rights concern (IC-9) | Intended-use statement prohibits it; the system produces no individual-level determination |
+| Scanning an environment without authority | Would be unauthorized access | Read-only credentials vended per environment only where the customer has established the trust relationship; the agent cannot name its own role; every read is attributable in CloudTrail |
+| Automating remediation directly from a verdict | Not designed for it; would remove the human oversight point | No write capability exists in the scan path |
+| Running an assessment to "shop" for a passing result | Would undermine assurance value | All assessments are retained as an audit record; repeat runs on unchanged scope are visible; scan evidence is always fresh |
+
+Detected out-of-purpose use is treated as an incident under §4 and reported to the AI System
+Accountable Owner; the AIGB may suspend the affected use.
+
+### 7.2 AI-specific information security threats in operation
+
+Identified for the system **in operation** (design-stage threat model in AIMS-DOC-009 §6):
+
+| Threat in operation | Detection | Response |
+|---|---|---|
+| **Prompt injection** through evidence content, titles, descriptions or annotations | Injection-signature monitoring on customer-supplied content; anomalous tool-call sequences; verdict anomalies | Content is structurally data, never instructions; suspicious assessments quarantined for analyst review; signatures added to the adversarial suite |
+| **Adversarial / evasive evidence** crafted to obtain a compliant verdict | Verdict-versus-scan contradiction monitoring; implausible full-compliance patterns | Directly observed technical state governs where the scan reads it; compensating controls capped below full compliance; escalated to the AI Security Lead |
+| **Excessive agency** — action beyond intended read-only scope | CloudTrail analysis of every action taken with vended credentials | Read-only permissions; immediate Sev 1 on any unexpected mutating call |
+| **Sensitive-data leakage** via logs or telemetry | Log content scanning for evidence material and personal data | Evidence content excluded from telemetry; log minimization; Sev 1 on confirmed leakage |
+| **Cost abuse / denial of wallet** | Inference cost per assessment and per tenant against budget | Per-assessment bounds; throttling; alarm and investigate |
+| **Model supplier behaviour change or deprecation** | Quarterly regression re-run; verdict-distribution monitoring | Revert to the last validated model identifier; documented fallback (risk R-08) |
+| **Tampering with stored evidence or results** | Integrity checks on retrieval; CloudTrail on the evidence store | Reject rather than repair; Sev 1 investigation |
+| Credential compromise, GuardDuty findings | GuardDuty; anomalous API activity | Standard security incident response; revoke and rotate |
+
+## 8. Review history
+
+| Version | Date | Reviewer | Outcome |
+|---|---|---|---|
+| 4.0 | 2025-12-03 | AI Operations Lead | Added verdict-distribution and override-rate monitoring as accuracy proxies |
+| 4.1 | 2026-01-28 | AI Operations Lead | Added the quarterly no-change regression re-run to detect supplier-side model drift |
+| 4.2 | 2026-03-08 | AI Operations Lead, approved by AI System Accountable Owner | Added §7 out-of-purpose use analysis and AI-specific operational threats; added support metrics reporting to the AIGB |

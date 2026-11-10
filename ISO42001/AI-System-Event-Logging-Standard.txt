@@ -1,0 +1,279 @@
+# AI System Event Logging Standard
+
+**Document ID:** AIMS-STD-013
+**Version:** 2.1
+**Owner:** AI Operations Lead
+**Approved by:** AI System Accountable Owner
+**Approval date:** 2026-08-14
+**Next scheduled review:** 2026-12-31
+**Scope:** Event logging for the compliance-evaluation AI system in AWS account 471885797689
+(us-west-2) — the Bedrock agent, the Bedrock AgentCore runtime, and the AWS control-plane and
+data-plane activity that supports them.
+
+---
+
+## 1. Life-cycle phases at which event logging is enabled
+
+The organization has **determined at which phases of the AI system life cycle event logging is
+enabled**. The determination is deliberate rather than blanket: each phase logs what makes that phase
+auditable, and **logging is always enabled when the system is in use**.
+
+| Life-cycle phase | Logging enabled? | What is logged | Rationale for the determination |
+|---|---|---|---|
+| Inception and requirements | Yes — records, not runtime logs | Requirement decisions, approvals, impact-assessment trigger | Traceability of why the system exists; no runtime exists yet |
+| Impact assessment | Yes — records | Assessment record, reviewers, disposition | Governance evidence |
+| Design | Yes — records | Design decisions, threat-model reviews, gate sign-offs | Reconstructing why an architecture was chosen |
+| Data preparation | Yes | Corpus provenance, de-identification, labelling, split assignment, access to corpus data | Poisoning and data-protection risk sit here |
+| Development | Yes | Version-control history, peer reviews, build and test results | Change attribution |
+| Verification and validation | Yes | Full V&V run records, measures, thresholds, pass/fail per criterion | Release defensibility |
+| Release approval | Yes | Release authorization, approver, commit, image digest, model identifier, timestamp | Reproducing exactly what was approved |
+| Deployment | Yes | Deployment events per stage, gates passed, rollbacks | Correlating behaviour change to a deployment |
+| **Operation and use** | **Yes — mandatory, always on. At a minimum, event logging is enabled whenever the AI system is in use** | §2 in full | This is the phase where the system affects interested parties; logging here is not optional and cannot be disabled by configuration |
+| Monitoring | Yes | Alarm state changes, metric anomalies, incident timelines | Detecting operation outside intended conditions |
+| Change management | Yes | Change class, approvals, regression results, communications | Change accountability |
+| Decommissioning | Yes | Deletion actions, retention discharge, evidence of completion | Proving obligations were met |
+
+**Enforcement.** Logging in the operation phase is enabled by the infrastructure definition, not by
+runtime configuration, so it cannot be turned off by a deployment; a deployment that would disable it
+fails review. Disabling or reducing logging in any phase requires AIGB approval as a dated exception.
+
+## 2. Automatic collection and recording of events during operation
+
+Logging is **automatic** — no operator action initiates it, and the application cannot opt out. Events
+are emitted by the runtime and by AWS platform services and recorded to durable log stores.
+
+| Event class | Automatically recorded | Emitted by |
+|---|---|---|
+| Assessment life cycle | Invocation received, assessment id, environment, framework, control, start and end, terminal status | Application (OpenTelemetry → CloudWatch Logs) |
+| Phase and node execution | Each graph node entered and exited, routing decisions and why a track was skipped, duration | Application; assessment journal |
+| Tool invocation | Every tool call with its inputs, outcome and duration | Application; assessment journal |
+| Model invocation | Model identifier, region, token counts, latency, throttling and retries | Application + Bedrock invocation logging |
+| Evidence access | Which evidence was discovered, read, and relied upon; integrity-check results | Application |
+| **Environment scan reads** | Every read performed against the assessed account, the resource read and the outcome | Application, and independently **AWS CloudTrail** in both the scanning and the assessed account |
+| Verdicts and score | Per-requirement status, rationale, cited evidence, computed score, coverage validation result | Application; assessment record (immutable audit record) |
+| Human oversight actions | Verdict overrides, annotations, halts, suspensions — with actor and timestamp | Front-end control plane |
+| Errors and failures | Exceptions, read failures, credential-vending failures, dependency errors, lock contention and stale-lock takeover | Application |
+| Security-relevant activity | All API calls, credential vending and role assumption; authentication; anomalous activity | **AWS CloudTrail**; Amazon GuardDuty |
+| Configuration and deployment change | Runtime version, model-identifier change, infrastructure change | Deployment pipeline; CloudTrail |
+| Data-protection events | Deletion requests and their completion, retention-job outcomes | Application |
+
+**Correlation.** Every operation-phase record carries the assessment id, environment id, framework,
+control id, runtime version and model identifier, so a verdict, the reads that supported it, the model
+that produced it and the code version that ran can be joined into one timeline.
+
+## 3. Traceability, operating as intended, and detection of out-of-condition performance
+
+The logging design serves three explicit purposes.
+
+### 3.1 Traceability of AI system functionality
+
+Any published verdict can be traced backwards, without re-running the system, to: the requirement text
+assessed → the evidence records relied on (verbatim document excerpt or raw API response per resource)
+→ the tool calls that collected them → the node that judged them → the model identifier and runtime
+version that ran → the release authorization that deployed it. The assessment journal is exposed to
+operators and auditors for exactly this purpose, and raw evidence is retained beside the verdict so a
+disputed finding is re-checkable against what was actually observed.
+
+### 3.2 Confirming the system operates as intended
+
+| Question | Answered from logs by |
+|---|---|
+| Did every canonical requirement receive exactly one status? | Coverage-validation records |
+| Did any verdict publish without cited evidence? | Rationale-citation completeness (RD-1) |
+| Was any `not_met` derived from a failed or absent read? | Read-failure events joined to verdicts (RD-2, IC-4) |
+| Did customer-supplied content ever obtain instruction authority? | Tool-call sequence anomaly detection against the expected graph |
+| Did the scan read what it was supposed to? | Scan-coverage records: resources read versus in scope |
+| Was any action taken beyond read-only? | CloudTrail event names for the vended role |
+| Are repeat assessments on unchanged scope consistent? | Verdict comparison across assessment records |
+
+### 3.3 Detecting performance outside intended operating conditions
+
+Logs feed the monitoring signals in AIMS-PRO-007 §2, whose purpose is to detect conditions that could
+lead to **undesirable performance or impacts on interested parties**:
+
+| Out-of-condition signal | Undesirable impact it guards against | Detected from |
+|---|---|---|
+| Verdict distribution shifting against the trailing baseline | Systematically wrong verdicts reaching customers after a release or supplier-side model change | Verdict logs aggregated per framework and control |
+| Rising `unable_to_assess` rate | A collection defect being read as customer non-compliance | Read-failure events |
+| Falling scan coverage | Silent loss of environment visibility, understating real gaps | Scan-coverage records |
+| Rising analyst override rate | Accuracy degradation in production | Oversight-action logs versus verdict logs |
+| Injection signatures in customer content; unexpected tool sequences | Adversarial redirection of the system | Evidence-content and tool-call logs |
+| Any mutating API call by a vended role | Excessive agency in a customer's account | CloudTrail |
+| Latency or inference cost outside bounds | Missed commitments; unmanaged environmental cost (RD-8) | Duration and token logs |
+| Out-of-domain evidence (unsupported language or framework) | Verdicts issued outside the characterized accuracy domain | Evidence-attribute logs |
+
+A detected out-of-condition state raises an alarm and is handled under AIMS-PRO-007 §4; where customer
+impact is possible, affected results are withdrawn and re-issued with notification.
+
+## 4. Log content and retention
+
+Content and retention are defined to **support the intended use of the system** and to **comply with
+organizational data-retention policy (AIMS-POL-009) and applicable legal retention requirements**.
+
+### 4.1 Content requirements
+
+Every operation-phase record includes: timestamp (UTC), event type, assessment id, environment id,
+framework and control id, actor (service principal or authenticated human), runtime version, model
+identifier, outcome, and duration where applicable.
+
+**Content minimization — what is deliberately excluded.** Customer evidence content is **not** written
+to telemetry or application logs; logs reference evidence by id and location, and the content itself
+lives only in the encrypted evidence store under its own retention. Personal data, credentials and
+session tokens are never logged. This keeps log retention from becoming a second, unmanaged copy of
+customer data — a data-protection requirement, not merely hygiene.
+
+### 4.2 Retention schedule
+
+| Log / record | Retention | Basis |
+|---|---|---|
+| **Assessment records and per-requirement verdicts** (the audit record) | **7 years** | Customers rely on them as audit evidence across certification cycles; contractual and audit-record obligation |
+| **AWS CloudTrail management events** (all API activity) | **7 years (2557 days)** — a trail is enabled and logging in every region the AI system operates in, with log-file validation on, delivering to a dedicated S3 bucket; CloudWatch Logs groups carrying trail events are set to 2557 days | Security investigation and legal/regulatory retention; a trail must exist in each operating region so activity there is always recorded |
+| Assessment journal (phases, tool calls, intermediate results) | 1 year (365 days) | Supports dispute resolution and defect investigation for the period a verdict is actively relied upon |
+| Application and runtime logs (operational detail, errors) | **365 days**, explicitly configured on every log group | Incident investigation window; **no log group is left with unlimited or undefined retention** |
+| Model invocation logs (identifiers, tokens, latency) | 1 year | Reproducibility of a historical verdict; cost and RD-8 tracking |
+| Scan evidence (raw API responses) | Retained with its assessment, 7 years | RD-1 traceability — a verdict must remain re-checkable |
+| Security findings (GuardDuty) and incident records | 7 years | Security and legal |
+| Human oversight actions (overrides, annotations, halts) | 7 years, with the assessment | Accountability (IC-2) — an override must remain attributable for as long as the verdict |
+| V&V, release-authorization and deployment records | 7 years | Demonstrating the approved configuration behind any historical result |
+| Data-preparation and corpus records | Life of the corpus entry + 3 years | Provenance and licensing defence |
+| Deletion-request records | 7 years (the record of deletion, not the deleted data) | Proving the obligation was discharged |
+
+### 4.3 Retention controls and constraints
+
+- **Defined, never default.** Every log destination has an explicitly configured retention period.
+  An indefinite or unset retention is a nonconformity: it is both a cost risk and a data-protection
+  risk, because data retained without a defined purpose cannot be justified.
+- **Minimum retention is enforced, not advisory.** Retention on audit-bearing stores cannot be reduced
+  below the schedule above without AIGB approval; the configuration is asserted from
+  infrastructure-as-code and audited monthly by the AI Operations Lead.
+- **Legal hold overrides deletion.** A litigation or regulatory hold suspends expiry for the records
+  in scope until the hold is released.
+- **Deletion obligations are honoured against evidence, not logs.** A customer deletion request removes
+  evidence content and, where contractually required, assessment content; the *fact* of the assessment
+  and of the deletion is retained as an audit record. Where a legal retention requirement conflicts
+  with a deletion request, the legal requirement prevails and the customer is told so.
+- **Integrity.** Audit-bearing stores are append-only in effect: assessment records are versioned and
+  never retroactively rewritten, the CloudTrail bucket is versioned with object-lock-equivalent
+  protection and log-file validation enabled, and access to logs is itself logged.
+- **Tenant isolation.** Logs are partitioned per tenant; cross-tenant access to logs is a Severity 1
+  security incident.
+
+### 4.4 Current configuration of record — account 471885797689, us-west-2
+
+This is the configuration implementing §4.2 in the region the AI system runs in, as last audited
+2026-03-07 by the AI Operations Lead:
+
+| Item | Configured state |
+|---|---|
+| CloudTrail trail `rokap-pdx` (home region us-west-2) | Enabled and actively logging; log-file validation **enabled**; global service events included; delivering to S3 bucket `rokap-pdx-ct-logs` |
+| Additional multi-region trails covering this account | `agge-trail`, `rokap-iad`, `roka-gru`, `fra-trail-test`, `org-test` — so API activity is recorded even outside the primary region |
+| `CloudTrail/DefaultLogGroup` | Retention **2557 days** (7 years) — audit-bearing |
+| `aws/cloudtrail/27e28701-1a16-400c-b3d2-a59fa270bef2` | Retention **2557 days** (7 years) — audit-bearing |
+| `/aws/bedrock-agentcore/runtimes/hosted_agent_ag3un-Nf0terDZmE-DEFAULT` (AI system runtime) | Retention **365 days** |
+| `/aws-glue/crawlers`, `admin-log-group`, `non-admin-log-group` | Retention **365 days** |
+| Log groups with unlimited or unset retention | **None** — every log group in the region has an explicitly configured retention period |
+
+## 4.5 Clock synchronisation and the standard reference time
+
+A timestamp is the field every other log field depends on: correlation across sources, incident sequencing
+and the evidentiary value of an audit record all fail if clocks disagree. This section defines the reference
+time, the approved sources, the protocol, the tolerances and how disagreement is detected.
+
+### 4.5.1 The organizational standard reference time
+
+**The entity's single standard reference time is UTC, traceable to Coordinated Universal Time as distributed
+by the Amazon Time Sync Service, which is itself traceable to a fleet of atomic clocks and GPS receivers
+maintained by AWS.** Every system, service, device and record in scope uses it. There is exactly one
+reference — a second one would be a second version of events.
+
+| Rule | Statement |
+|---|---|
+| **Representation in records** | Every stored timestamp is recorded in **UTC** in **ISO 8601 / RFC 3339** form with an explicit `Z` designator and **millisecond precision** (`2026-08-14T09:41:22.317Z`). A local-time or offset-bearing timestamp is not written to any audit-bearing store, and a record without a timezone designator is treated as malformed |
+| **Representation in presentation** | Local time is a **display** concern only: the console renders the viewer's timezone from the stored UTC value, and every exported report and every customer-visible timestamp is labelled with its timezone rather than left ambiguous. No conversion ever occurs on the way *into* a store |
+| **Leap seconds** | The upstream service **smears** a leap second across a 24-hour window rather than repeating or skipping one, so no monotonicity break or duplicate second appears in a log; no entity system performs its own leap-second handling |
+| **Clock direction** | The synchronisation daemon **slews** rather than steps except at boot, so a correction cannot move a running system's clock backwards and produce out-of-order records |
+
+### 4.5.2 Approved time sources, and the protocol
+
+| Population | Approved source | Protocol and configuration | Why this source |
+|---|---|---|---|
+| **All EC2 and container compute in AWS accounts, including the AgentCore runtime** | **Amazon Time Sync Service** at the link-local addresses **169.254.169.123** (IPv4) and **fd00:ec2::123** (IPv6) | **NTPv4** via `chrony`, configured in the base image with the link-local server as the sole `server` directive and `makestep 1.0 3` limited to boot | Link-local, so it needs no route, no internet egress, no security-group rule and no NAT path — the time source cannot be reached or influenced from outside the instance, which removes the usual attack path against NTP |
+| **AWS platform services** (CloudTrail, CloudWatch, S3, DynamoDB, Lambda, Bedrock) | AWS's own internally synchronised infrastructure | Not entity-configurable; timestamps arrive in UTC | The platform's service-level timestamping is the authority for platform events; the entity records that it inherits this rather than asserting it as its own control |
+| **Managed SIEM provider** | The provider's own synchronised infrastructure, contractually required to be traceable to UTC | Provider-operated; the requirements annex names the obligation and a **±1 second** ingest-time accuracy expectation | Correlation across the entity's and the provider's records depends on it, so it is a contract term rather than an assumption |
+| **Endpoint devices** (48 laptops, 12 mobiles) | Vendor platform time service — Apple and Microsoft NTP pools — enforced by MDM | NTP, automatic time and timezone **enforced by MDM policy and not user-modifiable**; drift reported in the MDM posture check | The endpoint is not an audit-bearing store, but its clock still stamps local security-agent telemetry, so it is enforced rather than left to the user |
+| **HQ network equipment and the alarm control panel** (the only on-premises devices) | **Amazon Time Sync public NTP pool** (`time.aws.com`) as primary with `pool.ntp.org` as secondary, both over the management VLAN | NTPv4, authenticated where the device supports it; the alarm panel additionally receives time from the monitoring centre | The physical procedure's badge and alarm records must sequence against cloud logs during an investigation |
+| **Building-management and landlord systems** (building access control, lift lobby CCTV) | **The landlord's own source — not entity-controlled** | Landlord-operated | Stated as a limitation, with the mitigation in §4.5.4: the entity records the observed offset each time it requests footage or building-access records under an incident reference, so a landlord record can still be aligned to the entity's timeline rather than assumed to agree with it |
+| **Entity entry/exit records** (badge readers, prop-open and intrusion alarms) | The badge system and the alarm panel, both synchronised as above | NTP | Entry/exit timing is frequently the corroborating evidence in an investigation, so it is inside the synchronised population rather than adjacent to it |
+
+**On the DHCP options set.** The VPC DHCP options set distributes `AmazonProvidedDNS` and **deliberately
+distributes no NTP server**, because every instance uses the link-local Amazon Time Sync Service, which is
+reachable without a DHCP-supplied address. The absence of an NTP option in the options set is therefore the
+configured state this standard intends, not an omission — and it is stated here explicitly because a reader
+checking the options set for a time server would otherwise reasonably read the absence as a gap.
+
+### 4.5.3 Accuracy requirements, and where they come from
+
+| Requirement | Tolerance | Source of the requirement |
+|---|---|---|
+| Audit-bearing records in AWS (assessment records, CloudTrail, application logs) | **Within 100 ms of UTC**, measured as the synchronisation daemon's reported offset | Internal: correlation across sources within a single assessment, whose phases can be under a second apart |
+| On-premises network equipment and the alarm panel | **Within 1 second of UTC** | Internal: sequencing physical events against cloud events |
+| Endpoint devices | **Within 2 seconds of UTC** | Internal: security-agent telemetry correlation |
+| SIEM provider ingest | **Within 1 second** | **Contractual** — the provider requirements annex |
+| **Customer-facing assessment timestamps** | UTC, unambiguous, and accurate to the second | **Contractual** — the customer agreement's reporting terms, and the audit-evidence use customers put the records to |
+| **Records supporting a regulatory notification deadline** | Accurate to the second, with the clock source stated | **Legal / regulatory** — GDPR Article 33's 72-hour notification runs from awareness, so the timestamp establishing awareness must withstand challenge; equivalent state breach-notification clocks apply in the primary geography |
+| **Records that may become evidence** | Accurate to the second, with the source, its traceability and the measured offset at the time of collection all recorded | **Legal** — admissibility depends on being able to state where the time came from, not merely what it said; the forensic requirements in the incident procedure require this to be captured in the evidence record |
+| Retention expiry calculations | Day-level accuracy | Retention policy AIMS-POL-009 and legal retention obligations |
+
+**Time obligations are therefore not purely technical**, and this table exists so that the tolerance is
+traceable to whoever imposed it: an internal correlation need can be renegotiated, a contractual or statutory
+one cannot.
+
+### 4.5.4 Detecting and recording clock differences
+
+Synchronisation that is configured but unmonitored is an assumption. Offsets are measured, recorded and
+alarmed:
+
+| Mechanism | What it measures | Cadence | On breach |
+|---|---|---|---|
+| **`chrony` offset metric published to CloudWatch** from every instance and the runtime, as `TimeOffsetMs` | The instance's own measured offset from the link-local source, and its stratum and last-sync age | Every 60 seconds | **Alarm at >100 ms sustained for 5 minutes, and at any `unsynchronised` state or last-sync age over 15 minutes**, to the on-call channel |
+| Synchronisation-daemon health check in the deployment gate | That `chronyd` is running, has a reachable source and is within tolerance | Every deployment | Deployment blocked |
+| **Cross-source offset reconciliation** — a scheduled job that compares, for a sampled set of events recorded by two independent systems, the timestamps each assigned | The **observed offset between the entity's cloud logs, the badge system, the alarm panel, the endpoint fleet and the SIEM provider's copy** | **Monthly**, and on demand during any incident investigation | Offsets over tolerance are recorded as a deficiency with an owner; the measured offset is retained so historical records can still be aligned |
+| MDM posture check | Endpoint clock offset and whether automatic time remains enforced | Continuous, reported weekly | Device out of posture loses access under the endpoint standard |
+| **Landlord and third-party record alignment** | The offset between a landlord-supplied record (building access, CCTV) and entity time, measured at the moment of the request against a known event | Per request | The measured offset is recorded **in the incident record itself**, so the third-party record is aligned rather than assumed synchronous |
+| Time-source availability | Reachability of the link-local service and of `time.aws.com` from the management VLAN | Continuous | Alarm; the on-premises devices hold their own oscillator and are permitted to run free for up to 24 hours within a 1-second budget before the drift becomes a finding |
+
+**Discrepancy risks, and how each is mitigated.** A single upstream provider is a single point of trust — the
+mitigation is that it is link-local and unreachable externally, plus the monthly cross-source reconciliation
+which would reveal a systematic shift as disagreement between independent populations. An on-premises device
+losing its source is bounded by its free-running budget and alarmed. A third-party record whose clock the
+entity cannot control is aligned by measured offset rather than trusted. And a **timestamp that cannot be
+reconciled is stated as such in the record it appears in** — a sequencing conclusion is never asserted across
+an unmeasured offset, because a plausible-looking timeline built on unverified clocks is worse than an
+acknowledged gap. The current period's monthly reconciliations show a maximum observed offset of **34 ms**
+across the AWS population, **210 ms** on the alarm panel and **1.4 seconds** against one landlord
+building-access export — the last of which is over tolerance for a source the entity controls, is recorded as
+**D-2026-021**, and is handled by the offset-recording rule rather than by a control the entity cannot
+exercise over its landlord.
+
+## 5. Verification that logging is operating
+
+| Check | Frequency | Owner |
+|---|---|---|
+| Trail enabled, multi-region, log-file validation on, delivering to the expected bucket | Continuous alarm + monthly audit | AI Operations Lead |
+| Every log group has an explicit retention period matching §4.2 | Monthly audit | AI Operations Lead |
+| Telemetry arriving from each deployment stage | Every deployment (AIMS-PLAN-008 §2 step 7) | AI Operations Lead |
+| Assessment journal completeness — every phase and tool call present for a sampled assessment | Quarterly | AI Development Lead |
+| Verdicts traceable end-to-end for a sampled assessment | Quarterly, and at every external audit | Responsible AI Lead |
+| No customer evidence content or personal data present in logs | Quarterly scan | AI Security Lead |
+| Retention configuration matches this standard | Monthly, and on any infrastructure change | AI Operations Lead |
+
+A failed check is raised as a nonconformity in the AIMS corrective-action log and tracked to closure.
+
+## 6. Review history
+
+| Version | Date | Reviewer | Outcome |
+|---|---|---|---|
+| 1.0 | 2025-09-16 | AI Operations Lead | Initial standard: operation-phase logging and correlation identifiers |
+| 1.1 | 2025-12-10 | AI Operations Lead | Excluded customer evidence content from telemetry after a privacy review |
+| 2.0 | 2026-03-07 | AI Operations Lead, approved by AI System Accountable Owner | Added the phase-by-phase determination (§1), the out-of-condition detection map (§3.3), and the full retention schedule with the no-indefinite-retention rule (§4.3); lengthened audit-record retention to 7 years |
+| 2.1 | 2026-08-14 | AI Operations Lead, AI Security Lead, approved by AI System Accountable Owner | Added clock synchronisation (§4.5): UTC named as the single organizational standard reference time with its representation rules, the approved time source and NTP configuration for every population — including why the VPC DHCP options set deliberately distributes no NTP server — the accuracy tolerances traced to the internal, contractual, legal and regulatory obligation that imposes each, and the offset monitoring, cross-source reconciliation and third-party-record alignment that detect and record clock differences (D-2026-021 raised against a landlord building-access export) |

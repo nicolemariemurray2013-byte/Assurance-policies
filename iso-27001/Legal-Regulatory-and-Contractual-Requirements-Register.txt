@@ -1,0 +1,341 @@
+# Legal, Statutory, Regulatory and Contractual Requirements Register
+
+**Document ID:** SEC-REG-047
+**Version:** 2.2
+**Owner:** General Counsel, jointly with the CISO (control implications) and the DPO (data protection)
+**Approved by:** CEO 2026-08-14; General Counsel 2026-08-12
+**Effective:** 2026-08-14
+**Next scheduled review:** 2026-12-31 (semi-annual), and immediately on entry to a new jurisdiction, a new
+customer sector, a change of intended purpose, a material change of law, or a new supplier category
+**Scope:** All legal, statutory, regulatory and contractual requirements relevant to **information
+security** and to the organization's approach to meeting them, for both legal entities and all
+jurisdictions of operation. Covers identification (§2), the domain-by-domain register (§3), cryptography
+compliance (§5), contractual requirements including supplier and insurance (§6), and how each requirement
+reaches the controls that satisfy it (§4).
+
+**Relationship to AIMS-REG-017.** AIMS-REG-017 *AI Reporting Obligations Register* is the register of
+obligations to **report or share information** about the AI system, and remains authoritative for those.
+This register is broader: it identifies every information-security requirement imposed on the organization
+from outside, of which reporting duties are one domain. Where a requirement appears in both, AIMS-REG-017
+holds the operative deadline and this register holds the control consequence; the semi-annual review
+reconciles the two so a requirement cannot be current in one and stale in the other.
+
+---
+
+## 1. Purpose and standing rules
+
+An external requirement that has been identified but not translated into a control is not satisfied, and
+one that has been satisfied by accident is not evidenced. This register exists so that every external
+requirement bearing on information security is written down once, owned by a named person, mapped to the
+control that meets it, and re-verified on a cadence — and so that a change in the law becomes a change in
+the control rather than a surprise at audit.
+
+**Standing rules:**
+
+- **Identified is not the same as met.** Every entry carries both the requirement and the control or
+  document that satisfies it. An entry with no control reference is a **gap**, is recorded as such, and
+  is treated as an open risk rather than as a completed identification.
+- **The most demanding requirement governs.** Where several jurisdictions or contracts impose comparable
+  duties at different levels, the organization implements the strictest and records that it has done so,
+  rather than maintaining per-jurisdiction variants that diverge.
+- **Silence is not permission.** Where the position is unclear, the General Counsel determines it in
+  writing and the determination is recorded with its date and reasoning, so a later reader knows a
+  decision was taken rather than a question overlooked.
+- **A contractual duty is a real duty.** A commitment made to a customer is enforced with the same rigour
+  as a statutory one; the register does not rank them.
+- **Nothing is researched for the first time during an incident.** Every entry names its owner and, where
+  a duty is time-bound, its clock.
+
+## 2. How requirements are identified
+
+| Input | What it yields | Who monitors | Cadence |
+|---|---|---|---|
+| Jurisdictions of establishment and operation of both legal entities | Statutory and regulatory duties applying to us directly | General Counsel | Semi-annual; immediate on a new establishment |
+| Jurisdictions of assessed organizations (five geographies) | Duties reaching us through the customer, and duties on the data we hold | General Counsel with DPO | Semi-annual; immediate on a new geography |
+| Data-protection regimes applicable to personal data that may appear in evidence | Processing, transfer, retention and breach duties | DPO | Semi-annual; continuous horizon monitoring |
+| Sectoral regulation of assessed organizations where our output feeds their regulatory reporting | Reliance, correction and record-keeping duties | General Counsel with the Accountable Owner | Semi-annual; on entry to a new customer sector |
+| AI-specific regulation in every jurisdiction where the system is made available | Documentation, transparency, incident, human-oversight and record duties | General Counsel with the Responsible AI Lead | Continuous horizon monitoring |
+| Customer contracts, DPAs and usage agreements | Contractual security, notification, audit, retention and deletion duties | Legal with Procurement | On execution; full re-read at each review |
+| Supplier and processor contracts | Duties we impose and duties we accept | Procurement with CISO | On execution and renewal |
+| Insurance policies and their conditions | Conditions precedent that function as security requirements (§6.3) | CFO with CISO | Annually at renewal |
+| Certification and audit scheme rules | Scope, change-notification and nonconformity duties | Accountable Owner | Per scheme cycle |
+| Export control, sanctions and cryptography regimes | Technology-transfer and cryptographic-use restrictions (§5) | General Counsel | Semi-annual; on a change of deployment geography |
+| Employment and workplace law | Monitoring notice, screening limits, disciplinary fairness | Head of People with General Counsel | Annually |
+| Law-enforcement and lawful-access frameworks | Disclosure duties and their limits | General Counsel | Semi-annual |
+| Horizon scanning — legal-update services, regulator publications, industry bodies, external counsel briefings | Forthcoming change before it takes effect | General Counsel | Continuous, reviewed monthly |
+
+**Completeness test applied at each review.** For each of the seven requirement **domains** in §3, the
+General Counsel records either the identified requirements or a positive statement that none applies to
+the organization's activities. A domain with neither is an incomplete identification, not an empty one —
+which is the specific failure this test exists to catch.
+
+## 3. Register by requirement domain
+
+Each entry: the requirement, its source, what it obliges, the owner, and the control or document that
+satisfies it. Deadlines for reporting duties are held in AIMS-REG-017 and referenced rather than duplicated,
+so the two cannot drift to different numbers.
+
+### 3.1 Data protection and privacy
+
+| # | Requirement | Source | Obligation | Owner | Satisfied by |
+|---|---|---|---|---|---|
+| L-1 | Lawful basis, purpose limitation and minimisation | GDPR Arts 5–6 and equivalents | Process evidence content only for assessment; no secondary use; no training on customer data | DPO | Privacy policy; SEC-MSK-043 §1; the contractual prohibition on onward disclosure |
+| L-2 | Security of processing | GDPR Art 32 | Appropriate technical and organizational measures, including encryption and pseudonymisation | CISO | The ISMS control set; SEC-MSK-043; encryption at rest and in transit |
+| L-3 | Data protection by design and by default | GDPR Art 25 | Controls designed in, defaults restrictive | CISO with DPO | Change-management design review; synthetic-by-default lower environments |
+| L-4 | Processor duties and sub-processing | GDPR Art 28; DPAs | Act only on instruction; flow down; authorise sub-processors; assist the controller | DPO | DPA terms; supplier flow-down (§6.1); AIMS-REG-017 O-3, O-13 |
+| L-5 | Breach notification | GDPR Arts 33–34; DPAs | Notify authority, controller and data subjects within the stated clocks | DPO | AIMS-REG-017 O-1 to O-3; SEC-PRO-014 |
+| L-6 | Data-subject rights | GDPR Ch. III | Respond within the statutory period, including through the controller | DPO | AIMS-REG-017 O-7 |
+| L-7 | International transfers | GDPR Ch. V | Transfer only on an approved mechanism; document it | DPO | Transfer mechanisms on file; SEC-FOR-045 §7 for evidence transfers |
+| L-8 | Retention and erasure | GDPR Art 5(1)(e); DPAs | Delete when the purpose ends; contractual return/deletion on termination (§6.2) | DPO | Retention schedule; lifecycle policies; deletion attestations |
+| L-9 | De-identification claims | GDPR Art 4(5); CCPA/CPRA | A claim of anonymity requires demonstrated adequacy; pseudonymised data remains personal data | DPO | SEC-MSK-043 §4, including the annual motivated-intruder test |
+| L-10 | Records of processing | GDPR Art 30 | Maintain and make available | DPO | Processing inventory, reconciled quarterly |
+
+### 3.2 AI regulation and product duties
+
+| # | Requirement | Source | Obligation | Owner | Satisfied by |
+|---|---|---|---|---|---|
+| L-11 | Technical documentation and record-keeping for the AI system | Applicable AI regulation | Maintain documentation of design, data, evaluation and limitations; retain logs | Accountable Owner | AIMS documentation set; the assessment journal; artifact and dependency records |
+| L-12 | Transparency on automated evaluation | AI regulation; contract | Disclose that evaluation is automated, its limitations and its valid domain of use | Responsible AI Lead | AIMS-DOC-012 §2; AIMS-REG-017 O-16 |
+| L-13 | Human oversight | AI regulation | A named accountable human able to review, override and withdraw a result | Accountable Owner | Override path; AIMS-REG-017 O-11 |
+| L-14 | Serious incident reporting | AI regulation | Report to the competent authority per its clock | General Counsel | AIMS-REG-017 O-4 |
+| L-15 | Post-market monitoring | AI regulation | Monitor performance in use and act on degradation | Responsible AI Lead | Monitoring measures; AIMS-REG-017 O-22, O-23 |
+
+### 3.3 Computer misuse, cyber and sector-specific security law
+
+| # | Requirement | Source | Obligation | Owner | Satisfied by |
+|---|---|---|---|---|---|
+| L-16 | No unauthorised access, and authorisation must be demonstrable | Computer-misuse statutes in the jurisdictions of operation | Access only within authorisation; authorisation recorded; scanning only of owned or authorised estates | CISO | Least-privilege model; the customer's written authorisation for scanning their accounts; the vended-credential model, which cannot exceed the authorised scope |
+| L-17 | Authorisation to scan a customer environment | Contract; computer-misuse law | Scanning is performed only under a current customer authorisation and only within the stated scope | CISO with Legal | Credential vending scoped per environment; the authorisation recorded per environment; scope re-verified at each engagement change |
+| L-18 | Interception and monitoring limits | Communications and employment law | Monitor only with notice and a lawful basis; no interception outside it | General Counsel with Head of People | The monitoring notice in HR-STD-046 §3.3; the decision not to deploy inline TLS decryption (SEC-MAL-024 §4.4) |
+| L-19 | Lawful-access and disclosure requests | Applicable law | Disclose only what is lawfully compelled, narrowly scoped, with notice to the affected party where lawful | General Counsel | AIMS-REG-017 O-8; §5.3 below for cryptographic aspects |
+| L-20 | Critical-infrastructure or sectoral security duties reaching us through a customer | Sectoral regulation; contract | Meet the customer's flow-down where it applies to our processing | General Counsel | Named schedules in customer contracts; personnel flow-down per HR-STD-046 §3.2 |
+
+### 3.4 Intellectual property and licensing
+
+| # | Requirement | Source | Obligation | Owner | Satisfied by |
+|---|---|---|---|---|---|
+| L-21 | Software licence compliance | Copyright law; licence terms | Use only licensed software within its terms; no unlicensed installation | Head of Engineering | Application control in enforce mode; the curated repository; licence inventory reconciled at each release |
+| L-22 | Open-source licence obligations | Licence terms | Observe attribution and copyleft consequences; no incompatible combination in a distributed artifact | Head of Engineering with Legal | SCA licence policy gate, which fails the build on a disallowed licence class; per-release BOM |
+| L-23 | Third-party IP not introduced improperly | Copyright law; prior obligations | No foreign confidential material or code introduced | Head of Engineering | HR-STD-046 §3.1; code review; acquisition review |
+| L-24 | Protection of our own IP and trade secrets | Statute; contract | Confidentiality obligations, access control, egress limits | General Counsel | HR-STD-046 §6; SEC-MSK-043 §3.3 |
+| L-25 | Customer's IP in evidence content | Contract | No use outside assessment; no disclosure; deletion on termination | General Counsel | DPA and usage-agreement terms; §6.2 |
+
+### 3.5 Records, evidence and accounting duties
+
+| # | Requirement | Source | Obligation | Owner | Satisfied by |
+|---|---|---|---|---|---|
+| L-26 | Retention of records for statutory periods | Company, tax and employment law | Retain for the stated period; do not destroy early | CFO with General Counsel | Retention schedule; object-locked storage; lifecycle policies that exclude records under a statutory period |
+| L-27 | Integrity and admissibility of records relied on as evidence | Rules of evidence in the forums in scope | Contemporaneous, tamper-evident, verifiable, with custody | Evidence Custodian | SEC-FOR-045 §3–§4 |
+| L-28 | Legal hold | Litigation and regulatory procedure | Suspend expiry on notice; preserve | General Counsel | SEC-FOR-045 §7; one hold currently in force to 2027-01-31 |
+| L-29 | Audit-trail immutability for our own actions | Contract; assurance schemes; evidence rules | No actor may alter the record of their own action | CISO | Write-once audit account with no production delete or modify permission; two-person break-glass for deletion |
+
+### 3.6 Employment and workplace duties
+
+| # | Requirement | Source | Obligation | Owner | Satisfied by |
+|---|---|---|---|---|---|
+| L-30 | Contractual security terms and their limits | Employment law | Terms must be lawful, notified, and proportionate in the jurisdiction | Head of People with General Counsel | HR-STD-046, re-papered on legal change per its §7 |
+| L-31 | Screening limits | Employment and data-protection law | Screen only to the extent lawful and proportionate to the role | Head of People | HR-POL-004, with Tier 3+ enhanced screening |
+| L-32 | Protected disclosures | Whistleblowing statutes | No restriction on, and no detriment for, a protected disclosure | General Counsel | The express carve-out in HR-STD-046 §3.1; the no-detriment contractual term in §2 |
+| L-33 | Disciplinary fairness | Employment law | Proportionate response with a fair process | Head of People | The proportionality term in HR-STD-046 §3.4 |
+
+### 3.7 Reporting and disclosure duties
+
+Held in **AIMS-REG-017 §2** (23 obligations, O-1 to O-23), each with its information set, recipient,
+timeframe, basis and owner. This register records that the domain is identified, that its owner is Legal &
+Privacy, and that the semi-annual review reconciles the two documents. **No reporting deadline is
+duplicated here**, because two copies of a deadline is how one of them becomes wrong.
+
+## 4. How external requirements reach the controls
+
+Identification is the input to the ISMS, not a parallel activity beside it. Each requirement is wired into
+the specific ISMS process that has to change when the requirement changes, with a named owner and a
+timeframe — so that a legal change produces a control change rather than a note.
+
+| ISMS process | How the register feeds it | Owner | When |
+|---|---|---|---|
+| **Security policy development** | Every policy and standard carries, in its scope or governance section, the external requirements it exists to meet. The semi-annual review reconciles in **both directions**: every register entry names at least one document that satisfies it, and every policy's stated legal basis resolves to a current register entry. A new or changed requirement is assigned to a named document owner with a due date | General Counsel with CISO | Semi-annually and on change |
+| **Control design and selection** | A new requirement is assessed for whether existing controls satisfy it, need extension, or need a new control. The determination is recorded per requirement — including a recorded determination that existing controls suffice, with the reasoning, so "already covered" is a decision and not an assumption | CISO | Within 30 days of a change taking effect |
+| **Information classification and handling** | Legal duties attaching to a data category set its classification floor and its handling rules: personal data in evidence content is Restricted by legal duty, not by preference; a statutory retention period overrides a shorter lifecycle; a transfer restriction becomes a storage-location rule | DPO with CISO | On change; verified at each classification review |
+| **Risk assessment and treatment** | Each register entry is a risk source with its own consequence of non-compliance (regulatory, contractual, or evidential). Legal and contractual consequence is an explicit input to impact scoring, and a compliance gap is entered on the risk register as a treatment item with an owner and a date — never left as an observation | CISO with General Counsel | At each risk review; immediately for a new gap |
+| **Supplier requirements** | A duty we owe that depends on a supplier is flowed down as a contractual requirement before the supplier is engaged, and re-flowed at renewal (§6.1). A supplier who cannot accept a required term is not engaged for that scope, and the decision is recorded | Procurement with CISO | Pre-engagement and at renewal |
+| **Contract terms we offer customers** | Commitments in customer contracts are made only where a control exists to meet them; the CISO reviews any security commitment before it is offered, so the organization does not contract to something it does not do | CISO with Legal | Per contract |
+| **Change management** | A change that would breach a register entry is blocked at design review; the change record carries a compliance-impact field for changes touching data handling, retention, cryptography or transfer | Head of Engineering | Per change |
+| **Internal audit programme** | Register entries with a legal or contractual consequence are in the audit universe, and the annual plan covers the entries whose failure would be most consequential | Internal Audit | Annually |
+| **Awareness and training** | Duties that depend on individual behaviour become training content and contractual terms (HR-STD-046 §3.2), because a requirement met only by a control that a person can bypass is not met | CISO with Head of People | Annually and on change |
+| **Management review** | Compliance status, open gaps, and forthcoming requirements are standing inputs | Chief AI Officer | At each review |
+
+**Operating record for the current period.** 6 external changes assessed. 3 required no control change with
+the reasoning recorded; 2 produced document changes (the cryptography position in §5 was previously
+unstated and is now written down; the supplier audit-rights term in §6.1 was strengthened); 1 remains open
+as a treatment item on the risk register — **R-2026-032**, the pending sector-specific requirement for one
+customer's regulator, owner CISO, due 2026-10-31. **0 changes assessed as "monitor" with no owner**, which
+was the previous period's finding and the reason the owner-and-date fields are now mandatory.
+
+## 5. Cryptography: legal and regulatory compliance
+
+Cryptography is regulated differently from other technology — its export, its use, and the ability of an
+authority to compel access are each separately constrained, and the constraints differ by jurisdiction.
+The organization's position is recorded here rather than assumed, and the General Counsel re-verifies it
+semi-annually and before any change of deployment geography.
+
+### 5.1 Import, export and transfer restrictions
+
+| Aspect | Position |
+|---|---|
+| **What cryptography we use** | Platform-provided cryptography only: AWS KMS for key management, TLS 1.2+ for transit, AES-256 at rest, and standard signature and hashing algorithms. **No cryptography is developed in-house**, and no non-standard or proprietary algorithm is used — which materially narrows the export analysis and is a deliberate reason for the choice |
+| **Export classification** | The service is not distributed as software to customers; it is operated as a hosted service, so no cryptographic product is exported by us. The cryptographic functionality reaching a customer is the platform provider's, under their classification. This determination is recorded by the General Counsel and re-verified semi-annually |
+| **If distribution ever occurs** | Any change to a distributed-software model requires an export-classification assessment **before** release, by the General Counsel with external advice, covering classification, licence or exception availability, and reporting duties. This is a gate on the release, not a follow-up |
+| **Import restrictions** | Jurisdictions that restrict the import or domestic use of strong cryptography are enumerated in the jurisdiction table; none of the current geographies imposes a restriction incompatible with the platform's defaults. A new geography is assessed for import restriction before the first customer there is onboarded |
+| **Technology transfer to persons** | Access by personnel or suppliers located in a restricted jurisdiction is treated as a potential transfer; access is granted by location as well as by role, and the location is a recorded attribute of every Tier 3+ engagement |
+| **Sanctions** | Customer and supplier onboarding includes a sanctions check; the account and region topology means no processing occurs in a sanctioned jurisdiction. Verified at onboarding and annually |
+| **Deployment geography** | Primary region us-west-2; a new region is assessed for cryptographic, data-localisation and lawful-access implications before deployment, and the assessment is recorded |
+
+### 5.2 Restrictions on use
+
+| Aspect | Position |
+|---|---|
+| **Mandatory use** | Where law or contract requires encryption (GDPR Art 32 as an appropriate measure, customer contractual terms, PCI-adjacent handling), encryption is mandatory and its absence is a compliance gap, not a design choice. All customer evidence content is encrypted at rest with a customer-scoped KMS key and in transit |
+| **Permitted strength** | The organization uses the strongest platform-supported standard configuration everywhere; no jurisdiction of operation currently caps permitted strength. A cap in a new jurisdiction is assessed before entry, and the outcome is either compliance or non-entry — never quiet non-compliance |
+| **Key management duties** | Keys are managed in KMS with policies that separate duties: the roles that hold data cannot administer its key, and the masking and evidence keys deny every production role. Key rotation, retention and destruction follow the retention schedule, and a key whose data is under a statutory retention period or a legal hold **cannot be scheduled for deletion** — deletion of a key destroys the data as effectively as deleting the data, so it is governed by the same rule |
+| **Prohibited use** | Personnel may not use unapproved cryptographic tooling on organizational information, and may not encrypt organizational data with a key the organization does not hold — because that converts a retention duty into an impossibility and is treated as a serious breach |
+| **Cryptography as an obstruction risk** | Full-disk encryption on endpoints is mandatory, **and** key escrow is mandatory with it, so that an evidential acquisition remains possible (SEC-FOR-045 §5.1). Escrow availability is verified before any endpoint is powered off in an investigation |
+
+### 5.3 Lawful access by authorities
+
+| Aspect | Position |
+|---|---|
+| **Standing position** | The organization does not build or maintain any capability to defeat its own cryptography, and does not hold a mechanism to decrypt customer content outside the operational path. Where an authority compels production, the organization produces what it lawfully must, in the form in which it holds it |
+| **Handling a request** | Every request is routed to the General Counsel; no engineer responds to a request directly. The request is assessed for validity, jurisdiction and scope; over-broad requests are narrowed or challenged; production is minimised to what is compelled; the request and response are recorded and retained. AIMS-REG-017 O-8 holds the operative process |
+| **Notice to the affected party** | Where lawful, the affected customer or data subject is notified before production; where a non-disclosure requirement applies, the organization records that it applied and reviews it for expiry, so a gag is not treated as permanent by default |
+| **Conflicts of law** | Where a lawful-access demand in one jurisdiction would breach a duty in another (a blocking statute, or a transfer restriction), the General Counsel obtains local advice and the conflict is escalated to the CEO. The conflict is recorded rather than resolved silently in favour of whichever authority asked most recently |
+| **Transparency** | The number and type of requests received is reported to the AI Governance Board quarterly and, in summary form, in the annual transparency reporting under AIMS-REG-017 O-23. Current period: **0 lawful-access requests received** |
+
+### 5.4 Validity of digital signatures, seals and certificates
+
+| Aspect | Position |
+|---|---|
+| **Legal effect of electronic signatures** | Contracts and instruments — including the employment terms and contractor annexes in HR-STD-046 — are executed electronically. The General Counsel has determined the form of electronic signature required for each instrument class in each jurisdiction of use, and the platform in use meets it. Instruments requiring a qualified or witnessed form are identified and are **not** executed by the standard path |
+| **Evidential weight of our own signatures** | Signed commits, artifact signatures and log-file validation digests are relied on as evidence of integrity and authorship. Their evidential value depends on key custody, so the signing keys' custody and access are recorded and the verification method is documented (SEC-FOR-045 §4.4) |
+| **Certificate validity and lifecycle** | TLS certificates are issued through the managed platform authority with automated renewal; the certificate inventory is monitored for expiry with alarming ahead of it, because an expired certificate is both an outage and a prompt for users to accept an insecure connection. **0 unplanned certificate expiries** in the period |
+| **Trust anchors** | The trusted-CA set on managed endpoints and in the runtime is managed, not ad hoc; a private CA's root is distributed by policy. Personnel may not add a trust anchor to a managed device |
+| **Signature validity over time** | An electronic signature's verifiability outlasts the certificate that produced it only if the validation context is retained, so signed instruments are retained with their validation evidence — signature, certificate chain and timestamp — for the instrument's full retention period. A signature that cannot be validated in five years is not evidence in five years |
+| **Time-stamping** | Records relied on evidentially carry a trusted timestamp from an NTP-synchronised source, with skew recorded (SEC-FOR-045 §4.3). Where a legal instrument requires a qualified timestamp, that requirement is identified per instrument class |
+| **Long-term instruments** | Instruments with an indefinite duty (confidentiality, IP assignment) are additionally retained in a human-readable executed form, so their enforceability does not depend on a cryptographic verification path remaining available decades later |
+
+## 6. Contractual requirements
+
+Contractual duties are identified and managed in both directions: what we owe, and what we require of
+others. Both are register entries, because a duty we owe that depends on a supplier is only as strong as
+the term we imposed on them.
+
+### 6.1 Requirements we impose on suppliers
+
+Every supplier with access to organizational or customer information, or on whom a service dependency
+rests, is engaged on terms that include the following. A term that cannot be obtained is a recorded
+exception with a compensating control and named approval — not an omission.
+
+| Required term | Why it is required | Verified |
+|---|---|---|
+| **Security obligations at least equal to our own** for the data they touch, expressed as requirements rather than as a general standard of care | A general "reasonable measures" clause is unenforceable in practice and unauditable | At engagement; at renewal |
+| **Flow-down** to their personnel and their sub-processors, with named-individual annexes where the access is to customer data | Our duty to customers does not stop at our perimeter | Quarterly (4/4 annexes current) |
+| **Sub-processor authorisation and notice** before any change | An unauthorised sub-processor is a transfer we did not agree to | On notice |
+| **Incident notification within 24 hours** of their becoming aware, with the information we need to meet our own clocks | Our 72-hour and 4-hour clocks cannot start after theirs has run | Tested at the annual tabletop |
+| **Audit rights** — the right to audit or to receive an independent assurance report, plus a right of on-site or remote inspection for suppliers holding customer data, plus the right to audit on cause following an incident | Assurance we cannot verify is assertion. Strengthened in v2.2: the previous term accepted an assurance report alone, with no right to inspect on cause | Annually; on cause |
+| **Evidence and log availability**, including a 30-day export window for their audit logs | Their logs are sometimes the only record of an event on our data (SEC-FOR-045 §2.1) | Annually |
+| **Data return and destruction on termination** — return in a usable format, then certified destruction of all copies including backups, within a stated period, with written certification | Termination is the point at which data is most often left behind | At each termination |
+| **Retention limits and deletion on instruction** | Our retention duties are meaningless if a processor keeps a copy | Annually |
+| **Location and transfer restrictions**, naming permitted processing locations | Transfer restrictions bind us regardless of who holds the data | At engagement; on change |
+| **Liability** — a liability position proportionate to the data and the dependency, not capped at the fee for a supplier holding customer evidence; carve-outs for confidentiality breach, data-protection breach and IP infringement | A cap at annual fees is not a remedy for a breach of customer data | At engagement; at renewal |
+| **Indemnity** for third-party claims arising from their breach | The claim reaches us first | At engagement |
+| **Insurance** — evidence of cyber and professional liability cover at a stated level, verified annually | An indemnity from an uninsured supplier is a promise, not a recovery | Annually |
+| **Cooperation** with investigations, regulatory enquiries and legal holds | Our duties do not pause because the record is in their system | On demand |
+| **Business continuity and exit assistance**, including transition support and a defined exit period | A supplier failure must not become our outage or our data loss | Annually |
+| **Change notification** for material changes to their security posture, ownership or location | A change of control can change every other answer | On notice |
+| **Right to terminate** for a material security failure, without penalty | Otherwise the only remedy is to continue | — |
+
+**Supplier population and state at 2026-07-15:** 11 suppliers in scope — 3 holding or processing customer
+evidence content (highest tier), 4 with infrastructure or tooling dependency, 4 corporate. **11/11 under
+current executed terms**; 3/3 highest-tier under DPAs with named-individual annexes; 1 recorded exception
+(a corporate SaaS provider whose standard terms cap liability at fees — accepted by the CISO and CFO
+because the data is non-customer and low-sensitivity, with the compensating control that no customer or
+personal data is placed in it, re-reviewed annually as **D-2026-028**); 2 renewals in the period, both
+re-flowed to v2.2 terms including the strengthened audit right.
+
+### 6.2 Requirements we owe customers
+
+| Duty | Source | How it is met |
+|---|---|---|
+| Stated security measures | Customer contract; DPA Art 28 schedule | The measures schedule is derived from the implemented control set and is reviewed by the CISO before it is offered — so the schedule describes what exists |
+| Incident notification within the stated clock | Contract | AIMS-REG-017 O-10 (4 hours Severity 1) |
+| Correction or withdrawal of an incorrect result | Contract; honesty obligation | AIMS-REG-017 O-11 |
+| Audit and information rights, including the assessment record on request | Contract | AIMS-REG-017 O-15; the write-once journal makes the record producible |
+| Sub-processor transparency and objection | DPA | AIMS-REG-017 O-13 |
+| Processing only on instruction, and only for assessment | DPA | Purpose-limitation controls; SEC-MSK-043 §5 usage agreements |
+| **Return and destruction of customer data on termination** | Contract; DPA | Export in a usable format on request, then deletion of all copies including backups within 30 days, with written certification, excepting only what a statutory retention period or a legal hold requires — and where an exception applies, it is stated to the customer with its expiry rather than applied silently |
+| Retention limits during the engagement | DPA | Retention schedule; lifecycle policies |
+| Location of processing and transfer mechanism | DPA | AIMS-REG-017 O-9 |
+| Cooperation with the customer's own regulator | Contract | Named schedules; L-20 |
+| Notice of verdict-affecting change | Contract | AIMS-REG-017 O-12 |
+| Liability and indemnity as accepted | Contract | Reviewed by the General Counsel per contract; the CISO reviews any security commitment before it is offered |
+
+**Termination record:** 0 customer terminations in the period; the return-and-destruction path was
+exercised in the 2026-05-20 tabletop against a synthetic customer, completing in 6 days against the 30-day
+commitment, with certification produced.
+
+### 6.3 Insurance conditions as security requirements
+
+Insurance conditions function as requirements because a breach of a condition can void cover, which makes
+them as operationally binding as a regulation and is why they are registered here rather than treated as a
+finance matter.
+
+| Policy | Conditions bearing on information security | Owner | Verified |
+|---|---|---|---|
+| **Cyber liability** | MFA on all remote and privileged access; endpoint detection deployed and monitored; backups held offline or immutable and tested; patching within stated windows for critical vulnerabilities; incident notification to the insurer within 72 hours of discovery; no material change to the risk without notice; retention of logs for the stated period | CFO with CISO | Annually at renewal, and on any control change affecting a condition |
+| **Professional indemnity / technology E&O** | Documented assessment methodology; stated limitations disclosed to customers; a record of each engagement retained; no knowing publication of an unreliable result | CFO with the Accountable Owner | Annually |
+| **Directors and officers** | Governance and reporting obligations to the Board | CFO | Annually |
+| **Crime / social engineering** | Payment-verification controls; dual authorisation above a threshold | CFO | Annually |
+
+**Conditions compliance statement, 2026-07-15.** All cyber-policy conditions verified as met: MFA on all
+remote and privileged access; EDR deployed and monitored on 100% of managed endpoints; backups immutable
+and restore-tested (most recent exercise 2026-07-08); critical and KEV patching inside the 7-day clock
+with 0 overdue; insurer notification path tested. **1 condition required a control change during the
+period** — the policy's backup-immutability condition was tightened at renewal and object lock was
+extended to a further backup set to meet it, which is the register doing its job. No material change to
+the risk occurred without notice. The renewal assessment is recorded, and the CISO signs the conditions
+statement before the CFO binds the policy, so cover is never bound against conditions the organization
+does not meet.
+
+## 7. Gaps and open items
+
+Recorded rather than omitted, because a register whose every line is green is usually a register that is
+not being maintained.
+
+| # | Gap | Consequence | Owner | Due | State |
+|---|---|---|---|---|---|
+| R-2026-032 | One customer's sectoral regulator has published a requirement whose application to a processor in our position is unsettled | Potential additional record-keeping and notification duties | CISO with General Counsel | 2026-10-31 | Open; external advice commissioned; the conservative reading is being implemented pending clarity |
+| D-2026-028 | One corporate SaaS supplier's liability is capped at fees | Limited recovery in a low-sensitivity scope | CISO with CFO | Annual re-review | Accepted, with the no-customer-data compensating control |
+| R-2026-031 | No full packet capture deployed; flow logs are the substitute | A narrower evidential record for network-borne events | AI Security Lead | Annual re-review | Accepted; recorded in SEC-FOR-045 §2.1 |
+
+## 8. Governance
+
+| What is checked | Frequency | By whom | Current state |
+|---|---|---|---|
+| Register complete against all seven domains, each with entries or a positive statement of non-application | Semi-annually | General Counsel | 2026-08-12: 7/7 domains covered, 33 entries |
+| Every entry names an owner and a satisfying control or document | Semi-annually | General Counsel with CISO | 2026-08-12: 33/33 owned; 33/33 mapped; 1 mapped to an in-flight treatment item (R-2026-032) |
+| Two-way reconciliation with AIMS-REG-017 | Semi-annually | Legal & Privacy | 2026-08-12: 23 reporting obligations reconciled, 0 divergences |
+| Two-way reconciliation with the policy set — every policy's legal basis resolves, every entry is served | Semi-annually | CISO | 2026-08-12: 14 documents, 2 divergences found and closed |
+| Horizon scanning reviewed and changes assessed with an owner and a date | Monthly | General Counsel | 6 changes assessed in the period; 0 without an owner |
+| Cryptography position re-verified | Semi-annually and before a geography change | General Counsel | 2026-08-12: verified; 0 lawful-access requests |
+| Certificate inventory and expiry alarming | Continuous, reviewed quarterly | Head of Platform Engineering | 0 unplanned expiries |
+| Supplier terms current, flow-downs executed, exceptions re-reviewed | Quarterly and at renewal | Procurement with CISO | 11/11 current; 1 exception re-reviewed |
+| Insurance conditions verified and signed before binding | Annually at renewal | CFO with CISO | 2026-07-15: all conditions met; 1 control change made to meet a tightened condition |
+| Customer return-and-destruction path exercised | Annually | DPO | 2026-05-20: 6 days against a 30-day commitment |
+| Compliance gaps carried on the risk register with owners and dates | At each risk review | CISO | 3 open, all owned and dated |
+
+## 9. Review history
+
+| Version | Date | Reviewer | Outcome |
+|---|---|---|---|
+| 2.0 | 2026-03-06 | General Counsel | Established the register for the information-security domains, referencing AIMS-REG-017 for reporting obligations |
+| 2.1 | 2026-06-11 | General Counsel + CISO | Added the ISMS wiring in §4; made owner and due date mandatory on every assessed change after the previous period's finding |
+| 2.2 | 2026-08-14 | CEO, General Counsel, CISO, DPO | Added §5 cryptography compliance in full (export, use, lawful access, signature and certificate validity), §6.1 supplier terms including strengthened audit rights, liability and data return and destruction, §6.3 insurance conditions, and §7 the open-gap table |

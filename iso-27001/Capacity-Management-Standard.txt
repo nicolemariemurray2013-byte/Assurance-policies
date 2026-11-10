@@ -1,0 +1,241 @@
+# Capacity Management Standard
+
+**Document ID:** OPS-CAP-029
+**Version:** 3.4 — **effective 2026-04-06**, superseding v3.0 of 2025-10-06
+**Owner:** Head of Platform Engineering
+**Approved by:** Head of Engineering 2026-04-01
+**Next scheduled review:** Annually (next by 2026-12-31), quarterly for the forecast itself, and on any material
+change to the architecture or the customer base
+
+**Scope.** Measurement, monitoring, evaluation, forecasting, and provisioning of processing capacity across the
+infrastructure, data, and software components of the service, so that availability commitments are met as demand
+changes. The reference implementation is AWS account **471885797689**, region **us-west-2**.
+
+Companion documents: the backup, recovery, and environmental protection standard (recovery infrastructure); the
+business continuity and recovery testing plan (capacity under disruption); the change management policy (the route
+by which capacity is added); the security monitoring procedure (alarm routing and on-call).
+
+---
+
+## 1. What constrains capacity in this system
+
+Capacity management here is not primarily about servers. The service is an **asynchronous, long-running,
+LLM-backed assessment pipeline**, and its real constraints are different from a request-serving system's. Naming
+them correctly is a precondition of measuring the right things:
+
+| Constraint | Why it binds | Nature of the limit |
+|---|---|---|
+| **Model inference throughput and token throughput** | Every assessment consumes a large number of model tokens across five graph nodes, and the auditor node uses the largest model | Provider-side quota per model per region; the hardest limit in the system |
+| **Concurrent assessment execution** | The assessment lock is **process-global**, so one worker process executes one assessment at a time; concurrency is the number of worker processes | Structural, and the primary scaling lever |
+| **Assessment wall-clock duration** | An assessment runs for minutes, not milliseconds; long-running work converts a throughput problem into a queueing problem | Determined by graph depth, evidence volume, and scan breadth |
+| **Cloud Control and describe API rate limits in the assessed account** | Scans read a customer's configuration; the throttle belongs to the customer's account, not the entity's | Per-account, per-service throttling outside the entity's control |
+| **Record store read/write capacity** | Assessment state, results, and evidence metadata | Managed, auto-scaling, with account-level ceilings |
+| **Object storage throughput and volume** | Evidence, results, logs, and archives | Effectively elastic; volume, not throughput, drives cost |
+| **Container runtime concurrency and memory** | Worker processes and the graph's memory footprint | Task and account quotas |
+| **Log and telemetry ingestion volume** | 400-day retention across trail, flow, access, and application logs | Ingestion and storage quotas, and cost |
+| **Provider service quotas generally** | Any quota can become the binding constraint as usage shifts | Per-quota, some adjustable on request with lead time |
+
+The consequence that shapes everything below: **the binding constraint is usually a quota, not a machine.** A
+quota increase has a **lead time measured in days**, which is why forecasting is mandatory rather than advisory —
+capacity here cannot be added in the minute it is needed.
+
+---
+
+## 2. Measuring current usage to establish a baseline (A1.1-R1)
+
+Usage is measured continuously across all three component classes the criterion names — infrastructure, data, and
+software — and the measurements are retained long enough to constitute a baseline rather than a snapshot.
+
+| Component class | Metric | Source | Baseline retained |
+|---|---|---|---|
+| **Software / application** | Assessments started, completed, failed, and abandoned per hour and per day | Application metrics | 13 months |
+| | Assessment wall-clock duration, p50 / p90 / p99, by framework and control count | Application metrics and the assessment journal | 13 months |
+| | Per-node duration within the graph, isolating the auditor node | Application metrics | 13 months |
+| | Concurrent assessments in flight; time spent waiting for the lock | Application metrics, lock heartbeat records | 13 months |
+| | Tool-call counts and scan-step counts per assessment | Assessment journal | 13 months |
+| | Model tokens consumed per assessment, by node and model | Inference metrics | 13 months |
+| | Error and retry rates by cause, including provider throttling | Application metrics | 13 months |
+| **Infrastructure** | Worker process count, CPU, and memory utilisation; peak memory per assessment | Container and runtime metrics | 13 months |
+| | Model inference request and token rates against quota | Provider metrics | 13 months |
+| | Record store consumed capacity, throttled requests, item sizes | Provider metrics | 13 months |
+| | Object storage volume and request rates, by bucket and prefix | Storage metrics; **server access logging is enabled on all 13 buckets**, giving per-object request visibility | 13 months, logs 400 days |
+| | Cross-account scan API call volume and throttle responses per assessed account | Application metrics | 13 months |
+| | Log ingestion volume by source | Log metrics | 13 months |
+| | Utilisation of every relevant service quota, expressed as a percentage of limit | Quota metrics | 13 months |
+| **Data** | Total evidence objects and bytes, per project and in aggregate; growth rate | Storage inventory | 13 months |
+| | Assessment result and journal record counts and growth rate | Record store metrics | 13 months |
+| | Log and archive volume growth against the retention schedule | Storage inventory | 13 months |
+| | Environment and project counts, and controls-per-framework — the multipliers that turn customer growth into load | Application data | 13 months |
+
+**The baseline** is the rolling 13-month record of these measures, expressed as average, peak, and the shape of
+the distribution — not a single average, because this workload is bursty by nature: scheduled and campaign-driven
+assessments arrive in clusters, and a system sized to the mean of a bursty workload is a system that fails at
+peak. **13 months** is deliberate: it captures a full annual cycle plus one month of overlap, so year-on-year
+comparison is possible and an annual compliance-cycle peak is visible rather than surprising.
+
+The baseline is **re-established** after any architecture change that alters the cost or duration of an
+assessment — a graph change, a model change, a scan-plan expansion — because a baseline measured against a
+different system is misleading precisely when it matters most.
+
+---
+
+## 3. Monitoring and evaluating the risk of impaired availability (A1.1-R2)
+
+### 3.1 Thresholds against the baseline
+
+Every constraint in §1 has a defined tolerance, and the tolerance is set **below** the hard limit so that action
+has room to complete given the lead times in §1:
+
+| Signal | Warning | Critical | Action on breach |
+|---|---|---|---|
+| Any service quota utilisation | **60%** of limit | **80%** of limit | Warning: raise a capacity item and begin the quota increase request, accounting for its lead time. Critical: escalate to the Head of Platform Engineering same day |
+| Model token or request rate against quota | 60% of quota | 80% of quota | As above; additionally consider rebalancing work across models or regions |
+| Assessment queue depth / wait-for-lock time | Above the 90th percentile of baseline | Wait exceeding the assessment duration itself | Add worker processes; a queue wait longer than the work itself means concurrency, not speed, is the constraint |
+| Assessment duration p90 | 25% above baseline | 50% above baseline, or approaching any invocation timeout | Investigate cause before assuming more capacity is the answer |
+| Provider throttling responses | Any sustained occurrence | Rate causing assessment failure | Backoff tuning and pacing first, quota increase second |
+| Worker memory utilisation | 70% | 85% | Increase task memory or reduce per-assessment footprint |
+| Record store throttled requests | Any | Sustained | Capacity mode review |
+| Storage volume growth against forecast | 20% above forecast | 50% above forecast | Re-forecast; verify retention and lifecycle rules are operating |
+| Log ingestion volume | 25% above forecast | 50% above forecast | Investigate; an unexplained log volume increase is also a security signal |
+| Assessment failure rate | Above baseline | Above baseline and rising | Availability incident under the incident response program |
+
+Alarms route to the on-call engineer per the security monitoring procedure's routing records; capacity warnings
+route to a reviewed queue rather than paging, and capacity criticals page.
+
+### 3.2 Evaluating the risk, not merely observing the metric
+
+Monitoring produces numbers; evaluation produces decisions. Each quarter, and on any threshold breach, the
+capacity review evaluates: **which constraint is currently closest to binding**, at what date the current growth
+rate reaches its tolerance, what the lead time to relieve it is, and whether that lead time still fits inside the
+remaining headroom. A constraint whose lead time exceeds its remaining headroom is a **live availability risk**
+regardless of the fact that nothing has yet failed, and it is recorded as such in the risk register with an owner
+and a date. This is the distinction that makes the control preventive: the failure mode being controlled is
+discovering a quota ceiling on the day it is hit.
+
+Capacity risks are reported into the risk assessment process and to the Audit Committee quarterly, so capacity is
+governed as a risk to the availability commitment rather than as an engineering housekeeping matter.
+
+---
+
+## 4. Forecasting average and peak use against capacity and tolerances (A1.1-R3)
+
+### 4.1 The forecast
+
+A **rolling 12-month forecast**, refreshed quarterly and on any material change to the customer base or the
+architecture, produced by Platform Engineering with input from Sales and Product. It projects, for every
+constraint in §1, both **average and peak** demand, and compares each against the current capacity and the
+tolerance in §3.1.
+
+Forecast inputs:
+
+| Input | Source | Why it matters |
+|---|---|---|
+| Committed and pipeline customer growth | Sales forecast | Environments and projects are the top-level multiplier |
+| Environments and projects per customer | Product forecast | Assessment volume scales with these, not with headcount |
+| Frameworks enabled per project, and controls per framework | Product roadmap and the catalog | **A framework's control count is a direct multiplier**: 61 controls for SOC 2 and 38 for ISO 42001 means enabling a second framework on a project nearly triples its assessment load, and enabling a large new framework can change demand by more than a year of customer growth |
+| Assessment cadence — scheduled, on-change, and ad hoc | Product and customer commitments | Determines the burst pattern, not just the total |
+| Evidence volume per project | Observed growth | Drives storage, and drives per-assessment token consumption |
+| Scan breadth per control | Scan-plan catalog changes | Drives assessed-account API call volume |
+| Per-assessment token cost by node | Measured baseline | Converts assessment count into inference quota demand |
+| Model and graph changes on the roadmap | Engineering roadmap | A change to the auditor model or to graph depth re-bases every per-assessment figure |
+| Retention schedule and lifecycle rules | Retention standard | Determines the steady-state storage plateau rather than unbounded growth |
+
+### 4.2 Peak, specifically
+
+Peak is forecast separately and explicitly, because this workload's peaks are structural and predictable rather
+than random:
+
+- **Scheduled-assessment clustering** — assessments triggered on a common schedule arrive together. The forecast
+  models the schedule, not the daily mean.
+- **Compliance-cycle seasonality** — audit periods and customer reporting deadlines concentrate demand into
+  specific weeks; the 13-month baseline is what makes this visible.
+- **Onboarding bursts** — a new customer's first full run across every control of every enabled framework is
+  their largest ever single demand, and it lands before any usage history exists for them.
+- **Framework-enablement bursts** — enabling a framework on existing projects triggers a full assessment sweep
+  across all of them at once.
+- **Retry storms** — a transient provider fault produces correlated retries; bounded retries with backoff and
+  jitter cap this, and the cap is itself a modelled capacity figure.
+
+The forecast states peak-to-average ratio per constraint and confirms that capacity plus tolerance covers the
+**forecast peak**, not the forecast average.
+
+### 4.3 The forecast is a document with a decision attached
+
+Each quarterly forecast records, per constraint: current capacity, current usage, forecast average and peak at 3,
+6, and 12 months, the tolerance, the date the forecast crosses the tolerance, the lead time to add capacity, and
+the resulting action — none needed, monitor, request an increase now, or engineering work required. It is approved
+by the Head of Platform Engineering and reviewed by the Head of Engineering. A forecast without an action column
+would be an observation, not a control.
+
+---
+
+## 5. Resilience and capacity in the event of component failure (A1.1-R4)
+
+Forecasting explicitly addresses **capacity after a failure**, because the capacity that matters for an
+availability commitment is the capacity that survives a fault. The rule: **capacity is sized so that the forecast
+peak is servable with the largest single capacity-constraining component unavailable.**
+
+| Failure of a capacity-constraining component | Effect on capacity | How the forecast accounts for it |
+|---|---|---|
+| Loss of one availability zone | Reduces available compute concurrency | Worker capacity is provisioned across zones such that the remaining zones serve forecast peak; the forecast records the surviving-capacity figure, not the total |
+| Loss of a worker process or task | Removes one unit of assessment concurrency, and its held lock | The lock **heartbeats and expires**, so a dead worker's assessment becomes re-runnable rather than permanently blocking a control; capacity planning includes N+1 worker headroom so a lost worker does not reduce throughput below forecast peak |
+| Model endpoint or model-specific quota exhaustion in the primary region | Removes the hardest constraint entirely | Fallback to an alternate region or an alternate model is provisioned and its quota is included in the forecast as **surviving capacity**; the degraded-mode assessment duration is measured, not assumed |
+| Record store or object store partial impairment | Reduces effective throughput | Managed multi-zone services; retry and backpressure behaviour is measured under fault injection so the degraded throughput figure in the forecast is empirical |
+| Throttling in an assessed customer account | Reduces per-assessment progress rate | Pacing and backoff bound the effect to that assessment; the forecast assumes a fraction of assessments run at throttled pace |
+| Loss of the primary region | Removes all capacity | Covered by the business continuity plan; the recovery-time objective is stated there, and the forecast records the alternate region's quota as the capacity available on failover — **quotas are per-region, so an alternate region with no pre-arranged quota is not capacity**, and pre-arranged quota in the failover region is therefore a standing capacity item |
+| Loss of key personnel | Reduces ability to *add* capacity, not capacity itself | Runbooks for quota requests and scaling are documented and exercised in the continuity tests' key-personnel-unavailable scenario |
+
+Degraded-mode capacity figures are **measured during the resilience testing** described in the change management
+policy and the continuity plan, not estimated. A surviving-capacity number that has never been observed is
+treated as an assumption and labelled as one in the forecast.
+
+---
+
+## 6. Initiating change management when forecasts exceed tolerance (A1.1-R5)
+
+When a forecast shows usage crossing a tolerance within the lead time required to relieve the constraint, the
+**change management process is initiated at that point** — not when the tolerance is actually crossed. The
+sequence is mandatory and recorded:
+
+1. **A capacity change record is raised** under the change management policy, naming the constraint, the forecast,
+   the crossing date, the lead time, and the proposed relief.
+2. **Authorization** per the change policy: routine capacity adjustments within an established pattern (worker
+   count, task memory, quota increase requests, storage lifecycle tuning) proceed on standing authorization with
+   peer review; anything that changes the architecture — a new region, a model change, a re-architecture of the
+   concurrency model — requires the pre-implementation architecture assessment and CISO and Platform Engineering
+   authorization before design.
+3. **Design and test** per the change policy, including a resilience assessment where the change alters the
+   failure behaviour, and load verification against the forecast peak rather than the forecast average.
+4. **Approve and implement** progressively, with the capacity metrics in §2 as the health signal for the
+   progressive deploy.
+5. **Verify** that the added capacity is real: measured, not merely requested. A granted quota increase is
+   verified by observing the new limit in the quota metric before the capacity item is closed.
+6. **Re-baseline** if the change altered per-assessment cost, and refresh the forecast.
+
+**The linkage is auditable in both directions.** Every capacity change record cites the forecast or the threshold
+breach that triggered it, and every forecast tolerance crossing cites the change record raised for it. The
+quarterly capacity review's first agenda item is that reconciliation: any tolerance crossing without a
+corresponding change record is a control failure and is recorded as such, because it means the forecast was
+produced and then not acted upon — which is the specific way this control most plausibly fails.
+
+Where relief is **not** pursued — because the forecast is judged unreliable, the growth is expected to reverse, or
+the cost is not justified — that is a recorded risk acceptance by the Head of Platform Engineering with the
+residual availability risk stated, not a silent omission.
+
+---
+
+## 7. Governance
+
+| Activity | Frequency | Owner | Evidence |
+|---|---|---|---|
+| Capacity metric and alarm review | Weekly | Platform Engineering | Review record |
+| Quota utilisation review against tolerances | Monthly | Platform Engineering | Utilisation report |
+| Capacity forecast refresh, average and peak, with the action column | Quarterly | Head of Platform Engineering | Approved forecast |
+| Forecast-to-change-record reconciliation | Quarterly | Head of Platform Engineering | Reconciliation with exceptions |
+| Surviving-capacity figures re-measured under fault injection | Semi-annually, with the resilience tests | Platform Engineering | Test results feeding the forecast |
+| Baseline re-establishment after architecture change | Per change | Platform Engineering | Re-baselined measures |
+| Capacity risk reporting into the risk register | Quarterly | Head of Platform Engineering | Risk register entries |
+| Standard review and approval | Annually | Head of Engineering | Approved version |
+
+Deficiencies are recorded in the control deficiency register with an owner and due date, tracked to closure, and
+reported to the Audit Committee quarterly.

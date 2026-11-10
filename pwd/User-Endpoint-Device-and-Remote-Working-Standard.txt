@@ -1,0 +1,306 @@
+# User Endpoint Device and Remote Working Standard
+
+**Document ID:** SEC-END-043
+**Version:** 3.0 — **effective 2026-03-02**, superseding v2.1 of 2025-11-18
+**Owner:** Director, IT Operations
+**Approved by:** CISO 2026-02-26, per the approval authority in GOV-POL-040 §3
+**Next scheduled review:** 2026-12-31 (Annually, and on any change to the workforce model, the device fleet, the MDM)
+platform, or the BYOD position
+**Scope:** Every device from which entity information is accessed — 52 entity-issued laptops (48 in use, 4
+spare), 12 entity-issued mobile devices, and the managed work profile on personally owned mobile devices —
+and every location from which entity work is performed, including 42 primarily remote personnel, the HQ and
+EU offices, and three co-working locations.
+
+**Related:** GOV-POL-040 (policy framework), SEC-PRO-013 (facility security), SEC-PHY-044 (physical and
+environmental threats, secure areas, clear desk), SEC-MED-046 (storage media and off-premises assets),
+SEC-IAM-021 (access and authentication), SEC-CRY-022 (encryption), SEC-MAL-024 (malware and software
+installation), SEC-CFG-025 (configuration and patching), SEC-DLP-023 (data transmission), SEC-IRP-027
+(incident response), SEC-NET-047 (network security).
+
+---
+
+## 1. The design decision this standard rests on
+
+The entity's endpoint estate is protected primarily by **removing the asset from it**. No production
+evidence, assessment result or log may be stored on an endpoint; this is technically prevented, not
+requested, following case **D-2026-004** in which an individual downloaded sample data to a personal
+directory. Everything else in this standard is defence in depth around that decision.
+
+That matters for how the requirements below should be read: where a control would normally protect data at
+rest on a laptop, the entity's first answer is that the data is not there, and the second answer is the
+technical control that would protect it if it were. Both are stated, because the first answer is an
+architectural claim that must be verifiable and the second is what covers the residual case — screenshots,
+working notes, a customer's own report downloaded for a call.
+
+---
+
+## 2. Topic-specific policy on secure configuration and handling of user endpoint devices (8.1-R1)
+
+The following is the topic-specific policy required by 8.1-R1. Every row is enforced by configuration where
+the "Enforced by" column says so; a device out of posture **loses access** rather than receiving a reminder,
+because compliance measured at the point of access is the only measurement that is current.
+
+| Area | Requirement | Enforced by |
+|---|---|---|
+| **Information classification levels the device may handle** | Internal and below may be held on an endpoint. **Confidential and Restricted may be displayed but not stored** — no local copies of evidence, assessment results, logs, personal data or customer material. Restricted (customer evidence, credentials, model weights) is accessible only inside the AWS environment through a brokered session | Data-loss prevention agent + browser policy blocking download of Restricted/Confidential MIME classes from the service; SEC-AST-020 classification scheme |
+| **Registration of devices** | Every device is registered in the asset register with serial, owner, issue date, OS, disk-encryption state and enrolment ID before first use. An unregistered device cannot obtain an entity certificate and therefore cannot authenticate | MDM enrolment as an identity prerequisite; certificate-based device trust in SEC-IAM-021 |
+| **Requirements for physical protection** | Devices are not left unattended in public or unsecured places, not left in vehicles or checked baggage, locked when unattended, and cable-locked at HQ desks where available. Off-premises handling is governed by SEC-MED-046 §4 | Directive, reinforced quarterly; incident data reviewed for effectiveness |
+| **Restriction of software installation** | Users hold **no local administrator rights**. Installation is limited to the managed catalogue; anything else requires an approved exception with a named approver and an expiry. Developer tooling is provisioned through the catalogue, not by self-service elevation | MDM app allowlisting + removal of admin rights (SEC-MAL-024 §4) |
+| **Software and software-update requirements** | OS and browser within **14 days** of a vendor security release; **7 days** for a Critical/actively-exploited CVE; third-party catalogue software within 30 days. Patching is automatic and non-deferrable past the deadline | MDM patch policy with forced restart at deadline; compliance reported weekly (SEC-CFG-025) |
+| **Rules for connection to networks** | Devices connect to the service through the entity's identity broker over TLS 1.2+; no split-tunnel access to production; **public Wi-Fi is permitted only with the always-on VPN client engaged**; no connection to a network that requires disabling the host firewall; guest and untrusted networks are treated as hostile by default (SEC-NET-047 §6) | Always-on VPN with certificate auth; host firewall locked on; conditional access requiring device posture |
+| **Access controls** | Unique named account, MFA, no shared logins, no local accounts other than the managed administrative account whose password is unique per device and escrowed; **5-minute** screen lock; 15-minute session re-authentication for production tooling | Identity provider conditional access; MDM lock policy; local admin password solution |
+| **Storage device encryption** | **Full-disk encryption mandatory** on every laptop and mobile device, keys escrowed, recovery keys held in the encryption escrow with access logged. An unencrypted device is denied access | MDM compliance policy; escrow report reconciled monthly against the asset register |
+| **Protection against malware** | Endpoint detection and response agent on every device, tamper-protected, signatures and behavioural engine current, alerts to the managed SIEM; no user ability to disable it | EDR agent + SEC-MAL-024 |
+| **Remote disabling, deletion or lockout** | Remote **lock**, remote **wipe** and selective work-profile removal available on every enrolled device, tested quarterly, and exercised on the day a device is reported lost or a person departs — **never conditional on physical recovery** | MDM command channel; quarterly test record |
+| **Backups** | User-generated working material lives in the managed collaboration platform, which is backed up centrally; **endpoints are deliberately not backed up**, because backing up a device that must hold no Confidential data would create the copy the standard exists to prevent. Users are told plainly that anything only on their laptop is not backed up | Platform sync enforced for the user profile directories; OPS-BCK-030 |
+| **Web services and web application usage** | Access to external websites is filtered and categorised per SEC-NET-047 §7; entity credentials may not be used on non-entity services; cloud storage other than the managed platform is blocked | Secure web gateway on-device; SSO-only credential use |
+| **End user behaviour analytics** | Endpoint and identity telemetry is analysed for anomalous behaviour — impossible travel, bulk download, first-time-seen process execution, credential misuse — under the monitoring purpose limitation in SEC-MON-026 §3, which is **disclosed to personnel** rather than operated silently, and which excludes content inspection of personal use on the work profile | SIEM detections; privacy notice to personnel; DPIA reference |
+| **Use of removable storage devices** | **USB mass storage is blocked** at the device. No removable media is used for entity or customer data. Where a rare business need arises, SEC-MED-046 §3 governs the exception, its encryption and its record | MDM device-control policy; the absence of an approved media register is itself the evidence |
+| **Partitioning capabilities** | Work and personal use are separated: entity laptops are for entity work; personally owned mobile devices carry a **managed work profile** that is cryptographically and logically separated from personal space, with no entity visibility into the personal side and no data flow between profiles | Mobile OS work-profile containerisation; MDM scoped to the profile only |
+
+### 2.1 Communication of the policy (8.1-R2)
+
+The policy in §2 is published on the policy portal, communicated to **all** personnel — not only to device
+administrators — at onboarding within 5 working days, at every material revision with acknowledgement required
+within 10 working days, and annually alongside the code of conduct. Contractors and the 11 named vendor
+individuals receive it as a contractual annex where they use entity devices, and the 2 vendor individuals who
+hold entity laptops acknowledge it directly. Current acknowledgement: **48 of 48 personnel, 4 of 4
+contractors, 2 of 2 vendor laptop holders.** Outstanding acknowledgement suspends access at day 15
+(GOV-POL-040 §5.2).
+
+### 2.2 User awareness of requirements and their own responsibilities (8.1-R3)
+
+Users are made aware of the security requirements and procedures, and specifically of the responsibilities
+that only they can discharge. The awareness curriculum states each as a duty of the user:
+
+1. **Log off active sessions when finished**, and do not rely on the screen lock as a substitute for ending a
+   privileged session.
+2. **Terminate active sessions** to production tooling when the task is complete; the 15-minute
+   re-authentication is a backstop, not the intended practice.
+3. **Protect devices from unauthorized use** — no lending, no family use, no unattended unlocked screen, no
+   entering credentials while screen-sharing.
+4. **Exercise special care in public places** — no Confidential material on screen in transit, privacy filter
+   in use on aircraft and trains, no Confidential calls in public spaces, awareness of shoulder surfing.
+5. **Physically protect devices against theft** — never left in a vehicle, never in checked baggage, never
+   unattended in a café or co-working common area, carried as cabin baggage.
+6. **Report loss, theft or suspected compromise immediately** to the single number in the SEC-IRP-027 runbook
+   — a number rather than an email address, changed after the lost-phone case in SEC-PRO-013 §7 showed that a
+   40-minute report was achievable only because the individual knew whom to call.
+7. **Do not install or elevate**, and do not attempt to work around a blocked download or a filtered site;
+   use the documented exception process instead, which exists precisely so that a legitimate need does not
+   become a workaround.
+
+Delivery: onboarding module before first access; annual refresher with a short assessment (a failed
+assessment routes to remedial training, not to a second attempt at the same click); quarterly security
+briefing; targeted micro-training after any relevant incident. Completion this period: **48 of 48**, with the
+D-2026-004 case taught as an anonymised case study.
+
+### 2.3 Theft or loss of a device (8.1-R4)
+
+A specific procedure exists, and it is written to be executable by a frightened person on a phone:
+
+| Step | Owner | Deadline | Legal/contractual driver |
+|---|---|---|---|
+| Report to the single incident number | The individual | **Immediately**, from any phone | Duty in §2.2(6) |
+| Remote lock, then remote wipe | On-call IT Operations | Lock immediately; wipe within 1 hour unless recovery is imminent and the device is encrypted and locked | Contractual security commitments |
+| Revoke credentials, sessions and device certificate | On-call Security | Within 1 hour | SEC-IAM-021 |
+| Classify: could the device have held personal data or Confidential material? | Incident commander, with the DPO on suspicion | **DPO engaged within 1 hour** on any suspicion of personal data | GDPR Art. 33/34 and equivalent; PRV-TPD-038 |
+| Notification assessment (regulator, customer, individual) | DPO with General Counsel | Within the 72-hour statutory clock, decision recorded either way | Statutory and contractual |
+| Insurance and police report where the value or circumstances require | Director IT Operations | Within 3 business days | Insurance policy conditions (OPS-BCP-031 §7) |
+| Replacement issued | IT Operations | Next business day for a primary device | Availability commitment |
+| Post-incident review; asset register updated to Lost/Stolen with the wipe confirmation | Incident commander | Within 10 business days | SEC-IRP-027 |
+
+The procedure explicitly records **legal, statutory, regulatory, contractual (including insurance) and other
+security requirements**: the statutory breach clock, the customer contract's 24-hour notification obligation,
+the insurer's requirement for a police report on theft above a threshold, and the entity's own commitment in
+the trust portal. **One device was lost this period** (the phone in a taxi, SEC-PRO-013 §7): reported in 40
+minutes, wiped 12 minutes after the report, no Confidential material, no notification required, decision
+recorded.
+
+### 2.4 Personally owned devices — the BYOD position (8.1-R5)
+
+The entity permits BYOD **only** for a managed work profile on mobile devices, used for on-call notification,
+calendar, chat and MFA. No personally owned laptop is permitted for entity work, and no personally owned
+device may reach production tooling. Within that narrow permission, each 8.1-R5 consideration is addressed:
+
+| Consideration | Position |
+|---|---|
+| **Separation of private and business use** | Enforced by OS work-profile containerisation: separate keys, separate storage, no clipboard or file movement between profiles, and no entity data in personal apps. Software is available to enforce this and is the mechanism relied on, not policy alone |
+| **User acknowledgement of duties, including physical protection, updating and non-storage** | A BYOD undertaking is signed before enrolment: keep the OS current, use a device passcode and biometric, do not root or jailbreak, do not store entity information outside the work profile, report loss immediately, and accept selective wipe |
+| **Remote wiping in loss/theft or on termination** | **Selective wipe of the work profile only** — the entity does not hold and does not want the ability to wipe personal data. This is stated in the undertaking, and personnel are told what the entity can and cannot see and do |
+| Intellectual property rights on privately owned equipment | The employment agreement §13 assigns work product regardless of the device it was created on; the BYOD undertaking restates it |
+| **Access to privately owned equipment for verification or investigation** | The entity may require production of work-profile logs and may, with the individual's cooperation, verify posture. It does **not** claim a right to inspect the personal partition. Where an investigation genuinely requires more, it proceeds through the individual's consent or legal process, and the constraint is accepted as a limitation rather than papered over. **Legal restriction:** in two of the five jurisdictions, even the work profile carries employee-privacy constraints recorded in the General Counsel's jurisdiction matrix |
+| Software licensing | Entity-licensed apps in the work profile are covered by entity licences; per-device licence counts are tracked in the licence register (SEC-AST-041 §4) so BYOD enrolment cannot silently breach a seat count |
+
+**Current state:** 14 personally owned mobile devices enrolled with a work profile, all with a signed
+undertaking; 12 entity-issued mobile devices for on-call certified personnel; **0 personally owned laptops**.
+Two BYOD enrolments were removed this period, both on departure, both confirmed by the platform.
+
+### 2.5 Wireless connection configuration and bandwidth (8.1-R6)
+
+| Requirement | Procedure |
+|---|---|
+| Configuration of wireless connections | Wi-Fi profiles are **pushed by MDM**, not configured by the user: the HQ and EU corporate SSIDs use WPA3-Enterprise with certificate-based authentication (EAP-TLS), server-certificate validation pinned to the entity CA, and auto-join restricted to those SSIDs. Open networks are never auto-joined, and the "connect to suggested hotspots" and ad-hoc/hotspot-bridging features are disabled by policy |
+| Public and home wireless | Permitted **only with always-on VPN engaged**; the VPN client starts before network access is granted to entity applications and fails closed. Home routers must use WPA2/WPA3 with a non-default administrative password — stated as a condition in §4 and covered in remote-working training, with the technical compensation being that the entity treats the home network as untrusted regardless |
+| Bandwidth adequacy for the work performed | Roles requiring sustained bandwidth (engineering, on-call, customer calls) have a **minimum connection standard** of 25 Mbps down / 5 Mbps up, verified at onboarding; a stipend is available where the standard cannot otherwise be met, so that a bandwidth constraint does not become a reason to bypass the VPN or the brokered session. Wired connection is required for on-call rotation duty at home |
+| Consistency with topic-specific policies | Wireless configuration is derived from SEC-NET-047 §6 (wireless segregation and guest isolation) and SEC-CRY-022 (cipher suites); this standard does not set its own cryptography |
+
+---
+
+## 3. Remote working: the topic-specific policy, its conditions and restrictions (6.7-R1)
+
+**A topic-specific policy on remote working is issued** and is the section that follows. It applies to all
+personnel, contractors and vendor personnel working outside entity premises — which is the normal case here:
+**42 of 48 personnel work primarily remotely**, across five geographies, plus three co-working locations used
+by 5 personnel.
+
+**Conditions of remote working.** Remote working is authorised by the individual's manager and recorded in the
+HR record, and is conditional on: a managed, enrolled, in-posture device; the always-on VPN; a signed
+acknowledgement of this standard; a completed remote-working self-assessment of the work location (§4);
+compliance with the minimum connection standard (§2.5); and the individual's role being one that can be
+performed without physical presence at a secure area (§5 and SEC-PHY-044 §4).
+
+**Restrictions.** Remote working does **not** authorise: storing Restricted or Confidential material locally;
+printing above Internal classification; use of a personal computer; work from a jurisdiction not covered by
+the entity's data-transfer and employment analysis without prior approval from the General Counsel (a
+positive list of approved countries is maintained, and 3 short-term requests were refused this period);
+performing on-call duty from an unreliable connection; or accessing production from a shared or public
+computer under any circumstances.
+
+## 4. Physical security of the remote working site (6.7-R2)
+
+The entity cannot inspect 42 home locations and does not claim to. What it does is set rules for the physical
+environment, provide the means to follow them, and remove the asset that would make a breach of them serious.
+
+| Rule for the remote physical environment | Provision |
+|---|---|
+| **Lockable storage** | Any physical document above Internal, and any spare device, is kept in **lockable furniture**; a lockable drawer unit or cabinet is provided on request and 11 have been issued. Where an individual has no lockable storage, they may not hold physical material above Internal at all |
+| **Secure transportation** | Devices and documents in transit are carried as cabin baggage or on the person, never in checked baggage or a vehicle; where physical material above Internal must move, it moves by tracked courier under SEC-MED-046 §5, or — the preferred answer — it does not move because it is not printed |
+| **Clear desk rules at the remote location** | The clear desk and clear screen rules in SEC-PHY-044 §5 apply in full at home and at co-working locations: screen locked when leaving the desk, no Confidential material visible to household members or co-working neighbours, whiteboards cleared, positioning of the screen away from windows and doorways |
+| **Printing** | No printing of material above Internal at any remote location. Confidential printing is disabled at the device, and no home or co-working printer is registered for entity material above Internal |
+| **Disposal of information** | Paper above Internal is not created remotely; where paper Internal material must be destroyed, it is cross-cut shredded — a shredder is provided on request (9 issued) — or returned to HQ for destruction. **Never household waste** |
+| **Information security event reporting** | The same single number and the same immediacy as anywhere else (§2.2(6)); the awareness module names remote-specific events explicitly: a household member seeing Confidential material, a lost document, an overheard call, a co-working neighbour photographing a screen, a delivery driver admitted while the screen was unlocked |
+| Location self-assessment | At onboarding and annually, the individual completes a short self-assessment of the work location: can the screen be seen from outside, is there lockable storage, is the router administratively secured, is there a household member with physical access to the device. Answers drive provision (a filter, a lock, a stipend) rather than a pass/fail |
+
+**Co-working locations** are treated as public: **no entity information asset above Internal may be stored on
+site**, no entity badge is issued by the entity, the operator's access list is reconciled monthly against the
+roster (raised from quarterly after D-2026-011), and screen-privacy filters are mandatory.
+
+**Stated limitation.** The compensating control for the 42 uninspectable locations is that **there is nothing
+of production value at those locations** — the no-local-copy control, full-disk encryption, remote wipe, and
+access that depends on device posture and identity rather than on physical possession. This limitation and its
+compensation are recorded in the risk register and disclosed in the customer-facing description rather than
+left for a customer to find.
+
+## 5. Communications security for remote working (6.7-R3)
+
+| Requirement | How it is met |
+|---|---|
+| **Secure remote access to the organization's systems** | Identity-broker-fronted access with SSO, phishing-resistant MFA (hardware or platform authenticator), device certificate, and conditional access on device posture. No VPN-to-flat-network model exists: the VPN authenticates the device, and authorisation is then per-application. **No standing human access to customer data**; production access is time-bound, purpose-recorded and approved (SEC-IAM-021 §6) |
+| **Sensitivity of the information passed over the communication link** | All entity traffic is TLS 1.2+ with modern cipher suites (SEC-CRY-022); Restricted material never traverses an endpoint at all, being handled inside the AWS environment through a brokered session that streams rendered output rather than transferring files |
+| **Sensitivity of the internal systems reached** | Production administrative interfaces are reachable only through the brokered session from an in-posture device with an approved just-in-time grant; the brokered session is recorded |
+| **Use of home networks and public networks** | Both are treated as untrusted. Always-on VPN, host firewall enforced, no split tunnelling to production, DNS resolved through the entity resolver so that filtering and logging survive the location change. Home router hardening is a stated condition (§2.5) with the untrusted-by-default treatment as its compensation |
+| **Restrictions on wireless network service configuration** | MDM-pushed profiles, WPA3-Enterprise with EAP-TLS on corporate SSIDs, certificate validation pinned, auto-join and hotspot-suggestion features disabled, tethering to an entity phone preferred over public Wi-Fi (§2.5) |
+| **Secure mechanisms for authentication and granting of privileges** | Phishing-resistant MFA for every identity; privileged actions require a second, separate authentication and an approval; privileges are granted just-in-time with an expiry, and the grant, the approver and the purpose are logged (SEC-IAM-021) |
+| Voice and messaging | Entity-managed collaboration platform only; no consumer messaging for entity business; recording of calls only with disclosure and, for customer calls, consent |
+
+## 6. Technical security measures for remote working (6.7-R4)
+
+Every measure named in 6.7-R4 is implemented and technically enforced, not requested:
+
+| Measure | Implementation | Verification |
+|---|---|---|
+| **Firewalls** | Host firewall enforced on and non-disableable by the user; default-deny inbound; egress from the endpoint to production only through the broker. Cloud-side controls in SEC-NET-047 | MDM compliance report; weekly |
+| **Malware protection** | Tamper-protected EDR with behavioural detection, alerts to the managed SIEM, current signatures; no user disable path | EDR console coverage report reconciled to the asset register monthly — **52 of 52 laptops, 12 of 12 mobiles** |
+| **Virtual desktop / brokered access** | Restricted material is worked on inside the AWS environment through a brokered session; the endpoint renders, it does not hold. This is the mechanism that makes the no-local-copy rule practical rather than obstructive | Broker session logs; DLP absence of local Restricted files |
+| **Device screen locks** | 5-minute automatic lock, password/biometric to unlock, immediate lock on lid close | MDM policy state |
+| **Inactivity timers** | 5-minute device lock; 15-minute re-authentication for production tooling; 8-hour maximum session lifetime; idle SSH/console sessions terminated at 15 minutes | MDM + identity provider session policy |
+| **Device location tracking** | Enabled on entity-issued devices, **disclosed** to personnel, retained 30 days, accessible only to a named IT Operations pair and only on a reported loss or an active investigation — a purpose limitation recorded in the DPIA because always-on location data about 48 people is itself a privacy risk. **Not enabled** on personally owned devices | MDM configuration; access log to the location function |
+| **Remote wipe capabilities** | Full wipe on entity devices, selective work-profile wipe on BYOD; **tested quarterly** on a spare device with the result recorded; exercised on the day of any loss or departure regardless of physical recovery | Quarterly test record; 3 departures and 1 loss exercised this period |
+| **Secure mechanisms for deploying and initializing systems remotely** | Zero-touch enrolment: a new laptop ships from the vendor directly to the individual, enrols against the entity tenant on first boot, applies the full baseline before the user reaches a desktop, and requires MFA at first sign-in. No image is emailed, no local administrator password is shared, and **no device is usable if it does not enrol**. Re-provisioning after a wipe follows the same path | Enrolment records; 9 devices provisioned this period, all zero-touch |
+| Certificate lifecycle | Device certificates are short-lived and auto-renewed only while posture holds, so a device that falls out of compliance loses access by expiry as well as by policy | Certificate authority logs |
+
+## 7. Provisions for remote workers (6.7-R6)
+
+| Provision | What the entity provides |
+|---|---|
+| **Suitable equipment** | Entity-issued laptop, external monitor, keyboard, mouse, headset, and a privacy filter as standard; a docking station on request |
+| **Storage furniture** | Lockable drawer unit or cabinet on request (11 issued); a cross-cut shredder on request (9 issued) |
+| **Definition of the work permitted** | §8 below |
+| **Training** | Onboarding module plus an annual refresher specifically on conducting business securely while working remotely — screen visibility, calls in shared space, household members, co-working etiquette, travel, phishing pressure in a remote context; completion 48 of 48 |
+| **Hardware and software support and maintenance** | Remote support during business hours with an on-call path for on-call personnel; **next-business-day replacement** for a failed primary device, shipped directly; a loaner pool of 4 spare laptops; courier-based repair with the device wiped before it leaves the individual's hands (SEC-MED-046 §6) |
+| **Insurance** | Entity equipment is covered under the entity's policy at remote locations; personnel are told they need not rely on household insurance, and the insurer's police-report condition is recorded in §2.3 |
+| **Backup** | Working material syncs to the managed platform, which is backed up centrally and restore-tested quarterly (OPS-BCK-030). Endpoints are deliberately not backed up (§2) and users are told so plainly |
+| **Business continuity** | Because production is in AWS and most of the workforce is already remote, loss of an office is a low-severity continuity event; the reverse case — an individual's home connectivity or power failing — is covered by tethering to an entity phone, the co-working locations, and an explicit on-call handover to another timezone rather than an expectation of heroics (OPS-BCP-031 §5) |
+| **Audit and security monitoring** | Endpoint and identity telemetry is monitored under SEC-MON-026 with the purpose limitation disclosed in §2; the annual internal assessment tests remote-working compliance by sampling device posture, acknowledgements, self-assessments and provision records rather than by inspecting homes |
+
+## 8. Work permitted, information classification and authorised systems (6.7-R5)
+
+| Dimension | Rule |
+|---|---|
+| **Work permitted remotely** | All roles may work remotely except where a task requires presence in a secure area (§5 of SEC-PHY-044) — currently only physical work in the HQ server closet and handling of the statutory records cabinet |
+| **Classification of information that may be held remotely** | Internal and below may be **held**; Confidential may be **displayed** through a brokered session but not stored; Restricted may be neither held nor displayed outside the brokered session. This is the classification boundary from SEC-AST-020 expressed as a location rule |
+| **Internal systems and services authorised for remote access** | The managed collaboration platform, the code repository, the ticketing system, the observability console (read), and — through the broker with a just-in-time grant — the AWS production environment. Everything else is not reachable from outside, and the list is a positive list maintained by IT Operations |
+| **Rules on unauthorized access by other persons at the remote site** | Household members, guests and co-working neighbours are not permitted to use an entity device, view entity screens, or be present during a Confidential call. Devices are locked whenever the individual leaves the desk, including for a doorbell. A household member gaining sight of Confidential material is a **reportable security event**, not an embarrassment to be absorbed — stated in those terms because the reporting rate is the control |
+| **Public places** | No Confidential material on screen and no Confidential calls in public; privacy filter mandatory in transit; co-working common areas treated as public |
+
+**Reported events this period, which is how the entity knows the reporting rule works:** 4 remote-specific
+events were reported — 2 household members briefly seeing Internal material (no action beyond the record), 1
+overheard portion of a Confidential call at a co-working location (individual moved to a booth; the co-working
+standard now requires booths for Confidential calls), and 1 device left unlocked while answering a door (no
+exposure; used as the trigger for a fleet-wide reminder and a reduction of the lock timer from 10 to 5
+minutes).
+
+## 9. Revocation of authority and access, and return of equipment when remote working ends (6.7-R7)
+
+Ending remote working is handled as a change, using the same machinery as a departure (HR-PRO-042 §5):
+
+| Trigger | Action | Deadline | Verification |
+|---|---|---|---|
+| Individual ceases remote working (returns to an office full time) | VPN profile retained (the office network is also treated as untrusted), remote-specific provisions reclaimed where no longer needed, self-assessment closed | Within 5 business days | HR record; asset register |
+| **Remote working authorisation withdrawn** (performance, security non-compliance, unapproved jurisdiction) | Authority revoked in the HR record; conditional access policy moves the identity to office-only; the individual is informed of the reason and the route back | Same day | Conditional access policy state; 1 case this period, a 3-week suspension of remote working after a repeat posture failure, restored on compliance |
+| Departure or role change | Full access revocation, device recovery, remote wipe on the last working day regardless of physical return, prepaid return shipment issued on the last working day, escalation at 10 business days | Per SEC-PRO-013 §6 | Asset register with wipe confirmation and disposition; 3 of 3 laptops recovered this period, one at 12 business days after a day-one wipe |
+| Vendor engagement end for a laptop-holding vendor individual | Return within 5 business days with the provider's written confirmation; badge hard-expiry as the backstop | Per HR-PRO-042 §8 | Vendor register; 1 case, returned in 3 business days |
+| Device replacement or end of life | Old device wiped and either re-imaged or securely disposed of with a certificate of destruction | Within 5 business days of the replacement being in service | SEC-MED-046 §6; asset register |
+| Enrolment removed / device unenrolled by the user | Access denied immediately by loss of certificate and posture; treated as a security event and investigated | Immediate, automatic | Conditional access denial log; 1 accidental unenrolment investigated and closed |
+
+**Access and data are never contingent on the hardware coming back.** Remote wipe and credential revocation
+happen on day one; the physical recovery may take a week, and when it does, the delay is recorded as an
+exception in the asset register rather than treated as an open data risk.
+
+## 10. Roles, evidence and independent testing
+
+| Role | Responsibility |
+|---|---|
+| Director IT Operations | Owns this standard, the MDM baseline, the fleet, provisioning and recovery |
+| CISO | Approves the standard; owns EDR, monitoring, DLP and the incident path |
+| Head of Platform Engineering | Owns the broker, conditional access and the network controls this standard depends on |
+| Head of People | Owns acknowledgement, training completion and remote-working authorisation records |
+| General Counsel | Owns the approved-jurisdiction list, the BYOD undertaking and the employee-privacy constraints on monitoring |
+| Managers | Authorise remote working; act on posture and acknowledgement escalations |
+| Individuals | The duties in §2.2 and §8 |
+| Internal assessment | Annually: samples device posture against the register; tests patch timeliness against the deadlines; verifies encryption escrow coverage; verifies quarterly wipe tests; samples acknowledgements, self-assessments and provision requests; tests one remote-working revocation end to end |
+
+| Evidence | Where it is held |
+|---|---|
+| Asset register with encryption state, enrolment ID and disposition | IT asset register |
+| MDM compliance and patch-timeliness reports | MDM console; weekly snapshots retained 13 months |
+| EDR coverage reconciliation | Security console; monthly |
+| Encryption escrow coverage reconciliation | Escrow report; monthly |
+| Quarterly remote-wipe test records | IT Operations file |
+| Zero-touch enrolment records | MDM enrolment log |
+| Acknowledgements and training completion | Policy portal; learning platform |
+| Remote-working authorisations and location self-assessments | HR record |
+| BYOD undertakings and work-profile enrolments | HR record; MDM |
+| Loss/theft incident records with wipe confirmation and notification decision | Incident system |
+| Provision records (locks, shredders, filters, stipends) | IT Operations file |
+| Conditional-access denial logs | Identity provider |
+
+## 11. Review history
+
+| Version | Date | Change |
+|---|---|---|
+| 1.0 | 2024-11-02 | Established the MDM baseline, encryption, screen lock and the remote-working rules |
+| 2.0 | 2025-06-30 | **No-local-copy control introduced following case D-2026-004's predecessor pattern**; brokered session adopted for Restricted material; USB mass storage blocked fleet-wide |
+| 2.1 | 2025-11-18 | Out-of-cycle: BYOD narrowed to a mobile work profile only after a personal-laptop request; work-profile containerisation made mandatory; location tracking purpose-limited and disclosed following the DPIA |
+| 3.0 | 2026-03-02 | Annual review. Lock timer reduced from 10 to 5 minutes and production re-authentication to 15 minutes after the unlocked-device report; wireless profiles moved to MDM-pushed EAP-TLS with auto-join restrictions; minimum connection standard and stipend introduced; theft/loss procedure restated with its legal, contractual and insurance drivers; co-working booth requirement added for Confidential calls; quarterly wipe test made a recorded control |

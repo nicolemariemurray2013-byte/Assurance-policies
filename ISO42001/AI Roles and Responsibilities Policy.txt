@@ -1,0 +1,164 @@
+# AI Roles and Responsibilities Policy
+
+**Document ID:** AIMS-POL-003
+**Version:** 2.1
+**Owner:** Chief AI Officer (CAIO)
+**Approved by:** Executive Leadership Team, on the recommendation of the AI Governance Board
+**Approval date:** 2026-02-10
+**Next scheduled review:** 2026-12-31 (annual, and on any material change)
+**Scope:** All AI systems developed, deployed, operated or procured by the organization,
+including the Amazon Bedrock agents and Bedrock AgentCore runtimes operated in AWS account
+471885797689 (us-west-2).
+
+---
+
+## 1. Purpose
+
+This policy defines and allocates the roles, responsibilities and accountabilities for
+artificial intelligence within the organization's AI Management System (AIMS). It exists so that
+every phase of the AI system life cycle has a single named accountable role, and so that no
+AI-related decision — from data acquisition through retirement — is unowned.
+
+This policy is a mandatory instrument of the AI Policy (AIMS-POL-001) and is allocated according
+to the needs, size, structure and risk profile of the organization.
+
+## 2. Policy statements
+
+The organization **shall** maintain a documented allocation of AI roles and responsibilities.
+The organization **shall** review that allocation at least annually and whenever the AI system
+inventory, the organization's structure, or the AI risk register changes materially. The
+organization **shall NOT** deploy any AI system into production without a named Accountable Owner
+recorded in the AI System Inventory.
+
+## 3. Defined roles, responsibilities and authority
+
+### 3.1 AI Governance Board (AIGB)
+- **Responsibility:** Owns the AI Management System. Approves the AI Policy, this policy, the AI
+  objectives, and the organization's stated AI risk appetite.
+- **Accountability:** Accountable to the Executive Leadership Team for the effectiveness of the
+  AIMS.
+- **Authority:** May halt or suspend any AI system deployment or operation.
+- **Membership:** CAIO (chair), CISO, Chief Privacy Officer, General Counsel, VP Engineering,
+  Responsible AI Lead.
+- **Cadence:** Quarterly, and on demand for any high-impact AI system decision.
+
+### 3.2 Chief AI Officer (CAIO)
+- **Responsibility:** Develops, reviews and evaluates the AI Policy and this roles policy;
+  maintains the AI System Inventory; reports AIMS performance to the AIGB.
+- **Accountability:** Single management-approved role accountable for AI governance overall.
+- **Authority:** Approves AI system impact assessments; assigns Accountable Owners.
+
+### 3.3 Responsible AI Lead
+- **Responsibility:** Owns the responsible-AI objectives (fairness, transparency,
+  explainability, human oversight, safety) and the AI system impact assessment process.
+- **Accountability:** Accountable to the CAIO for responsible-AI outcomes across the portfolio.
+
+### 3.4 AI System Accountable Owner (per system)
+- **Responsibility:** Named, individual accountability for one AI system across its entire life
+  cycle. Maintains that system's technical documentation, intended-use statement, impact
+  assessment and risk treatment.
+- **Accountability:** Accountable to the CAIO. Recorded per system in the AI System Inventory.
+- **Current allocation:** the Bedrock agent and Bedrock AgentCore runtime assets in account
+  471885797689 are allocated to the Platform Engineering Accountable Owner.
+
+### 3.5 AI Development Lead
+- **Responsibility:** Design, development, verification and validation of AI systems, including
+  model selection, evaluation and documented testing before release.
+- **Accountability:** Accountable to the AI System Accountable Owner.
+
+### 3.6 Data Steward
+- **Responsibility:** Provenance, lineage, quality, acquisition legality and retention/deletion
+  of all data used for AI development, training, tuning and evaluation.
+- **Accountability:** Accountable to the AI System Accountable Owner, and jointly to the Chief
+  Privacy Officer for personal data.
+
+### 3.7 AI Operations Lead (SRE)
+- **Responsibility:** Deployment, monitoring, event logging, alerting, incident detection and
+  performance/drift monitoring of AI systems in production.
+- **Accountability:** Accountable to the AI System Accountable Owner.
+
+### 3.8 AI Security Lead
+- **Responsibility:** Threat modelling for AI systems, adversarial and prompt-injection testing,
+  access control, secrets handling, and AI security incident response.
+- **Accountability:** Accountable to the CISO.
+
+### 3.9 AI Risk Manager
+- **Responsibility:** Maintains the AI risk register; ensures every identified AI-related risk has
+  an owner, a treatment and a review date; escalates risks that exceed the approved risk appetite.
+- **Accountability:** Accountable to the AIGB.
+
+### 3.10 Internal Audit
+- **Responsibility:** Independent assurance over the AIMS. Reports findings directly to the AIGB.
+- **Accountability:** Independent of all roles above; does not own any AI system.
+
+### 3.11 All personnel
+- **Responsibility:** Comply with the AI Policy and report AI-related concerns through the channels
+  in the Reporting of Concerns Procedure (AIMS-PRO-004), including anonymously and without
+  retaliation.
+
+## 4. Accountability across the AI system life cycle
+
+Every life-cycle phase has exactly one accountable role. This mapping is the organization's
+allocation of accountability and is reviewed with this policy.
+
+| # | AI system life-cycle phase | Accountable role | Consulted |
+|---|---|---|---|
+| 1 | Inception / intended use definition | AI System Accountable Owner | Responsible AI Lead, Legal |
+| 2 | AI impact assessment | Responsible AI Lead | CAIO, Chief Privacy Officer |
+| 3 | Risk identification and treatment | AI Risk Manager | AI Security Lead, AIGB |
+| 4 | Data acquisition, provenance and preparation | Data Steward | Chief Privacy Officer, Legal |
+| 5 | Design and development | AI Development Lead | AI Security Lead |
+| 6 | Verification and validation (evaluation) | AI Development Lead | Responsible AI Lead |
+| 7 | Release approval / deployment authorization | AI System Accountable Owner | AIGB (high impact) |
+| 8 | Deployment | AI Operations Lead | AI Development Lead |
+| 9 | Operation, event logging and monitoring | AI Operations Lead | AI Security Lead |
+| 10 | Incident detection, response and communication | AI Security Lead | AI Operations Lead, Legal |
+| 11 | Change management and re-evaluation | AI Development Lead | AI System Accountable Owner |
+| 12 | Third-party / supplier oversight | AI System Accountable Owner | Procurement, Legal |
+| 13 | Decommissioning, data deletion and retirement | Data Steward | AI Operations Lead |
+| 14 | Independent assurance | Internal Audit | AIGB |
+
+## 5. Basis of the allocation
+
+The allocation above is not generic; it is derived from three documented inputs, and it is
+re-derived whenever any of them changes:
+
+1. **The organization's AI policies.** Each role's remit maps to a commitment in the AI Policy
+   (AIMS-POL-001) — human oversight, transparency, data protection, security, and continual
+   improvement of the AIMS.
+2. **The organization's AI objectives.** Each responsible-AI objective in the AI Objectives
+   Register (AIMS-REG-002) names one accountable role from section 3, so no objective is unowned.
+3. **The identified AI-related risks.** Every risk in the AI Risk Register (AIMS-REG-001) is
+   assigned to a role in section 3. The current mapping is:
+
+| Identified AI risk | Accountable role |
+|---|---|
+| R-01 Harmful, biased or discriminatory model output | Responsible AI Lead |
+| R-02 Prompt injection / adversarial manipulation of an agent | AI Security Lead |
+| R-03 Leakage of personal or confidential data via an AI system | Chief Privacy Officer |
+| R-04 Unlogged or untraceable AI decision-making | AI Operations Lead |
+| R-05 Model or data drift degrading performance outside intended conditions | AI Development Lead |
+| R-06 Use of an AI system outside its documented intended use | AI System Accountable Owner |
+| R-07 Unlawful or unlicensed training-data acquisition | Data Steward |
+| R-08 Over-reliance on a third-party model provider | AI System Accountable Owner |
+| R-09 Loss of availability of a production AI system | AI Operations Lead |
+| R-10 Insufficient human oversight of automated decisions | Responsible AI Lead |
+
+Segregation of duties is enforced: the role that develops and validates an AI system (3.5) is
+never the role that grants its production release authorization (3.4), and Internal Audit (3.10)
+owns no AI system.
+
+## 6. Communication
+
+This policy is published on the internal AIMS portal, is mandatory reading in onboarding for all
+engineering and data personnel, and is summarized for external interested parties in the public
+Responsible AI Statement. Role assignments are recorded per system in the AI System Inventory and
+are visible to all personnel.
+
+## 7. Review history
+
+| Version | Date | Reviewer | Outcome |
+|---|---|---|---|
+| 1.0 | 2024-03-04 | CAIO | Initial issue, approved by AIGB |
+| 2.0 | 2025-02-14 | CAIO | Added life-cycle accountability matrix (section 4) |
+| 2.1 | 2026-02-10 | CAIO | Annual review; added AI risk-to-role mapping (section 5.3); confirmed suitable, adequate and effective; approved by AIGB |

@@ -1,0 +1,253 @@
+# AI System Impact Assessment — Documented Results
+
+**Document ID:** AIMS-REC-005
+**Version:** 4.1
+**System assessed:** Compliance-evaluation AI system (Bedrock agent + AgentCore runtime), AWS account
+471885797689, us-west-2 — assessed at runtime version 5.2 / auditor model Opus-class
+**Assessment type:** Full re-assessment on material change (auditor model family + scoring semantics)
+**Assessment date:** 2026-03-04 **Facilitated by:** Responsible AI Lead
+**Participants:** Responsible AI Lead (owner), AI System Accountable Owner, AI Development Lead, Data
+Steward, AI Security Lead, Legal & Privacy, two compliance analysts (user representatives), external
+responsible-AI researcher (fairness and evasion review), accessibility specialist
+**Approved by:** AI Governance Board — 2026-03-04 **Classification:** High-impact
+**Next scheduled review:** 2026-12-31
+**Retention:** 7 years, or life of the system + 3 years, whichever is longer (§7)
+**Process followed:** AIMS-PRO-005 v3.2, all eight elements
+
+---
+
+## 1. Documented results — summary of the assessment
+
+The results of every AI system impact assessment are **documented** in a record of this form and
+retained per §7. This record documents the current assessment in full: intended use and foreseeable
+misuse (§2), positive and negative impacts (§3, §5), predictable failures and their mitigations (§4),
+relevant demographic and other groups (§5.2), system complexity (§6.1), and the role of humans in
+relation to the system (§6.2).
+
+**Overall conclusion.** With the treatments in §4 and §8 in place, residual impact is **acceptable**.
+Two residual impacts remain accepted-with-monitoring rather than eliminated: the possibility of a
+plausible-but-wrong verdict (mitigated, not removed, by human oversight), and dependence on a supplier
+model whose behaviour can change. Both are registered in the AI Risk Register (R-03, R-08) and
+monitored in operation. No unacceptable impact was identified. The AIGB approved release on this basis.
+
+## 2. Intended use and reasonably foreseeable misuse
+
+**Intended use.** Automated, evidence-cited assessment of an organization's compliance with a supported
+managed control framework, from evidence that organization supplies and from authorized read-only
+observation of its own cloud environment, to support — never replace — qualified human compliance
+judgement.
+
+**Reasonably foreseeable misuse** (assessed, with treatment; operational controls in AIMS-PRO-007 §7.1):
+
+| Foreseeable misuse | Who could do it | Consequence if unchecked | Treatment |
+|---|---|---|---|
+| Presenting a score as a certification or attestation | Assessed organization, to its own customers or a regulator | False assurance propagates downstream; the audit ecosystem is degraded | Explicit "assessment aid, not certification" statement on every result and in customer documentation; human review point disclosed |
+| Rubber-stamping: accepting verdicts without the required human review | Assessed organization under time pressure | Real gaps go unremediated; oversight becomes nominal | Oversight point is documented and its exercise is logged; override and review rates monitored; analyst competence required (AIMS-REG-004) |
+| Uploading a document that overstates compliance, to obtain a passing verdict | Assessed organization | Compliance theatre; assurance value destroyed | Where the scan directly reads the setting, observed technical state governs and a document cannot overwrite it; compensating controls cap at partial; evasion cases in the adversarial suite |
+| Prompt injection through evidence content | Assessed organization, or an attacker who has compromised it | Verdicts manipulated at scale | Customer content is structurally data, never instructions; injection suite must be 100% blocked before release |
+| Repurposing verdicts to evaluate individual employees | Assessed organization's management | Employment consequences from a system never validated for that use; human-rights concern | Prohibited in the intended-use statement; the system produces no individual-level determination; would require a new impact assessment |
+| Running assessments to "shop" for a favourable result | Assessed organization | Selective disclosure to auditors | All assessments retained as an audit record; repeat runs visible; scan evidence always fresh |
+| Scanning an environment without authority | Anyone able to configure an environment | Unauthorized access to a third party's account | Read-only credentials vended only where the customer established the trust relationship; every read attributable in CloudTrail |
+| Using the system outside its characterized domain (unsupported framework or language) | Any user | Unquantified accuracy presented as quantified | Unsupported frameworks not offered; out-of-domain evidence routed to human review; limitation published |
+
+## 3. Positive impacts
+
+Assessed deliberately, because an impact assessment that records only harms cannot support a
+proportionate decision.
+
+| Positive impact | Beneficiary | Basis |
+|---|---|---|
+| Compliance assessment becomes affordable and continuous rather than annual and sampled | Assessed organizations, especially smaller ones without a compliance function | Turnaround falls from weeks to minutes at a fraction of manual cost |
+| Real AI-governance practice is raised, not just documented | Society, users of AI systems generally | Concrete, per-requirement findings are harder to satisfy with paperwork than a self-attestation is |
+| Findings are evidence-cited and reproducible, so they are contestable | Assessed organizations; auditors | Every verdict cites the document excerpt or raw API record behind it |
+| Consistency between assessors improves | Assessed organizations; the audit ecosystem | The same rubric is applied to every organization, removing assessor-to-assessor variance |
+| Skilled human effort moves from evidence-gathering to judgement | Compliance analysts and auditors | Automation targets collection and collation, not the judgement step |
+| Gaps are found that manual sampling misses | End users of assessed organizations | Full-population scanning rather than sampling |
+
+## 4. Predictable failures and their mitigations
+
+| Predictable failure | Impact if unmitigated | Who bears it | Mitigation | Residual |
+|---|---|---|---|---|
+| **Plausible-but-wrong verdict** (model error) | Wrong remediation spend, or false assurance | Assessed organization; its end users | ≥0.90 per-requirement agreement gate; gap recall held to the stricter ≥0.95; rationale must cite evidence; mandatory human review; override facility | **Accepted with monitoring** (R-03) — override rate and verdict distribution tracked |
+| **Read failure reported as non-compliance** | Fault mis-attributed to the customer | Assessed organization | Distinct read-failure state, excluded from scoring; IC-4 permits zero mis-attributions | Closed 2025-11-18 |
+| **Requirement no API can observe scored as a gap** | Customers penalized for API blindness | Assessed organization | Documented coverage-gap versus contradiction rule; document decides where the scan cannot read the subject | Closed 2026-03-06 |
+| **Prompt injection succeeds** | Verdicts manipulated | Assessed organization; the ecosystem | Structural trust boundary; adversarial suite as a release gate; anomalous tool-sequence monitoring | Low, monitored |
+| **Silent loss of scan coverage** | Real gaps understated | Assessed organization; end users | Scan-coverage metric per assessment with alarming | Low |
+| **Supplier model behaviour change or deprecation** | Verdicts shift without any change of ours | All parties | Pinned model identifier recorded per assessment; quarterly no-change regression; documented fallback | **Accepted with monitoring** (R-08) |
+| **Personal data in customer evidence over-retained or exposed** | Privacy harm to named individuals | Data subjects | Content minimization — evidence content never in logs or telemetry; encryption; scoped retention; tenant isolation | Low |
+| **Cross-tenant exposure** | Confidentiality breach | Assessed organizations | Per-tenant partitioning; any occurrence is Severity 1 | Very low, zero tolerance |
+| **Over-reliance / de-skilling of reviewers over time** | Oversight degrades into rubber-stamping | Analysts; assessed organizations | Rationale designed to be checked rather than trusted; evidence gaps shown distinctly from failures; override rate monitored as an oversight-health signal; analyst competence requirements | Medium — monitored, see §5.2 |
+| **Unmanaged growth in inference cost and emissions** | Environmental and financial | Society; the organization | Cost and estimated emissions per assessment tracked release over release (RD-8, IC-12); Opus-class model scoped to one node | Low |
+| Availability failure | Assessment commitments missed | Assessed organizations | Staged deployment, rollback, incident process | Low |
+
+## 5. Impacts on individuals and groups of individuals
+
+The organization **assesses and documents the potential impacts of the AI system on individuals and
+groups of individuals throughout the life cycle** — at inception, design, development, V&V, release,
+operation, change and decommissioning. This assessment is made against the organization's **governance
+principles, AI policy (AIMS-POL-001 P1–P7), AI objectives, and the trustworthiness expectations held
+by users and by individuals whose personal data is processed**.
+
+### 5.1 Impact areas
+
+| Impact area | Assessment for this system | Governance principle / objective | Treatment and status |
+|---|---|---|---|
+| **Fairness** | Risk that verdicts track document polish, verbosity or language rather than substance — disadvantaging organizations with less mature documentation practice, non-native-English writers, or smaller teams | P3; RD-6; IC-1 | Rubrics score required elements, not length or style; terse-compliant documents are a fairness stratum in the test corpus; disparity across strata investigated before release; English-only corpus recorded as a known limitation with human review for other languages |
+| **Accountability** | Risk that no identifiable human is answerable for a consequential verdict | P1; RD-5; IC-2 | Every verdict has a named human able to review and override; overrides are attributable and retained 7 years; no verdict is final without that route |
+| **Transparency and explainability** | Risk of an opaque score that a reader cannot interrogate; risk that a confident rationale conceals a weak basis | P7; RD-1; IC-3, IC-11 | Per-requirement rationale citing specific evidence; assessment journal exposing every phase and tool call; evidence gaps shown distinctly from failures; analyst comprehension reviewed quarterly. Not disclosed: prompts and rubrics (intellectual property) — a deliberate, recorded limit on transparency |
+| **Security and privacy** | Personal data appears incidentally in evidence (policy owners, approvers) and in logs (operators); customer evidence enters model context | P6; RD-7; IC-5 | Inference-only — no customer data in model weights; evidence content excluded from telemetry; minimization; encryption in transit and at rest; tenant isolation; defined retention; lawful basis and DPA obligations reviewed by Legal & Privacy |
+| **Safety and health** | Examined and recorded as **not applicable** — the system controls no physical process and makes no clinical, safety-critical or employment decision. Recorded as considered with the basis stated, and re-examined at each assessment rather than assumed | P4; IC-6 | Re-confirmed 2026-03-04; would change immediately if the system were repurposed |
+| **Financial consequences** | A false gap causes unnecessary remediation spend; a missed gap can contribute to a failed audit or a regulatory finding | P2; IC-7 | Both error directions tracked separately; gap recall held to the stricter bar because a missed gap defeats the purpose; false-gap rate reported per release |
+| **Accessibility** | Analysts and auditors with visual impairments must be able to use the output; findings must not be conveyed by colour alone | P3; IC-8 | Accessibility review of output presentation by a specialist; assistive-technology compatibility; status conveyed by text and not colour alone |
+| **Human rights** | The system makes no determination about any individual. Residual concern: repurposing to judge individuals, and the dignity interest of people named in evidence | P1, P3; IC-9 | Prohibited in the intended-use statement; repurposing requires a new impact assessment; personal data minimized and access-controlled |
+
+### 5.2 Groups, including those with specific protection needs
+
+Specific protection needs are examined explicitly, and the basis for each conclusion is recorded —
+groups are not omitted silently.
+
+| Group | Applicability | Assessment and treatment |
+|---|---|---|
+| **Workers** — compliance analysts, auditors, and staff of assessed organizations | **Applicable** | Two distinct impacts. (a) **Task displacement and de-skilling:** automating evidence collation could erode the judgement skills the oversight model depends on. Treatment: automation is scoped to collection and collation; judgement remains human; analysts are the required review point; competence requirements are maintained (AIMS-REG-004); consulted directly in this assessment. (b) **Work generated by false findings:** a false gap creates real work for people who did nothing wrong — false-gap rate is tracked as an impact metric, not only as an accuracy metric. Verdicts must never be used to evaluate individual worker performance |
+| **Children** | **Not applicable** | The system is not consumer-facing, processes no children's data, and assesses organizations. Examined and recorded 2026-03-04; would be re-assessed if evidence categories changed |
+| **Elderly persons** | **Not applicable as a distinct exposure** | No age-dependent decision or interaction; general accessibility treatment applies to all users |
+| **Impaired persons / persons with disabilities** | **Applicable as users** | Accessibility treatment (IC-8): assistive-technology compatible output, no colour-only encoding, specialist review |
+| **Individuals named in customer evidence** (data subjects who are not users) | **Applicable** | They neither chose the processing nor benefit from it. Treatment: minimization, no evidence content in logs, defined retention, access control, deletion honoured against evidence, lawful-basis review |
+| **Employees of the organization operating the system** | Applicable | May be pressured to bypass a gate to meet a date; may need to raise a concern about the system. Treatment: exceptions require AIGB approval and are visible; concerns may be raised confidentially or anonymously without reprisal (AIMS-PRO-004) |
+| **Smaller organizations with immature documentation** | Applicable | Fairness treatment above — substance over polish, terse-compliant stratum |
+| **Non-English-speaking users and organizations** | Applicable | Recorded limitation: accuracy characterized on English evidence only; out-of-domain evidence routed to human review; corpus rebalanced annually |
+| Relevant demographic groups generally | Considered | The system makes no demographic inference and holds no demographic attributes; the relevant differentiators here are organizational maturity and language, which are treated above |
+
+### 5.3 Expert, researcher and user consultation performed
+
+| Consulted | Date | Contribution to this assessment |
+|---|---|---|
+| Two compliance analysts (user group) | 2026-02-25 | Raised the de-skilling and rubber-stamping concern; drove the decision to monitor override rate as an oversight-health signal, not only as an accuracy proxy |
+| External responsible-AI researcher | 2026-02-27 | Reviewed the fairness strata and the evasion risk; recommended capping compensating controls below full compliance, which was adopted |
+| Legal & Privacy | 2026-03-02 | Confirmed lawful basis, DPA terms and retention; required content minimization in logs to be explicit in AIMS-STD-013 |
+| Accessibility specialist | 2026-03-03 | Output presentation review; no colour-only status encoding |
+| AI Security Lead | 2026-02-20 | Threat-model refresh, including AI-specific threats |
+
+## 6. System characteristics considered
+
+### 6.1 System complexity
+
+A five-node graph with tool use, autonomous read-only scanning of a live cloud account, two parallel
+evidence tracks, a model-authored judgement step on an Opus-class model, and deterministic scoring in
+code. Complexity is **material to impact** in three ways: (a) failure can arise in orchestration rather
+than in the model, so testing covers the whole path end-to-end, not the model alone; (b) more
+autonomous steps mean more places for injected content to act, so the trust boundary is structural;
+(c) explanation must cover the chain, not one inference, which is why the assessment journal exposes
+every phase and tool call. Complexity is deliberately bounded: anything that must be reproducible —
+routing, scoring, coverage validation — is implemented in code, not left to a model.
+
+### 6.2 Role of humans in relation to the system
+
+| Role | Human involvement |
+|---|---|
+| Before assessment | Humans define scope, register environments, supply and link evidence, and authorize read access |
+| During assessment | No human in the loop — the run is autonomous and machine-invoked; a human may halt it |
+| **Before consequence** | **A qualified compliance analyst reviews verdicts and may override any of them. This is the decisive oversight point: the AI system never holds final authority over a compliance outcome** |
+| After publication | Humans annotate, contest, re-run with new evidence, and act on remediation tasks |
+| Over the system | Operators may suspend the system; the AIGB may refuse or withdraw it |
+| Accountability | Named accountable roles per AIMS-POL-003; the system is never the accountable party |
+
+**Known dependency:** the mitigation for the most serious residual impact (a plausible-but-wrong
+verdict) is human review — so oversight quality is itself monitored, because a mitigation that decays
+in practice is not a mitigation.
+
+## 7. Societal impacts
+
+The organization **assesses and documents the potential societal impacts of its AI systems throughout
+the life cycle**, considering both **beneficial and detrimental** effects.
+
+### 7.1 Impact areas
+
+| Societal impact area | Assessment | Direction | Treatment |
+|---|---|---|---|
+| **Environmental sustainability** | Inference is computationally significant. Estimated at the order of tens of thousands of tokens per control assessment; an Opus-class model is used for the judgement node only, precisely to contain this. Set against the organization's environmental sustainability goals: this is a cloud-only workload in a region with a published carbon profile, and it **displaces** travel and manual audit effort, which is a partial offset | Both | Inference cost and estimated emissions per assessment tracked release over release (RD-8, IC-12); a regression is treated as a defect; smaller models used wherever they meet the accuracy bar; assessments are not re-run without cause; results cached rather than recomputed. Reported to the AIGB quarterly against the organization's sustainability strategy |
+| **Economic impacts** | Beneficial: lowers the cost of assurance, which disproportionately helps organizations that cannot afford a compliance function; shifts skilled labour from collation to judgement. Detrimental: reduces demand for junior audit and evidence-gathering work, and could concentrate assurance capability in whoever owns the tooling | Both | Automation scoped to collation, not judgement; findings are contestable and portable so customers are not locked in; task displacement tracked as a worker impact (§5.2) |
+| **Government and political impacts** | The system produces material that regulators and certification bodies may rely on. Beneficial: better-evidenced compliance conversations. Detrimental: if a score were mistaken for an attestation, it could distort regulatory judgement or be used to lobby for weaker supervision; a systematic bias in the rubric could shift practice across a whole sector | Both | Explicit non-certification disclosure; rationale always published with the verdict so a regulator can check the reasoning; rubric changes are Material changes with communication; no political or policy-advocacy use of aggregate customer data |
+| **Health and safety impacts** | No direct effect — the system controls no physical process and makes no clinical decision. **Indirect** effect considered: if a safety-relevant AI governance gap were missed in an organization operating a safety-critical AI system, harm could propagate downstream | Detrimental (indirect) | Gap recall held to the stricter threshold precisely because a missed gap propagates; safety-relevant frameworks flagged for mandatory human review |
+| **Impacts on norms, traditions, culture and values** | Two real effects. (a) **Normalizing automated judgement of governance** — shifting the professional norm from human assessor judgement toward machine-first assessment, and shifting what "compliance" means toward what a machine can read. (b) **Cultural and linguistic narrowness** — an English-language, Western-framework-trained rubric could impose one documentation culture as the standard of adequacy, disadvantaging organizations whose legitimate practice is expressed differently (oral process knowledge, differently structured governance, other languages) | Detrimental | Human judgement retained as the final authority by design, so the professional norm is augmented rather than replaced; rubrics score substance, not documentation style; the English-only limitation is published; non-English evidence routed to human review; corpus rebalanced annually; requirement interpretation reviewed with practising analysts each quarter |
+| **Effects on the assurance ecosystem** | Beneficial if it raises the floor on real governance practice; detrimental if it enables **compliance theatre** at scale — the most consequential societal risk identified | Both | IC-10: a document alone cannot assert away an observed misconfiguration; observed technical state governs where the scan reads it; compensating controls capped below full compliance; evasion cases in the adversarial suite; assessments retained as an audit record |
+| **Concentration of information** | Aggregate visibility into many organizations' governance postures is itself sensitive | Detrimental | Tenant isolation; no aggregate customer data used for any purpose beyond the customer's own assessment without explicit contractual permission |
+
+### 7.2 Misuse to create societal harm, and reinforcement of historical biases
+
+The organization **analyses how actors could misuse the system to create societal harm and how it could
+reinforce unwanted historical social biases.**
+
+| Actor | Misuse pathway | Societal harm | Treatment |
+|---|---|---|---|
+| Assessed organization | Publishing a score as an attestation to customers, insurers or a regulator | Systemic false assurance; erosion of trust in AI governance claims generally | Non-certification disclosure; rationale published; audit record retained |
+| Assessed organization | Crafting documentation to pass rather than to govern | Compliance theatre at scale; the standard becomes a paperwork exercise | Observed technical state governs where read; compensating controls capped; evasion suite |
+| Attacker who has compromised a customer | Injecting content to manufacture compliant verdicts | Undetected non-compliance in critical infrastructure | Structural trust boundary; injection suite as a release gate |
+| Management within an assessed organization | Repurposing verdicts to assess individual employees | Unjustified employment consequences from an unvalidated use | Prohibited use; no individual-level output; new impact assessment required |
+| A vendor of this class of tool (including us) | Marketing automated assessment as sufficient, discouraging human expertise | De-skilling of the assurance profession; oversight becomes nominal | Human authority retained by design; oversight health monitored; honest limitation statements in customer-facing documentation |
+| Any actor | Using aggregate posture data to target or pressure organizations | Confidentiality harm; chilling effect on honest self-assessment | Tenant isolation; no secondary use of customer data |
+
+**Reinforcement of unwanted historical social biases — analysed:**
+
+| Historical bias that could be reinforced | Mechanism in this system | Treatment |
+|---|---|---|
+| **Privileging formal, Western, English-language documentation practice** as the marker of competence | Corpus and rubrics are English and drawn from Western-origin frameworks; polished documentation may read as more compliant | Rubrics score required elements, not fluency or style; terse-compliant fairness stratum; English-only limitation published; human review for other languages; annual corpus rebalancing |
+| **Advantaging large, well-resourced organizations** over small ones, replaying the historical pattern that assurance is a privilege of scale | A dedicated compliance function produces evidence that scores well; a small team's real controls may be less legible | Substance-over-polish rubric; low cost per assessment is itself a levelling effect; disparity across maturity strata investigated before release |
+| **Inherited bias in the underlying foundation models** — including associations attached to names, regions or languages appearing in evidence | Model judgement is the mechanism; we do not control the weights | Fairness-strata testing on our actual task; no demographic attributes held or inferred; anomalous disparity investigated as a defect; supplier obligations recorded (AIMS-PRO-010) |
+| **Devaluing non-documentary forms of knowledge** (oral process, tacit practice) | Only written and API-observable evidence can be read | Published as a limitation; human review can accept evidence the system cannot read; the system never asserts non-compliance from absence of a readable source (RD-2) |
+
+**Addressing historical harms.** The system is also assessed for how it can be used to *reduce* an
+existing inequity: the historical concentration of assurance capability in organizations that could
+afford professional auditors. Lowering the cost of credible, evidence-cited assessment by an order of
+magnitude extends real governance capability to organizations previously priced out — recorded as an
+intended beneficial societal effect, and one reason the AIGB approved the system.
+
+## 8. Treatment plan and residual impacts
+
+| # | Treatment | Owner | Status |
+|---|---|---|---|
+| T-1 | Mandatory human review and override point for every published verdict | Responsible AI Lead | Implemented; exercised in V&V |
+| T-2 | Read-failure state excluded from scoring | AI Development Lead | Implemented 2025-11-18 |
+| T-3 | Coverage-gap versus contradiction precedence rule, with observed state governing where read | AI Development Lead | Implemented 2026-03-06 |
+| T-4 | Compensating controls capped below full compliance | AI Development Lead | Implemented |
+| T-5 | Fairness strata incl. terse-compliant documents; disparity gate before release | Responsible AI Lead | Implemented |
+| T-6 | Evidence content excluded from logs and telemetry; retention defined | AI Operations Lead | Implemented (AIMS-STD-013) |
+| T-7 | Non-certification and limitation disclosures published to users | AI System Accountable Owner | Implemented (AIMS-DOC-012 §2) |
+| T-8 | Cost and estimated emissions per assessment tracked and reported | AI Operations Lead | Implemented (RD-8, IC-12) |
+| T-9 | Override rate monitored as an oversight-health signal | AI Operations Lead | Implemented 2026-03 |
+| T-10 | Annual corpus rebalancing; non-English evidence routed to human review | Data Steward | Scheduled, next 2026-09 |
+| T-11 | Quarterly no-change regression to detect supplier model drift | AI Development Lead | Implemented |
+
+**Residual impacts accepted, with monitoring:** plausible-but-wrong verdicts (R-03); supplier model
+drift (R-08); de-skilling of reviewers over time; the English-language and Western-framework narrowness
+of the characterized domain. Each is registered, monitored, and re-examined at the next assessment.
+
+## 9. Communication of results to users and interested parties
+
+The documented results **support communication** and are used for it. Communicated externally, in
+customer-facing documentation and release notes: intended purpose; the non-certification statement; the
+technical limitations in AIMS-DOC-012 §2; the human oversight requirement; the domain of use and its
+English-language limitation; and verdict-affecting changes ahead of their effective date. Communicated
+internally: this record in full, to the AIGB and the accountable roles. Communicated on request, under
+NDA: the full record to external auditors and certification bodies. Not communicated: prompts and
+rubrics, and any tenant-identifying content.
+
+## 10. Retention and update
+
+| Aspect | Rule |
+|---|---|
+| **Retention period** | 7 years, or life of the system + 3 years, whichever is longer — aligned to the organizational retention schedule (AIMS-POL-009), the audit-record retention in AIMS-STD-013 §4.2, and applicable legal retention requirements. A legal hold suspends expiry |
+| Storage | Controlled document repository with version history and access control |
+| **Update rather than replace** | Superseded versions are retained, so what was known and decided at each point remains reconstructable. Records are updated as the elements of AIMS-PRO-005 §3 are revisited — identification, analysis, evaluation, treatment, documentation, reporting, communication, monitoring |
+| Triggers for update | Every trigger in AIMS-PRO-005 §2.1: material change, annual review, Severity 1 incident, substantiated concern, new deployment context, decommissioning |
+| Completeness check | An assessment record missing any element of AIMS-PRO-005 §3 is not accepted as current, and its absence blocks release (RC-8) |
+
+## 11. Assessment and review history
+
+| Version | Date | Type | Outcome |
+|---|---|---|---|
+| 1.0 | 2025-04-09 | Initial, at inception | Approved to proceed to design with 6 required treatments |
+| 2.0 | 2025-07-30 | Before first release | Approved for release; human oversight point made mandatory |
+| 3.0 | 2025-11-14 | Event-driven, after the IC-4 finding | Read-failure treatment (T-2) required and delivered |
+| 4.0 | 2026-01-20 | Annual periodic review | Societal impact section expanded; environmental tracking (T-8) added |
+| 4.1 | 2026-03-04 | Material change (auditor model family; scoring semantics) | **Approved by AIGB.** Added T-3, T-4, T-9; added the historical-bias analysis (§7.2) and the norms/culture impact area after external researcher and analyst consultation |

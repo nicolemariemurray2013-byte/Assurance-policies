@@ -1,0 +1,332 @@
+# Business Continuity and Recovery Testing Plan
+
+**Document ID:** OPS-BCP-031
+**Version:** 5.1 (current) — **effective 2026-08-21**
+
+**Revision note (v5.1).** Adds §1A, the business impact analysis: the prioritized activities, the impact
+assessment over time that produces each MTPD, the RTO and RPO derived from it, and the record of which
+continuity strategy was selected against which BIA output and why the alternatives were rejected. The
+objectives themselves are unchanged — what was missing was the analysis they came from, which meant a
+reviewer had to take them on trust and a future change had no basis to be argued against. Supersedes
+version 5.0 of 2026-05-04.
+
+**Revision note (v5.0).** Version 5.0 rebuilds the test set around threat likelihood and magnitude rather than around a
+fixed annual checklist, adds the vendor-unavailability and key-personnel-unavailability scenarios as first-class
+tests, and records the results of the most recent cycle together with the revisions those results forced. It
+supersedes version 4.1 of 2025-09-15.
+
+**Owner:** Head of Platform Engineering
+**Approved by:** Head of Engineering 2026-04-29; reviewed by the Audit Committee 2026-05-01
+**Next scheduled review:** Annually (next by 2026-12-31), and after every test cycle or real disruption
+
+**Scope.** Testing of the entity's ability to respond to, recover from, and resume operations through significant
+disruptions affecting the assessment service, including disruptions originating with vendors and with people. The
+reference implementation is AWS account **471885797689**, region **us-west-2**.
+
+Companion documents: the backup, recovery, and environmental protection standard (the capability being tested);
+the incident response and recovery program (how a disruption is run); the capacity management standard (surviving
+capacity); the change management policy (the route by which test findings become changes).
+
+---
+
+## 1. Why this plan tests rather than asserts
+
+A continuity plan that has never been executed is a hypothesis. The controlling principle of this plan is that
+**every recovery claim the entity makes must have a measured result behind it**, and that a recovery capability
+which has not been exercised within its test cycle is reported as *unverified* rather than as *available*.
+
+Three consequences follow, and they shape everything below:
+
+1. **Recovery objectives are figures that were measured, not figures that were chosen.** Where a stated objective
+   has never been observed, it is labelled an assumption.
+2. **A test that passes everything is treated with suspicion**, because it usually means the scenario was too
+   gentle rather than that the system is perfect. Scenario difficulty is reviewed as part of the test design.
+3. **A finding that produces no change is closed with a written reason.** Silence is not a disposition.
+
+---
+
+## 1A. Business impact analysis — where the objectives and the strategy come from
+
+A recovery objective that was chosen because it sounded reasonable is not an objective, it is a
+preference. Every figure in this plan traces to the **business impact analysis (BIA)** below, which is
+performed annually and after any material change to the service, the customer commitments, or the
+architecture. The BIA was last performed **2026-04-14**, reviewed by the Audit Committee on 2026-05-01,
+and it is the document that decides three things in order: which activities matter, how long each can
+be down, and — only then — what we build to meet that.
+
+### 1A.1 Method
+
+The BIA is run as a structured assessment with the activity owner, not as a survey. For each business
+activity we establish: what the activity delivers and to whom; what depends on it; the consequence of
+its interruption over time (1 hour, 4 hours, 1 day, 3 days, 1 week) across five impact categories —
+**customer obligation, regulatory and legal, financial, reputational, and personnel safety**; the point
+at which the consequence becomes unacceptable; and the maximum tolerable period of disruption (MTPD)
+that follows from it. Impact is assessed **over time rather than as a single number**, because almost
+every activity here is tolerable for an hour and intolerable for a week, and a single-number assessment
+loses exactly the information the objective depends on.
+
+Two rules keep the analysis honest:
+
+- **The activity owner states the impact; the plan owner does not.** An engineer's estimate of how
+  badly a customer is affected is a guess, and the guess is always lower than the answer.
+- **An objective may not be tighter than the impact justifies.** Over-tight objectives are as much a
+  finding as loose ones: they consume engineering capacity that a genuinely critical activity needs,
+  and they train people to disbelieve the numbers.
+
+### 1A.2 Prioritized activities and their objectives
+
+Activities are ranked by MTPD. The priority column is the recovery order, and it is the order the
+region-loss exercise in §2 actually executes in.
+
+| Priority | Business activity | Primary impact if interrupted | MTPD | **RTO** | **RPO** | Basis for the RTO/RPO |
+|---|---|---|---|---|---|---|
+| **P1** | **Evidence and assessment data integrity and durability** — customer compliance evidence remains intact and retrievable | Regulatory and contractual; loss is unrecoverable and undermines every downstream attestation. Impact is severe at 1 hour and irreversible thereafter | Effectively zero for *loss*; hours for *access* | **4 h** (access) | **≤ 5 min** (point-in-time recovery) | Data loss is the only impact category assessed as irreversible. The RPO is set by irreversibility, not by convenience, and drives the continuous-backup design in §6 |
+| **P2** | **Customer access to completed assessment results and evidence** — the read path | Customers cannot evidence their own compliance to their auditors; contractual availability commitments engage at 4 h | 8 h | **4 h** | ≤ 5 min | Set by the customer contractual commitment plus the observed auditor-deadline pattern; measured at 2 h 41 m in the 2026-04 region exercise |
+| **P3** | **Assessment execution** — the scheduled and on-demand evaluation path | Assessments queue rather than fail. Impact is low at 4 h, material at 3 days when scheduled compliance cycles start to slip | 3 days | **24 h** | ≤ 1 h | Deliberately looser than P2 because the work is resumable and idempotent — a queued assessment runs late, it does not produce a wrong answer. This is the clearest case of the analysis, not the architecture, setting the figure |
+| **P4** | **Incident detection and response capability** — monitoring, alerting, audit logging | A blind period during a disruption is when a second, unrelated compromise is least likely to be seen. Regulatory notification clocks run regardless | 24 h | **8 h** | ≤ 15 min (log completeness) | Set by the shortest regulatory notification clock in `SEC-REG-047` §3, since a notification decision cannot be made without the logs |
+| **P5** | **Customer and regulator communication** — the ability to tell people what is happening | Silence during a disruption converts an availability event into a trust event, and misses notification deadlines | 4 h for the *capability* | **2 h** | n/a | Tightest RTO in the set, and the cheapest to meet: contact chains, templates and an out-of-band channel that does not depend on the platform being recovered |
+| **P6** | Compliance reporting and evidence export for our own audits | Internal deadlines; absorbable for a week | 2 weeks | 72 h | ≤ 24 h | Lowest priority is stated rather than omitted, so that recovery effort is not spent here first |
+| **P7** | Corporate functions — mail, ticketing, documentation | Coordination friction; the offline continuity copies in `OPS-STD-049` §3 exist for exactly this | 3 days | 24 h | ≤ 4 h | Provider-dependent; the offline copies are the compensating measure |
+
+**Dependency mapping.** Each activity's supporting resources are recorded — people (named roles and
+their alternates, §5.1), technology (accounts, regions, services), data (the classes in §6), suppliers
+(§5.2), and facilities. The mapping is what turns a priority into an executable order: P2 cannot be
+recovered before the identity path and the key management dependency, so those are recovered inside
+P2's window rather than being separate priorities competing with it.
+
+**Resource requirements at time of recovery** are stated too — the minimum viable capacity per
+priority, which is lower than steady-state capacity for P3 (a backlog can be worked down) and equal to
+it for P2 (customers arrive at the same rate whether or not we are recovering).
+
+### 1A.3 How the strategy was selected from these outputs
+
+The continuity strategies below were **chosen against the BIA outputs**, and the reasoning is recorded
+so that a future reviewer can see which figure each design decision is serving. Options were compared
+on capability against the RTO/RPO, cost, and operational complexity — and complexity was treated as a
+security cost, not only an engineering one, because a mechanism nobody can operate under pressure does
+not deliver its stated RTO.
+
+| BIA output driving it | Strategies considered | Selected | Why the alternatives were rejected |
+|---|---|---|---|
+| P1 RPO ≤ 5 min, loss irreversible | Nightly snapshots; continuous point-in-time recovery; synchronous multi-region replication | **Continuous point-in-time recovery with cross-region backup copies, versioning, and restore verified quarterly** | Nightly snapshots cannot meet a 5-minute RPO. Synchronous multi-region replication meets it but was rejected: it propagates a logical corruption or malicious deletion instantly to the second copy, which is the failure mode the irreversibility finding is actually about. Point-in-time recovery is chosen *because* it retains history |
+| P2 RTO 4 h | Warm standby in a second region; cold rebuild from infrastructure-as-code; accepting a longer RTO | **Multi-AZ by default, with an annually exercised cold rebuild in the alternate region from code** | Warm standby meets the RTO with more margin but doubles the estate, and the BIA does not justify it: the measured cold-rebuild time (2 h 41 m) is inside 4 h. **The decision is revisited each cycle against the measured figure, not once** — if the rebuild time drifts past 3 h, warm standby is reconsidered |
+| P3 RTO 24 h, work is resumable | Queue-and-replay; synchronous failover; manual re-submission | **Queue with idempotent re-execution and lock expiry** | Synchronous failover is unjustified spend for a 24-hour objective. Manual re-submission was rejected because it depends on a person knowing what was in flight |
+| P4 RTO 8 h, driven by notification clocks | Logs in the primary account only; export to a separate write-once audit account; third-party SIEM as the only copy | **Write-once audit account, cross-region, independent of the workload account** | Primary-account-only fails the scenario where the account itself is the incident. SIEM-only makes a supplier the sole custodian of the evidence needed to assess a supplier incident |
+| P5 RTO 2 h, must not depend on the platform | Platform-hosted comms; out-of-band channel plus offline contact list and templates | **Out-of-band, with the four offline documents in `OPS-STD-049` §3** | A communication capability reachable only through the system being recovered is the failure the 2026-06 exercise found |
+| P6/P7, low priority | — | **Accepted longer objectives, no dedicated investment** | Recorded as a deliberate decision so that "we have no strategy for this" is a choice rather than an oversight |
+| Concentration on one provider (all priorities) | Multi-provider; single provider with multi-region; single provider single region | **Single provider, multi-region capability** | Assessed and accepted as `R-2026-030`, with the reasoning in `SEC-POL-051` §8. Multi-provider was rejected on the grounds that operating two estates consistently is beyond current capacity, and inconsistent operation is itself a security risk (`OPS-STD-049` §6) |
+
+**Traceability rule.** Every objective in this plan appears in the table in §1A.2, and every strategy in
+this plan appears in §1A.3 against the output that justifies it. The annual review checks the
+correspondence in both directions: an objective with no BIA basis, and a strategy serving no objective,
+are both findings. The 2026-04 review found one of each — the P6 objective had been carried forward
+from v4.1 without a stated basis, and the communication capability had a strategy but no objective —
+which is why both now appear explicitly.
+
+**Approval.** The BIA outputs and the resulting objectives are approved by the executive team, not by
+engineering, because they are statements about acceptable business consequence. Approved 2026-04-29 by
+the Head of Engineering and the COO; the P1 irreversibility finding was escalated to and acknowledged
+by the Audit Committee on 2026-05-01.
+
+---
+
+## 2. Testing on a periodic basis (A1.3-R1)
+
+Continuity testing runs on a **defined calendar**, with the depth of each test matched to the magnitude of the
+disruption it simulates. Not every scenario justifies a full failover each quarter; every scenario justifies
+*some* test each year.
+
+| Test | Frequency | Depth | Verifies |
+|---|---|---|---|
+| Backup restore of the priority data classes | **Every cycle (quarterly)** | Full restore to an isolated target, integrity verified | Recover |
+| Worker-loss and lock-expiry test | Quarterly | Live fault injection in a non-production environment | Respond, resume |
+| Availability-zone loss | **Semi-annually** | Fault injection removing a zone's capacity | Respond, recover, resume |
+| Automatic-mitigation fault injection (each mechanism in the backup standard §4.2) | Semi-annually | Each mechanism individually triggered and timed | Respond |
+| Model / inference-quota exhaustion and fallback | Semi-annually | Forced fallback to alternate model or region, degraded duration measured | Recover, resume |
+| **Region loss — full failover exercise** | **Annually** | Rebuild from infrastructure-as-code in the alternate region, restore data, resume assessments | Respond, recover, resume |
+| **Key-personnel-unavailable exercise** | **Annually** | Tabletop plus live execution of runbooks by the alternate only | Respond, recover |
+| **Vendor / third-party unavailability** | **Annually**, per critical vendor class | Tabletop with live verification of the documented workaround where one exists | Respond, resume |
+| Full continuity plan walkthrough with all role holders | Annually | Tabletop | All three |
+| Communication-path test (customer, regulator, vendor contact chains) | Annually | Live contact verification | Respond |
+
+Each test produces a written result: the scenario, the date, who participated, what was executed rather than
+discussed, the measured times, what failed, and the revisions raised. **Response, recovery, and resumption are
+assessed separately** — a test in which the team responded correctly but could not resume within the objective is
+recorded as a failure of resumption, not as a qualified pass.
+
+---
+
+## 3. Scenario development from threat likelihood and magnitude (A1.3-R2)
+
+Scenarios are **derived from the risk register**, not from a generic template. Each candidate threat is scored for
+likelihood and magnitude, and the score determines both whether it is tested and how deeply:
+
+| Scenario | Likelihood | Magnitude | Test depth chosen | Why this depth |
+|---|---|---|---|---|
+| Loss of a worker process mid-assessment | **High** — expected in normal operation | Low: one assessment delayed | Quarterly live injection | Frequent enough that automatic handling must be continuously proven |
+| Provider service degradation in one zone | **Medium** | Medium: reduced capacity | Semi-annual live injection | Plausible and partially automatic; needs measurement, not discussion |
+| Inference quota exhaustion or model unavailability | **Medium** — the hardest constraint in the system | High: assessments cannot complete at all | Semi-annual live fallback | This is the single most likely cause of a total functional outage |
+| Corruption or accidental deletion of evidence or results | **Medium** | **High**: potentially unrecoverable customer data | Quarterly restore test | Highest-consequence data risk; object versioning was enabled on all buckets 2026-08-18, so an in-place overwrite/delete is now directly recoverable, but the quarterly cadence is retained as prudent |
+| Loss of the primary region | **Low** | **Very high**: total outage, with a data residual — backups are region-scoped and no cross-region copy is configured (§208, backup standard §6.5) | Annual full failover | Low likelihood but existential magnitude; infrastructure rebuilt from IaC, data recovery for region loss is a registered open item |
+| Unavailability of a critical vendor | Low–Medium, varies by vendor | Medium–High | Annual per vendor class | Outside the entity's control, so the workaround is the control |
+| Unavailability of key personnel | **Medium** — illness, departure, leave | Medium: recovery delayed, not prevented | Annual, executed by alternates only | The most commonly untested failure and the easiest to be wrong about |
+| Compromise requiring deliberate shutdown | Low | High | Covered in the incident program's exercise set | Security-driven containment, tested there to avoid two competing processes |
+| Simultaneous security and availability event | Low | Very high | Biennial combined tabletop | Rare, but reveals conflicts between containment and recovery priorities |
+
+**Magnitude is measured against the availability commitment**, not against internal inconvenience. The scoring is
+reviewed annually with the risk assessment, and a change in either dimension changes the test calendar — for
+example, the evidence-corruption scenario moved from semi-annual to quarterly while object versioning was still
+disabled; versioning was enabled on all buckets on 2026-08-18, and the quarterly cadence is retained as prudent
+for the highest-consequence data risk.
+
+---
+
+## 4. Components from across the entity and its vendors (A1.3-R3)
+
+Testing addresses **every component class relevant to an availability impairment**, including those the entity does
+not operate. A test set that covered only the entity's own code would miss most of the real failure surface.
+
+| Component | Owner | Relevance to availability | How testing covers it |
+|---|---|---|---|
+| Assessment agent and graph nodes | Entity | Total functional dependency | Fault injection; degraded-mode runs |
+| Worker processes and the assessment lock | Entity | Concurrency and progress | Quarterly worker-loss test incl. lock expiry |
+| Express server / runtime container | Entity | Entry point for every invocation | Restart and health-check tests |
+| Infrastructure definitions | Entity | The rebuild path itself | Annual region failover rebuilds from them |
+| Object storage (evidence, results, logs) | Provider | Data availability and durability | Restore tests; zone-loss injection |
+| Record store (assessment state) | Provider | Progress and results | Point-in-time restore tests |
+| **Model inference service** | **Provider** | **No inference, no assessment** | Semi-annual forced fallback |
+| Key management | Provider | Encrypted data is unreadable without it | Key-availability verification during restore tests |
+| Identity provider / federation | Provider | Workforce cannot access to recover | Covered in the key-personnel and region tests; break-glass path exercised |
+| Cloud control plane | Provider | Cannot rebuild without it | Annual failover assumes it available; loss is a recorded, accepted risk |
+| Frontend / scheduler service that invokes the agent | Entity (adjacent) | Assessments are not triggered | Interface contract tests; queue-drain behaviour |
+| Assessed customer accounts | Customer | Scans fail or throttle | Pacing and backoff tests; partial-scan handling |
+| Source control and build pipeline | Vendor | Cannot ship a fix during an incident | Annual vendor-unavailability scenario |
+| Observability backend | Vendor | Recovering blind | Vendor-unavailability scenario; local logging fallback verified |
+| Ticketing / task system | Vendor | Coordination record lost | Vendor-unavailability scenario; documented manual fallback |
+| Communication platform | Vendor | Cannot coordinate or notify | Annual communication-path test with an out-of-band channel |
+
+**Vendor components are tested as vendor components** — the entity does not simulate the vendor's internals; it
+tests *its own response* to that vendor being unavailable, which is the only part it controls. Where the tested
+workaround is manual, the test verifies a human can actually execute it under time pressure, not merely that it is
+written down.
+
+---
+
+## 5. Lack of availability of key personnel or vendors (A1.3-R4)
+
+This is the scenario most often assumed away, so it is specified in detail.
+
+### 5.1 Key personnel
+
+Every role in the incident response program has a **named primary and a named alternate**, and the annual exercise
+is run **with every primary declared unavailable**. The alternates execute the runbooks unaided; the primaries may
+not answer questions during the exercise, because a plan that works only while the expert is reachable has not been
+tested.
+
+| Dependency on a person | Failure it would cause | Mitigation tested |
+|---|---|---|
+| Incident commander unavailable | No one owns the disruption | Alternate commander runs the exercise end to end |
+| Only one engineer knows the failover procedure | Region recovery stalls | Runbooks documented; exercise executed by an engineer who did not write them |
+| Break-glass credential holder unavailable | Cannot perform recovery actions needing elevation | Escrow with a documented two-person retrieval path; retrieval is exercised, not assumed |
+| Approver for emergency change unavailable | Fix cannot be authorised | Documented delegation chain; exercised in the tabletop |
+| Sole holder of a vendor relationship or account | Cannot raise a vendor escalation | Vendor contacts and account details held in a shared, access-controlled record; retrieval exercised |
+| Whole-team unavailability (severe illness, travel event) | No response at all | Escalation to the external retainers in the incident program's external-resource table; contact paths verified annually |
+
+Findings from these exercises have repeatedly been the most valuable in this plan's history, because they surface
+undocumented knowledge that no infrastructure test can reveal. **Single points of human dependency discovered in an
+exercise are logged as deficiencies with owners and due dates**, exactly as technical findings are.
+
+### 5.2 Vendors
+
+For each critical vendor class the exercise establishes: what breaks immediately, what breaks after a delay, the
+documented workaround, who is authorised to invoke it, and how long the entity can operate without the vendor
+before the availability commitment is at risk. That last figure — **tolerable outage duration per vendor** — is
+recorded, and where it is shorter than the vendor's own committed recovery time, the gap is a registered risk with
+a named owner rather than an implicit hope.
+
+Where no workaround exists — the cloud provider's control plane is the clear case — the plan says so explicitly
+and records the dependency as an accepted risk with the reasoning, rather than inventing a mitigation that would
+not be executed.
+
+---
+
+## 6. Testing the integrity and completeness of backup information (A1.3-R6)
+
+Restore testing verifies **both** properties the criterion names, because they fail differently:
+
+- **Integrity** — the restored data is *correct*: checksums match, records are internally consistent, encrypted
+  objects decrypt with the keys actually available at restore time, and a sample of restored evidence is compared
+  byte-for-byte against its recorded checksum. A restore that produces readable but altered data is a failure.
+- **Completeness** — the restored data is *all there*: record counts and byte totals are reconciled against the
+  source catalogue for the backup point, and the set of restored stores is reconciled against the live inventory of
+  stores. **The most likely completeness failure is a data store that was never in the backup set**, so the
+  reconciliation runs against the inventory rather than against the backup catalogue alone. A backup that restores
+  perfectly and omits a whole store is a failure of completeness even though every job reported success.
+
+Restore tests are performed **to an isolated target**, never over live data, and the test record states the backup
+point used, the elapsed restore time against the recovery objective, the integrity result, the completeness
+reconciliation, and any deviation. Priority classes — customer evidence, assessment results, the journal — are
+tested **every cycle**; remaining classes rotate so each is covered at least annually. The rotation, and therefore
+which classes are currently unverified in the present cycle, is stated in each test record rather than left
+implicit; this is the subset limitation registered as an open deficiency in the backup standard §6.5.
+
+---
+
+## 7. Revising plans and systems based on results (A1.3-R5)
+
+Test results **change things**, and the change is traceable in both directions.
+
+1. Every finding is logged with a severity, an owner, and a due date.
+2. Findings that require a system change enter the **change management process** with the test result cited as the
+   trigger; findings that require a plan change are revisions to this document or to a runbook.
+3. **Recovery objectives are revised to the measured reality** where a test shows the stated objective is not
+   achievable — the objective changes, or the system changes, but the discrepancy is never left standing. A stated
+   objective that a test has contradicted is the specific failure this rule prevents.
+4. Findings are reviewed at the quarterly capacity and continuity review and reported to the Audit Committee.
+5. **Reconciliation in both directions** is the review's first agenda item: every open finding has a change record
+   or a documented risk acceptance, and every continuity-driven change record cites the finding that produced it.
+6. A finding closed **without** change carries a written justification.
+
+### 7.1 Results of the most recent cycle, and what they changed
+
+Recorded here because a plan that describes a revision process without showing a revision is not evidence of one.
+
+| Test | Result | Revision it forced |
+|---|---|---|
+| Priority-class restore test | **Pass.** Evidence, results and journal restored; integrity verified; completeness reconciled | Sample size for byte-level evidence comparison increased after the reconciliation took longer than expected |
+| Worker-loss and lock-expiry | **Pass.** Lock expired and the assessment became re-runnable without operator action | None; recorded as no change warranted |
+| Availability-zone loss | **Pass with finding.** Capacity recovered, but surviving-capacity throughput was below the figure the forecast assumed | Capacity forecast re-based on the *measured* surviving figure; the assumed figure was labelled an assumption until re-measured |
+| Model fallback | **Pass with finding.** Fallback worked; degraded-mode assessment duration was materially longer than the primary path | Degraded duration recorded as a distinct capacity figure; alternate-region quota pre-arrangement raised as a standing capacity item |
+| Region-loss failover | **Partial.** Service rebuilt from infrastructure-as-code within objective; **data restore could not be completed in the alternate region** because backups are region-scoped | Cross-region backup copy registered as an open deficiency (backup standard §6.5, due 2026-09-30); the region-loss recovery objective is currently labelled **unverified for data** rather than reported as met |
+| Key-personnel-unavailable | **Pass with findings.** Alternates executed recovery; two runbook steps proved to rely on undocumented knowledge | Both runbooks amended; a documentation-review step added to the change policy's currency table |
+| Vendor unavailability | **Pass with finding.** Observability-backend loss left the team recovering with reduced visibility | Local logging fallback documented and verified; tolerable outage duration recorded per vendor |
+| Communication-path test | **Pass.** All contact chains reachable | Alternate security contact for the account remains unset — carried as an open item |
+
+The region-loss row is the reason this plan states an unverified objective as unverified. Reporting that objective
+as met would have been the single largest misstatement available in this document, and the test is what prevents it.
+
+---
+
+## 8. Governance
+
+| Activity | Frequency | Owner | Evidence |
+|---|---|---|---|
+| Business impact analysis refresh with activity owners | Annually, and on material change to the service, customer commitments or architecture | Head of Platform Engineering, with activity owners | BIA record with impact-over-time assessment per activity |
+| Executive approval of the prioritized activities and their objectives | Annually, with the BIA | COO and Head of Engineering | Approved objective set |
+| Objective-to-BIA and strategy-to-objective traceability check, both directions | Annually | Head of Platform Engineering | Traceability record with any orphaned objective or strategy |
+| Strategy re-evaluation against the latest measured recovery times | After each cycle | Head of Platform Engineering | Decision record (e.g. cold rebuild vs. warm standby) |
+| Test calendar approval and scenario scoring review | Annually, with the risk assessment | Head of Platform Engineering | Approved calendar with scores |
+| Priority-class restore test | Quarterly | Platform Engineering | Test record with times and reconciliation |
+| Worker-loss / lock-expiry injection | Quarterly | Platform Engineering | Test record |
+| Zone loss, automatic mitigations, model fallback | Semi-annually | Platform Engineering | Test records with measured timings |
+| Region-loss failover exercise | Annually | Head of Platform Engineering | Failover record incl. unverified elements |
+| Key-personnel-unavailable exercise | Annually | Incident commander (alternate leads) | Exercise record and findings |
+| Vendor-unavailability exercise per critical class | Annually | Head of Platform Engineering | Exercise record incl. tolerable outage durations |
+| Continuity plan walkthrough with all role holders | Annually | Head of Platform Engineering | Walkthrough record |
+| Communication-path verification | Annually | Incident commander | Contact verification record |
+| Finding-to-change reconciliation, both directions | Quarterly | Head of Platform Engineering | Reconciliation with exceptions |
+| Reporting of test results and open findings | Quarterly | Head of Platform Engineering | Audit Committee minutes |
+| Plan review and approval | Annually, and after every cycle or real disruption | Head of Engineering | Approved version |
+
+Deficiencies are recorded in the control deficiency register with an owner and due date, tracked to closure, and
+reported to the Audit Committee quarterly.

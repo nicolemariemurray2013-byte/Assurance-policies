@@ -1,0 +1,134 @@
+# Information Provided to Users of the AI System
+
+**Document ID:** AIMS-STD-015
+**Version:** 3.1
+**Owner:** AI System Accountable Owner; content approved with the Responsible AI Lead
+**Approved by:** AI Governance Board
+**Approval date:** 2026-03-06
+**Last validated for completeness, currency and accuracy:** 2026-03-06 (see §4)
+**Next scheduled review:** 2026-12-31, and on every user-visible change
+**Scope:** All information provided to users of the compliance-evaluation AI system (AWS account
+471885797689, us-west-2).
+
+---
+
+## 1. Determination of what information users need
+
+The organization **determines and provides the information necessary to users of the AI system.**
+Determination is deliberate and recorded: §2 documents the criteria applied, §3 the resulting
+information set per user category, and §4 how it is kept accessible, complete, current and accurate.
+
+### 1.1 Who counts as a user
+
+| User category | Relationship to the system | Expertise assumed |
+|---|---|---|
+| **Compliance analysts and auditors** (primary users, and the human oversight point) | Read, interrogate, override and act on verdicts | Qualified in the framework assessed; not necessarily AI-literate |
+| **Assessed organizations' staff** (recipients of findings) | Receive and act on findings and remediation tasks | Domain-competent, variable AI literacy |
+| **Operators / administrators** | Configure environments, scope, evidence and model configuration; suspend or roll back | Technically expert |
+| **External auditors and certification bodies** | Rely on results as assurance input | Expert in audit, not in this system |
+| **Internal management** | Rely on aggregate posture | Non-specialist |
+
+## 2. Documented criteria for determining whether and what information is provided
+
+The following criteria are applied to every candidate item of user information. An item is provided when
+any criterion triggers it; the criteria also determine the **form and depth**, so information is
+appropriate to context and user need rather than uniform.
+
+| # | Criterion | How it is applied | Example of what it produced |
+|---|---|---|---|
+| C-1 | **Intended use** — the user must know what the system is for and what its output means | Anything a user must know to rely correctly on a verdict is provided | The statement that a result is an assessment aid and **not** a certification or attestation |
+| C-2 | **Reasonably foreseeable misuse** — where a plausible misuse exists, information is provided specifically to counter it | Each foreseeable misuse in AIMS-REC-005 §2 is checked for a corresponding user-facing statement | The prohibition on using verdicts to evaluate individual employees; the warning that a passing score is not evidence of certification |
+| C-3 | **User expertise** — depth and vocabulary are set by the least AI-literate user in the category, not by the most expert | Analyst-facing material assumes framework competence but not AI competence; operator material assumes technical depth | Rationale-interpretation guidance for analysts; configuration reference for operators only |
+| C-4 | **Specific impacts of the system** — where an identified impact falls on a user or on someone they affect, the user is told | Each impact in AIMS-REC-005 §5 and §7 is checked for a disclosure | Disclosure that a false gap can create unnecessary remediation work; the English-language domain limitation |
+| C-5 | **Awareness that the output is AI-generated** | Always provided, unconditionally | Every verdict is labelled as machine-generated and pending human review |
+| C-6 | **Ability to intervene** — if a user can influence or reverse an outcome, they must be told how | Override, halt, re-scope, annotate and suspend are all documented with instructions | Override procedure in the operator guide |
+| C-7 | **Legal, contractual or regulatory obligation** | Legal & Privacy identify mandatory disclosures per jurisdiction | Data-processing and retention disclosures |
+| C-8 | **Accuracy limits and domain of use** — a user must be able to tell when they are outside the characterized domain | Limitations are published, not buried | Supported frameworks; English-language limitation; point-in-time nature of a result |
+| C-9 | **Proportionality** — information must not be so voluminous that the important parts are lost | Layered presentation: essential statements in the interface, detail in documentation | The non-certification statement appears on the result itself, not only in the manual |
+| C-10 | **Withheld where justified, and the withholding recorded** | Intellectual property and security-sensitive detail may be withheld, but never in a way that prevents a user judging the output | Prompts and rubrics are withheld; **every verdict's rationale and cited evidence are always disclosed** |
+
+## 3. Information provided
+
+### 3.1 Provided to all users, unconditionally
+
+| Information | Where it appears | Criterion |
+|---|---|---|
+| **That this is an AI system and the verdicts are machine-generated** | On every result and in the interface, not only in documentation | C-5 |
+| **Intended purpose** — automated, evidence-cited compliance assessment to support qualified human judgement | Product documentation; result header | C-1 |
+| **That the result is an assessment aid, not a certification or attestation** | On every result and in every export | C-1, C-2 |
+| **That a qualified human must review consequential verdicts, and that override is available** | Result presentation; operator guide | C-1, C-6 |
+| **Technical limitations** — probabilistic judgement, point-in-time observation, API-observability limits, English-language domain, supported frameworks only | Published limitations page (AIMS-DOC-012 §2) | C-4, C-8 |
+| **How to interpret an evidence gap versus a failure** | Shown distinctly in the output; explained in the interpretation guide | C-1, C-4 |
+| **What the score does and does not mean**, including that unreadable requirements are excluded rather than failed | Scoring explanation | C-1, C-8 |
+| **How data is used** — no customer data used for training; retention; tenant isolation | Privacy and data-handling notice | C-7 |
+| **How to report a problem or an adverse impact**, including anonymously | In-product help; support portal (AIMS-PRO-016) | C-6, C-7 |
+| Prohibited uses | Intended-use statement | C-2 |
+
+### 3.2 How to interact with the system, and how and when to override
+
+| Topic | Information provided |
+|---|---|
+| **How to interact** | The system is machine-invoked and asynchronous — users do not converse with it. Users act by: registering an environment and authorizing read-only access; creating a project and selecting a framework; uploading evidence **and linking it to the specific controls it supports** (an unlinked document is invisible to a control — stated explicitly, because it is the most common user error); running an assessment; then reviewing results |
+| **How to read a result** | Per-requirement status, rationale and cited evidence; the control summary and score; the assessment journal for the full phase and tool-call trace |
+| **How to override** | Any verdict can be overridden by a qualified analyst through the result view; the override is recorded with actor and timestamp and retained with the assessment |
+| **When to override** | Guidance provided: when the rationale does not follow from the cited evidence; when evidence exists that the system did not have or could not read; when the requirement is not applicable to the organization; when the analyst's framework judgement differs on interpretation. Guidance is explicit that override is **expected in normal use**, not an exception — a zero override rate is itself a signal of insufficient review |
+| **When not to override** | When the disagreement is with the requirement itself rather than the verdict (that is a framework-scoping decision); when no additional evidence supports the change. Overrides must be justified in the record |
+| **Other controls** | Halt or re-scope an assessment; add or replace evidence and re-run; annotate; suspend the system (operator/AIGB authority) |
+| **What users cannot influence** | The scoring formula, requirement text, and the rubric — stated so users do not expect configuration that does not exist |
+
+### 3.3 Additional information by user category
+
+| Category | Additional information | Form |
+|---|---|---|
+| Compliance analysts / auditors | Rationale-interpretation guide with worked examples; evidence-citation model; override procedure and expectations; journal walkthrough; known failure modes to look for | Operator guide + in-product help; worked examples rather than abstract description |
+| Assessed organizations' staff | Remediation task meaning and priority; how to supply better evidence; what linkage does; how to contest a finding | In-product help; findings view |
+| Operators / administrators | Configuration reference; environment and trust-relationship setup; model identifier and framework enablement; monitoring dashboards; incident and rollback procedures | Runbook (AIMS-PRO-007) |
+| External auditors | Document register with versions and approvals; V&V and impact-assessment evidence pack; provenance on request | Controlled evidence pack under NDA |
+| Internal management | What aggregate scores mean and their limits; the requirement for human review | Governance pack |
+
+## 4. Accessibility, completeness, currency and accuracy — and their validation
+
+Information provided to users is **made accessible and is validated to be complete, up to date and
+accurate.** Validation is a defined activity with an owner and a record, not an assumption.
+
+### 4.1 Accessibility
+
+| Aspect | Measure |
+|---|---|
+| Assistive technology | Output and documentation are compatible with screen readers; semantic structure rather than visual-only layout |
+| No colour-only encoding | Verdict status is conveyed in text as well as colour (IC-8) |
+| Plain language | Customer-facing material avoids internal identifiers and jargon; reviewed for readability |
+| Findability | Essential statements (AI-generated, not-a-certification, human-review-required) appear **at the point of use**, not only in a manual — a document nobody opens is not information provided |
+| Availability | Documentation published alongside the release it describes, never after |
+| Reviewed by | Accessibility specialist, most recently 2026-03-03 |
+
+### 4.2 Validation
+
+| Validation | Method | Frequency | Owner | Last performed |
+|---|---|---|---|---|
+| **Completeness** | Each criterion in §2 is walked against the current information set; each foreseeable misuse (AIMS-REC-005 §2) and each identified impact (§5, §7) must have a corresponding disclosure or a recorded reason for none | Every release; full review semi-annually | AI System Accountable Owner | 2026-03-06 |
+| **Currency** | Documentation is updated in the same change as the system change it describes; documentation currency (RC-10) blocks release | Every release | AI Development Lead | 2026-03-06 |
+| **Accuracy** | Stated behaviour is checked against actual behaviour on the release candidate; a discrepancy is a defect, not a documentation nicety. Analysts confirm the interpretation guide matches what the system actually produces (release criterion 5) | Every release | Compliance analysts + AI Development Lead | 2026-03-04 |
+| **Comprehensibility** | Analyst comprehension review — can a qualified reader determine, unaided, why a verdict was reached? (IC-11) | Quarterly, sampled | Responsible AI Lead | 2026-02-25 |
+| Accessibility | Specialist review | Semi-annually and on interface change | Responsible AI Lead | 2026-03-03 |
+
+**Findings from the last validation (2026-03-06):** two gaps were found and closed — the evidence-linkage
+requirement was not stated prominently enough at the point of upload (now surfaced in the upload flow
+and in §3.2), and the override guidance did not say that override is expected rather than exceptional
+(now stated in §3.2). Recording closed findings is deliberate: a validation that never finds anything is
+not a validation.
+
+## 5. Change and communication
+
+User-visible changes are communicated per AIMS-PRO-007 §5.2: verdict-affecting changes at least 10
+business days ahead with their effective date and expected effect; new framework support on release;
+withdrawal or re-issue of a published result immediately on decision. **Documentation is published
+before or with the change, never after.**
+
+## 6. Review history
+
+| Version | Date | Reviewer | Outcome |
+|---|---|---|---|
+| 2.0 | 2025-10-08 | AI System Accountable Owner | Established the criteria set and the per-category information matrix |
+| 3.0 | 2026-01-16 | AI System Accountable Owner + Responsible AI Lead | Added the override *when* guidance and the rationale-interpretation guide after analyst feedback |
+| 3.1 | 2026-03-06 | AI System Accountable Owner, approved by AIGB | Added §4.2 validation method and record with the two closed findings; added C-10 recorded-withholding criterion |

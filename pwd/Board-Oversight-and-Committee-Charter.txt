@@ -1,0 +1,156 @@
+# Board Oversight and Committee Charter
+
+**Document ID:** GOV-CHT-002
+**Version:** 3.1
+**Owner:** Chair of the Board of Directors
+**Adopted by:** Board resolution 2026-02-19
+**Next scheduled review:** 2026-12-31 (Annually; skills evaluation each February)
+**Applies to:** The Board of Directors of the entity operating the compliance-evaluation service in
+AWS account 471885797689, us-west-2, and its standing subcommittees.
+
+---
+
+## 1. The board identifies and accepts its oversight responsibilities
+
+The Board has **identified and formally accepted** its oversight responsibilities in relation to the
+requirements and expectations established for the entity — the trust services criteria for security,
+availability, processing integrity, confidentiality and privacy; the AI management obligations under
+AIMS-POL-001; and applicable legal, regulatory and contractual commitments. Acceptance is recorded as
+a Board resolution, not inferred from practice.
+
+| Accepted oversight responsibility | Established requirement it relates to | How the Board discharges it | Cadence |
+|---|---|---|---|
+| Oversee the design and operating effectiveness of internal control | All trust services criteria; CC4 monitoring | Reviews the internal control report, control failures and remediation status | Quarterly |
+| Oversee security of the system and data | Security criteria (CC6) | Reviews the security posture report, incidents, penetration test and vulnerability metrics | Quarterly |
+| Oversee availability and resilience commitments | Availability criteria (A1) | Reviews SLA attainment, capacity headroom, backup and recovery-test results | Quarterly |
+| Oversee processing integrity of assessment outputs | Processing integrity criteria (PI1) | Reviews output-accuracy metrics and the verdict-integrity sampling results | Quarterly |
+| Oversee confidentiality of customer information | Confidentiality criteria (C1) | Reviews confidential-data inventory, disclosure register and disposal attestations | Semi-annually |
+| Oversee privacy commitments and legal privacy obligations | Privacy criteria (P1-P8); applicable privacy law | Reviews the privacy program report, data-subject request metrics, DPIAs and privacy incidents | Quarterly |
+| Oversee the AI management system and responsible-AI obligations | ISO/IEC 42001; AIMS-POL-001 | Receives the AI Governance Board report; approves the AI risk appetite | Quarterly |
+| Oversee the integrity and ethical values of the entity | GOV-STD-001 | Standing ethics agenda item; receives every conduct case involving management | Quarterly |
+| Oversee external audit and the assertion | SOC 2 examination | Appoints the service auditor; approves management's assertion and the system description | Annually |
+| Oversee risk assessment, including fraud risk | CC3 | Approves the risk assessment and the fraud-risk assessment | Annually, and on material change |
+| Oversee third-party and outsourced service provider risk | CC9 | Reviews the supplier risk register and concentration exposure | Semi-annually |
+
+The Board minutes for 2026-02-19 record the resolution: *"The Board identifies and accepts the
+oversight responsibilities set out in the Charter §1, acknowledges that these relate to the entity's
+established trust services and privacy requirements, and directs that it be provided the information
+necessary to discharge them."*
+
+**Information rights.** The Board resolved that it receives management reporting on a defined
+schedule, has unrestricted access to any record, may engage independent advisors at the entity's
+expense without management approval, and holds an in-camera session without management present at
+every meeting. Acceptance of responsibility without these rights would be nominal.
+
+## 2. Independence from management
+
+The Board has **sufficient members who are independent from management and objective in evaluations
+and decision making**.
+
+| Member | Role | Independent of management? | Basis |
+|---|---|---|---|
+| M-1 | Chair of the Board | **Yes** | Not an employee or officer; no consulting or commercial relationship; no family relationship with management; independent of the founding shareholders |
+| M-2 | Audit Committee Chair | **Yes** | Non-executive; no other relationship with the entity; financially literate |
+| M-3 | Security & Privacy Committee Chair | **Yes** | Non-executive; retained solely as a director |
+| M-4 | Non-executive director | **Yes** | Investor-nominated but not an employee; recuses on matters affecting the nominating shareholder |
+| M-5 | Chief Executive Officer | No — management | Executive director |
+
+**Four of five directors are independent of management.** The Chair is independent and is not the CEO,
+so the person leading the Board is not the person the Board evaluates.
+
+Objectivity is maintained by defined mechanisms rather than by assertion:
+
+- **Independent majority and independent chairs.** All three standing committees are chaired by
+  independent directors, and management holds no committee seat.
+- **In-camera sessions.** Every quarterly meeting includes a session with no member of management
+  present. Held 4 of 4 quarters in the current period.
+- **Recusal.** A director recuses from any matter in which they have an interest. Recorded in the
+  minutes; three recusals in the current period, including M-4 on a matter concerning the nominating
+  shareholder's portfolio company.
+- **Annual independence determination.** Each director submits an independence and interests
+  declaration; the Board determines independence in February and records the determination.
+- **Direct access channel.** The Audit Committee Chair receives conduct reports directly, bypassing
+  management (GOV-STD-001 §5, channel D-4).
+- **Annual Board effectiveness review**, including whether management dominated the agenda. The 2026
+  review found that management-prepared material crowded out independent discussion in two of four
+  meetings, and the Board responded by reserving the first 30 minutes of each meeting for the
+  independent directors.
+
+## 3. Skills and expertise — defined, maintained, and periodically evaluated
+
+The Board **defines, maintains, and periodically evaluates the skills and expertise needed among its
+members** to enable it to ask probing questions of senior management and take commensurate action. The
+instrument is a skills matrix, evaluated every February.
+
+| Required skill | Why the Board needs it | Held by | Depth |
+|---|---|---|---|
+| Financial reporting and audit | Approve the assertion; oversee the examination | M-2, M-4 | Strong (M-2 is a former audit partner) |
+| Information security | Probe the security posture report | M-3 | Strong (former CISO) |
+| Privacy and data protection law | Probe privacy commitments and legal obligations | M-3, M-2 | Moderate — **supplemented**, see §4 |
+| AI/ML governance and assurance | Probe model risk and assessment quality | M-1, M-5 | Moderate — **supplemented**, see §4 |
+| Cloud infrastructure and availability engineering | Probe resilience and capacity claims | M-3 | Moderate |
+| Regulated-industry compliance operations | Understand customer obligations | M-1, M-4 | Strong |
+| Enterprise risk management | Approve the risk appetite | M-1, M-4 | Strong |
+
+**Evaluation, and the action taken.** The February 2026 evaluation was performed against this matrix
+by the Chair with input from each director and produced two identified gaps: privacy law depth
+(assessed Moderate against a Strong requirement, given the expansion of the P-series commitments) and
+AI assurance depth. The Board did not record the gaps and move on — it took **commensurate action**:
+engaged the two consultants in §4, added privacy-law depth as a required attribute for the next
+director appointment, and commissioned director education (four sessions delivered: privacy law,
+threat detection, model evaluation methods, and the SOC 2 examination process).
+
+The evaluation also asks a behavioral question, since expertise on paper is not the criterion: *did
+each director in fact ask probing questions this year?* The 2026 review recorded that two directors
+had asked few substantive questions in the security and privacy sessions, which is what prompted the
+director education program.
+
+## 4. Supplementing board expertise through subcommittees and consultants
+
+The Board **supplements its expertise relevant to security, availability, processing integrity,
+confidentiality and privacy through the use of subcommittees and consultants**, where its own members'
+depth is insufficient.
+
+**Standing subcommittees**
+
+| Subcommittee | Chair (independent) | Members | Trust services scope | Cadence |
+|---|---|---|---|---|
+| **Audit Committee** | M-2 | M-2, M-4 | Internal control over all five categories; external audit; conduct cases; the assertion | Quarterly, plus ad hoc |
+| **Security & Privacy Committee** | M-3 | M-3, M-1, + external advisors (non-voting) | **Security, availability, processing integrity, confidentiality, privacy** | Quarterly |
+| **AI Governance Oversight Committee** | M-1 | M-1, M-3, + the Chief AI Officer reporting in | AI-specific risk, model performance, responsible AI | Quarterly |
+
+The Security & Privacy Committee exists specifically because the full Board lacks the depth to probe
+these five areas unaided. Its charter gives it authority to commission independent testing, to demand
+remediation with a deadline, and to escalate directly to the Board.
+
+**Consultants engaged to supplement expertise**
+
+| Consultant | Expertise supplied | Reports to | Engagement | Output in the current period |
+|---|---|---|---|---|
+| External privacy counsel | Privacy law and contractual privacy obligations (the identified gap) | Security & Privacy Committee | Retainer since 2025-10-01 | Legal-obligations register refresh; opinion on cross-border transfer; review of the privacy notice |
+| Independent AI assurance advisor | Model evaluation, assessment-quality methodology (the identified gap) | AI Governance Oversight Committee | Retainer since 2025-11-15 | Independent review of the evaluation methodology; 3 recommendations, all accepted |
+| Independent penetration testing firm | Adversarial security testing | Security & Privacy Committee | Annual + on major change | 2026 test report: 1 high, 4 medium, all remediated and retested |
+| Service auditor | SOC 2 examination | Audit Committee | Annual | Examination in progress |
+| Independent internal audit provider | Control testing independent of management | Audit Committee | Semi-annual | 2 reports; findings tracked in the CAP register |
+
+Consultants report to the relevant committee, not to management, which is what makes the supplement
+independent. The Security & Privacy Committee's 2026-Q1 minute records it rejecting management's
+proposed risk rating for a finding after the penetration testers disagreed with it — the practical
+demonstration that the supplement functions.
+
+## 5. Meetings and records
+
+Four scheduled quarterly meetings plus meetings on demand; the Audit Committee met 5 times and the
+Security & Privacy Committee 4 times in the current period. Attendance in the current period was 100%
+for the Audit Committee and 95% across all meetings. Minutes record attendance, materials received,
+questions raised, decisions, recusals, in-camera sessions and actions with owners and dates. Open
+Board actions are tracked to closure and re-reported at the next meeting; 11 of 12 actions in the
+current period closed on time, and the overdue one (a policy refresh) was re-committed with a date.
+
+## 6. Charter review history
+
+| Version | Date | Change |
+|---|---|---|
+| 2.0 | 2024-10-15 | Established the Board charter, Audit Committee and information rights |
+| 3.0 | 2025-09-11 | Added the Security & Privacy Committee covering all five trust services categories; added the annual skills evaluation |
+| 3.1 | 2026-02-19 | Recorded the formal acceptance resolution in §1; added the two consultant retainers closing the privacy-law and AI-assurance gaps found by the February skills evaluation; added the behavioral "probing questions" test to the effectiveness review |

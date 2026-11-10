@@ -1,0 +1,165 @@
+# AI System Impact Assessment Process
+
+**Document ID:** AIMS-PRO-005
+**Version:** 3.2
+**Owner:** Responsible AI Lead
+**Approved by:** AI Governance Board (AIGB)
+**Approval date:** 2026-02-18
+**Next scheduled review:** 2026-12-31
+**Scope:** All AI systems developed, deployed, provided or used by the organization, across the entire
+AI system life cycle — including the compliance-evaluation AI system in AWS account 471885797689.
+
+---
+
+## 1. Purpose: a process to assess consequences for individuals, groups and societies
+
+The organization **establishes and maintains this process to assess the potential consequences for
+individuals, for groups of individuals, and for societies that can result from an AI system throughout
+its life cycle** — not only at launch. The process is mandatory: no AI system passes its design gate,
+first release, or any material change without a current impact assessment (AIMS-POL-006 §2.4).
+
+The assessment is distinct from, but linked to, AI risk assessment: risk assessment asks what could go
+wrong for *the organization*; impact assessment asks what could happen *to people and to society*. Both
+run, and findings cross-feed — an impact finding is registered as a risk and treated in the AI Risk
+Register.
+
+## 2. Circumstances in which an impact assessment is performed
+
+An impact assessment is required in the following circumstances, and the trigger criteria are
+themselves the factors that make impact likely.
+
+### 2.1 Life-cycle trigger points
+
+| Trigger | Type |
+|---|---|
+| Inception, before design is committed | Initial |
+| Before first release | Full |
+| Before any **significant change** to the factors in §2.2 | Re-assessment |
+| Annually, regardless of change | Periodic review |
+| After a Severity 1 incident, a substantiated concern raised under AIMS-PRO-004, or an external finding | Event-driven |
+| Before a new deployment context (new customer segment, new jurisdiction, new intended use) | Re-assessment |
+| Before decommissioning, where withdrawal itself affects users | Targeted |
+
+### 2.2 Factors determining whether, and how deeply, an assessment is performed
+
+The depth of assessment is proportionate to these factors, each of which is scored and recorded:
+
+| Factor | What is considered | Effect on this system |
+|---|---|---|
+| **Criticality of the intended purpose and context of use** | Whether output influences decisions affecting rights, access, safety, employment, credit or legal standing; whether use is in a regulated context; how reversible a wrong output is | **Medium-high.** Output drives compliance decisions and remediation spend for organizations, and may be relied on in audit. It does not decide anything about an individual, which bounds criticality |
+| **Complexity and degree of automation of the AI system** | Number of interacting models and tools, agentic autonomy, whether a human is in the loop before consequence, explainability of the mechanism | **Medium-high.** A five-node graph with tool use and autonomous scanning is complex; automation is bounded because verdicts are advisory and a qualified human reviews and can override before reliance |
+| **Sensitivity of data types and sources processed** | Personal data, special-category data, children's data, confidential business data, customer-supplied versus organization-owned, provenance quality | **Medium.** Primarily confidential business and configuration data. Personal data may appear incidentally in customer documents (names, approvers) — a real sensitivity, handled by minimization and access control |
+| Scale and reach | Number of affected organizations and individuals, geographic spread | Medium and growing |
+| Vulnerability of those affected | Presence of groups with specific protection needs | Low direct — affected parties are organizations; workers are considered in §A.5.4 analysis |
+| **Significant change to any of the above** | A change to purpose, autonomy, oversight point, data category, model family, or scale | Any such change is itself a trigger under §2.1 |
+
+A system scoring high on criticality **or** on automation-without-oversight is classified
+**high-impact**, which additionally requires AIGB approval of the assessment and of release.
+
+## 3. Elements of the impact assessment
+
+Every assessment follows these defined elements in order, and each produces a recorded output.
+
+| # | Element | What is done | Recorded output |
+|---|---|---|---|
+| 1 | **Identification** | Identify potentially impacted individuals, groups and societies (§4), the intended purpose, reasonably foreseeable misuse, and the impact areas in scope | Impacted-party map; misuse list |
+| 2 | **Analysis** | For each impacted party and impact area, analyse plausible positive and negative impacts, the causal mechanism, predictable failure modes, likelihood and severity, and who bears the consequence | Impact analysis table with likelihood × severity |
+| 3 | **Evaluation** | Compare analysed impacts against the organization's AI policy principles, AI objectives, trustworthiness expectations, legal obligations and defined acceptance thresholds; decide acceptable / acceptable-with-treatment / unacceptable | Evaluated impact register with a stated decision per impact |
+| 4 | **Treatment** | Determine and assign treatment for anything not acceptable as-is: design change, technical control, human oversight, documented limitation, scope reduction, disclosure, or do-not-proceed. Each treatment has an owner and a date | Treatment plan; residual impact after treatment |
+| 5 | **Documentation** | Record the assessment per AIMS-REC-005 (results, method, participants, date, version of the system assessed, residual impacts, decision) | Impact assessment record, retained per §6 |
+| 6 | **Reporting** | Report results to the accountable roles and to the AIGB; high-impact systems require AIGB decision | AIGB minutes; release-gate record |
+| 7 | **Communication** | Communicate relevant results to users and other interested parties — intended purpose, limitations, human oversight point, and known residual impacts — in customer-facing documentation | Published limitations and disclosures (AIMS-DOC-012 §2) |
+| 8 | **Monitoring and review** | Monitor the treated impacts in operation; re-open on trigger (§2.1) | Monitoring signals in AIMS-PRO-007 §2; review record |
+
+An unacceptable impact that cannot be treated is grounds to **not proceed**; that decision rests with
+the AIGB and is recorded.
+
+## 4. Identifying potentially impacted individuals, groups and societies
+
+Identification is driven from the system's **intended purpose, actual use and characteristics**, not
+from a generic checklist. The method: trace every output and every data flow to the parties it reaches,
+then ask who is affected without having chosen to be.
+
+| Category | Identified parties for this system | Basis of identification |
+|---|---|---|
+| **Individuals — direct users** | Compliance analysts, auditors and operators who read, rely on and override verdicts | They act on the output; they carry the oversight duty |
+| **Individuals — data subjects** | People named incidentally in customer evidence (policy owners, approvers, reviewers) and in event logs (operators) | Their personal data is processed even though they are not users |
+| **Individuals — indirectly affected** | Employees of assessed organizations whose work is redirected by a finding | A false gap creates work; a missed gap leaves them exposed |
+| **Groups** | Compliance and audit professionals as an occupational group (task displacement and de-skilling); teams in assessed organizations; **workers** whose processes are audited | Considered explicitly under A.5.4 |
+| **Groups with specific protection needs** | Assessed and recorded: children, impaired persons, elderly persons — **no direct exposure**, since the system assesses organizations and is not consumer-facing; **workers** — in scope and analysed; **persons with disabilities** — in scope through accessibility of the output | Recorded as considered, with the basis stated, rather than left unexamined |
+| **Societies** | The assurance and audit ecosystem; regulators and the public who rely on AI governance being real; the environment (computational cost); the wider market for compliance labour | Considered explicitly under A.5.5 |
+| **Organizations (context, not "individuals")** | Assessed organizations; their customers | Carried for completeness of the causal chain |
+
+Where the organization's own knowledge is insufficient, **experts are consulted** (§5.3).
+
+## 5. Who performs the assessment, and how results are used
+
+### 5.1 Who performs it
+
+| Role | Part in the assessment |
+|---|---|
+| **Responsible AI Lead** | **Owns and facilitates** the assessment; signs the record; cannot be the same person as the system's development lead |
+| AI System Accountable Owner | Provides purpose, context and use; accountable for acting on the outcome |
+| AI Development Lead | Provides architecture, data, automation and failure-mode input |
+| Data Steward | Provides data categories, provenance, sensitivity and lawful-basis input |
+| AI Security Lead | Provides threat and misuse input |
+| Legal and Privacy | Assess legal, data-protection and human-rights aspects |
+| Compliance analysts (users) | Consulted as the affected user group and the oversight point |
+| **AIGB** | Reviews and, for high-impact systems, **approves**; may require treatment or refuse the system |
+| External experts | Engaged per §5.3 |
+
+Segregation is deliberate: the assessment is **not** performed solely by the team that wants to ship
+the system.
+
+### 5.2 How results inform design, use, review and approval
+
+| Use of results | Mechanism | Example from this system |
+|---|---|---|
+| **Design** | Findings become design requirements before design is committed; the design gate checks them | The distinct read-failure state exists because an assessment found that reporting unreadable evidence as customer non-compliance mis-attributes fault |
+| **Use** | Findings set the documented intended purpose, the out-of-purpose list, and the mandatory human oversight point | The prohibition on using verdicts to evaluate individual employees, and the "not a certification" disclosure |
+| **Review** | Impact criteria (IC-1 … IC-12) become release criteria evaluated at every release and quarterly | AIMS-PLAN-010 §4 and §6 |
+| **Approval** | Release authorization requires impact sign-off; the AIGB may refuse or impose conditions | RC-8 blocks release without Responsible AI Lead sign-off |
+| **Communication** | Residual impacts and limitations are published to users | AIMS-DOC-012 §2 limitations |
+| **Change control** | A material change re-triggers the assessment before deployment | AIMS-POL-006 §4 |
+
+### 5.3 Consulting experts, researchers and users
+
+Where a fuller understanding is needed, the organization **consults**: internal subject-matter experts
+(Legal, Privacy, Security, Accessibility); the compliance analysts and auditors who use the system;
+customers, through quarterly advisory sessions and structured feedback on verdict quality; external
+responsible-AI researchers, engaged for the fairness and evasion review; and an accessibility
+specialist for output presentation. Consultation, its date, its participants and its effect on the
+assessment are recorded in the impact assessment record. Consultation is mandatory where the system is
+classified high-impact, where a group with specific protection needs is in scope, or where the
+organization has no internal competence in an identified impact area.
+
+## 6. Aspects of the AI system the assessment must take into account
+
+Every assessment covers, at minimum, these aspects of the system itself — impact cannot be judged from
+the intended purpose alone:
+
+| Aspect | What is examined |
+|---|---|
+| **Data used for development** | Categories, provenance, lawfulness, licensing, de-identification, labelling quality, representativeness and known biases of the evaluation corpus; whether customer data is used (it is not, for training); data-quality assumptions and their failure modes (AIMS-REG-006 §3) |
+| **AI technologies used** | That pre-trained foundation LLMs are used by inference only, with no training or fine-tuning; the implications of that choice — no customer data in weights, but dependence on a supplier's model and its opacity, and susceptibility to prompt injection |
+| **Functionality of the overall system** | The end-to-end graph, not the model in isolation: scope resolution, autonomous read-only scanning of a customer environment, document analysis, model-authored judgement, deterministic scoring, published verdicts and remediation tasks, and the human oversight point — because impact arises from the *system's* behaviour, including its non-model parts |
+| Degree of autonomy and human oversight | Where a human can and must intervene, and what happens if they do not |
+| Deployment and operating context | Cloud-only, machine-invoked, multi-tenant, cross-account read access |
+| Interfaces and output presentation | How a verdict is presented, and whether presentation could mislead |
+| Life-cycle stage under assessment | Which stage triggered this assessment and what is still undecided |
+
+## 7. Retention, documentation and review of assessments
+
+Assessment results are documented and retained per **AIMS-REC-005** and the retention schedule in
+AIMS-STD-013 §4.2 (impact assessment records: 7 years, and for the life of the system plus 3 years,
+whichever is longer). Records are updated — not replaced — as the elements in §3 are revisited, so the
+history of what was known and decided at each point remains reconstructable.
+
+## 8. Review history
+
+| Version | Date | Reviewer | Outcome |
+|---|---|---|---|
+| 2.0 | 2025-05-14 | Responsible AI Lead | Established the eight assessment elements |
+| 3.0 | 2025-11-26 | Responsible AI Lead + AIGB | Added the proportionality factors in §2.2 and the high-impact classification |
+| 3.1 | 2026-01-22 | Responsible AI Lead | Added mandatory expert consultation conditions (§5.3) |
+| 3.2 | 2026-02-18 | Responsible AI Lead, approved by AIGB | Added §6 (aspects of the system to be taken into account) and separated impact assessment from risk assessment explicitly |

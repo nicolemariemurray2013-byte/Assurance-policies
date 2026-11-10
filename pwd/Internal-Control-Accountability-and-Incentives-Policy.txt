@@ -1,0 +1,261 @@
+# Internal Control Accountability, Incentives and Sanctions Policy
+
+**Document ID:** GOV-POL-005
+**Version:** 3.2
+**Owner:** Chief Executive Officer and the Head of People Operations
+**Approved by:** Board of Directors 2026-02-19; the Audit Committee owns the sanctions provisions
+**Next scheduled review:** 2026-12-31 (Annually — incentive relevance is reviewed every December, before the)
+compensation cycle
+**Applies to:** Directors, officers, employees, interns, contractors and vendor personnel supporting
+the compliance-evaluation service in AWS account 471885797689, us-west-2.
+
+---
+
+## 1. Mechanisms to communicate and hold individuals accountable, and to implement corrective action
+
+Management and the Board **have established mechanisms to communicate and hold individuals accountable
+for the performance of internal control responsibilities across the entity, and implement corrective
+action as necessary.** Accountability starts from a named owner: every control in the control set has
+exactly one accountable individual, recorded in the control register, and that assignment is what the
+mechanisms below act on.
+
+| Mechanism | What it holds people accountable for | Applies to | Cadence | Corrective action it can trigger |
+|---|---|---|---|---|
+| Control register with a single named owner per control | Operating the control as designed | All control owners | Reviewed quarterly | Reassignment; escalation to the owner's manager |
+| Internal control responsibilities written into the role profile, offer letter and performance review | The individual's specific control duties | All employees, contractors | Annual review; semi-annual rating | Rating impact; development plan |
+| **Quarterly control-owner attestation** — each owner attests the control operated as designed and reports any failure or exception | Honest self-reporting of control performance | 24 control owners | Quarterly | A false attestation is a Serious conduct matter under GOV-STD-001 |
+| Independent testing by the internal audit provider | Whether the control actually operated, irrespective of the attestation | All controls on a rotating plan | Semi-annual | Corrective action plan with an owner and a date |
+| Corrective action plan (CAP) register | Closing identified control deficiencies | Deficiency owners | Reviewed monthly by management, quarterly by the Audit Committee | Escalation on overdue; individual accountability for repeated slippage |
+| Management review of control performance | Aggregate effectiveness | Management team | Monthly | Resource reallocation; design change |
+| Board / Audit Committee review | Management's own accountability | CEO and officers | Quarterly | Direct instruction to management; compensation consequence; §7 action |
+| Conduct and ethics program | Adherence to the standards of conduct | All covered persons | Continuous | The GOV-STD-001 §6 sanctions framework |
+| Vendor and provider accountability through contract | Control responsibilities allocated to third parties | Outsourced providers, vendor personnel | Per CC9 review cycle | Corrective action; scope restriction; removal; termination |
+
+**Communication of the responsibilities** — accountability requires that people know what they are
+accountable for. Control responsibilities are communicated on appointment (the control register entry
+is acknowledged by the owner in writing), at onboarding, in the annual policy acknowledgement, in the
+quarterly attestation cycle itself (which restates the control's design), and at the quarterly
+all-hands where control performance is reported to the whole entity.
+
+**Corrective action, in the current period** — the mechanisms produced consequences rather than
+reports:
+
+| Trigger | Corrective action implemented |
+|---|---|
+| Access review not completed by the due date in 2025-Q4 | Control reassigned to a second owner with the original owner retained as backup; a calendar-driven ticket now opens automatically; the miss was recorded in the owner's performance review |
+| Internal audit found evidence retention was not being verified | CAP opened; verification step added and tested; closed and re-tested in the following cycle |
+| Control-owner attestation reported an exception in change approval (two emergency changes lacked post-hoc review) | Both reviewed retrospectively; the pipeline now blocks the next deploy until a prior emergency change has a completed review |
+| Repeated slippage on a CAP by the same owner | Escalated to the owner's manager; workload reallocated after the root cause proved to be capacity, not diligence — the corrective action addressed the cause, not the person |
+| Vendor personnel control failure (GOV-STD-001 case D-2026-004) | Individual removed; supplier CAP; scope restriction retained |
+
+## 2. Performance measures, incentives and rewards appropriate for responsibilities at all levels
+
+Management and the Board **have established performance measures, incentives and other rewards
+appropriate for responsibilities at all levels of the entity, reflecting appropriate dimensions of
+performance and expected standards of conduct, and considering the achievement of both short-term and
+longer-term objectives.**
+
+| Level | Performance measures | Dimensions reflected | Short vs longer term | Incentive / reward form |
+|---|---|---|---|---|
+| **Board / committee members** | Meeting attendance and preparation; completion of the skills evaluation and director education; discharge of the oversight responsibilities in GOV-CHT-002 §1 | Oversight quality; independence; conduct | Longer term — no short-term financial measure by design | Fixed fees only. **No variable pay, no share options tied to short-term results**, so oversight is not exposed to the outcome being overseen |
+| **CEO and officers** | Balanced scorecard: customer and revenue outcomes; **security and availability commitments met**; **processing-integrity metrics**; privacy and compliance outcomes; conduct; people outcomes | Financial, operational, control, conduct, people | Short-term annual bonus **plus** multi-year equity vesting | Annual variable pay with a control-and-conduct gate (§3); equity vesting over 4 years |
+| **People managers** | Team delivery; team control-ownership performance; conduct evaluation of the team; competence development of the team | Delivery, control, conduct, people | Annual variable pay; promotion (longer term) | Variable pay; promotion; recognition |
+| **Control owners** | Control operated as designed; attestation timeliness and accuracy; independent test results; CAP closure on time | Control performance and honesty | Annual | Explicit line in the performance review; recognition award; eligibility gate for promotion |
+| **Engineers and analysts** | Delivery quality; change-failure rate; security and quality gate adherence; on-call performance; contribution to reliability and technical health | Delivery, quality, control | Annual variable pay; multi-year equity | Variable pay; equity; promotion; spot recognition |
+| **Contractors** | Statement-of-work deliverables; adherence to the entity's standards and conduct | Delivery, conduct | Contract term | Renewal decision; rate review |
+| **Outsourced providers** | Contractual SLAs; control obligations; incident notification timeliness | Service and control | Contract term | Renewal; scope expansion or restriction |
+
+**Rewards that specifically recognize internal control behavior**, because measures without a matching
+reward do not change behavior: a quarterly recognition award for the strongest control or reliability
+contribution (4 awarded in the current period, one to an engineer who self-reported a control failure
+that nobody had detected); a formal "raise-it" recognition for surfacing a control weakness or a
+conduct concern; and a resilience-engineering award tied to the game-day program.
+
+## 3. Incentives and rewards aligned with the fulfillment of internal control responsibilities
+
+Management and the Board **align incentives and rewards with the fulfillment of internal control
+responsibilities in the achievement of objectives.** Alignment is structural — gates and weightings —
+rather than an expectation that people will balance the two themselves.
+
+**Structural alignment mechanisms**
+
+1. **Control-and-conduct gate on all variable pay.** No individual receives variable compensation if
+   they hold a Does Not Meet conduct rating, an unremediated control failure attributable to their own
+   omission, or overdue mandatory training. The gate is binary and applied before any performance
+   calculation. Applied in the current period to 2 individuals (case D-2026-003, a member of
+   management, forfeited variable pay in full; one engineer forfeited 25% for an unremediated control
+   failure).
+2. **Control measures carry explicit weight in the officer scorecard** — 30% of the CEO and officer
+   scorecard is security, availability, processing integrity, privacy and compliance outcomes. The
+   weighting is set by the Board, not by management.
+3. **No incentive is tied to a compliance verdict, score or finding count.** This is the alignment
+   decision that matters most for this entity: paying anyone on the outcome of an assessment would
+   create a direct incentive to bias the product. Sales compensation is tied to bookings and
+   retention, explicitly **not** to assessment outcomes, and the sales plan is reviewed by the General
+   Counsel each year to confirm it.
+4. **No incentive is tied to a low count of reported incidents, vulnerabilities or ethics reports.**
+   Suppressing reports would be the cheapest way to hit such a target. Metrics used are
+   time-to-detect, time-to-remediate and closure rate — measures that improve when reporting
+   increases.
+5. **Longer-term alignment through equity vesting** over four years, so decisions that trade
+   durable control quality for a short-term result reduce the decision-maker's own outcome.
+6. **Clawback.** Variable compensation is recoverable where a subsequent finding shows the result it
+   rewarded was misstated or was achieved through a control breach. Board-approved provision; not
+   invoked in the current period.
+7. **Provider incentives aligned the same way**: supplier contracts tie renewal to control obligations
+   and incident-notification timeliness, and no supplier is paid on assessment volume in a way that
+   would reward speed over accuracy.
+
+## 4. Evaluating incentives and rewards for ongoing relevance
+
+Management and the Board **evaluate incentives and rewards for ongoing relevance.** The evaluation is
+performed each December, before compensation decisions are made, by the CEO and Head of People with
+the Board approving any change to officer or Board arrangements. It asks three questions: do the
+measures still correspond to the entity's current objectives and commitments; is any measure now
+gameable or driving an unintended behavior; and is the reward still competitive enough to retain the
+competence the control environment depends on.
+
+| Evaluation date | Finding | Change made |
+|---|---|---|
+| 2024-12 | Officer scorecard was almost entirely financial and operational; control outcomes were mentioned but unweighted | Introduced the explicit 30% control weighting |
+| 2025-12 | The support incentive included a "tickets closed" measure, which was **driving premature closure** of customer issues, including two that concerned assessment accuracy | Measure removed and replaced with resolution quality and reopen rate |
+| 2025-12 | A proposed sales accelerator would have paid on customers achieving a compliance milestone — a direct incentive to bias verdicts | **Rejected before implementation** by the General Counsel and the Board |
+| 2025-12 | Vulnerability metric was expressed as open-finding count, which discouraged reporting | Replaced with time-to-remediate by severity and SLA attainment |
+| 2026-02 | Security engineering compensation was below market, creating retention risk in a role the control environment depends on (linked to the competence finding in HR-POL-004 §4) | Off-cycle adjustment for two roles; benchmark cadence moved to semi-annual for control-critical roles |
+| 2026-02 | Board fees confirmed as fixed-only; a proposal to grant options to the independent directors was declined to preserve objectivity | No change — decision recorded |
+
+The 2025-12 cycle produced two rejections and two removals. An evaluation that never changes anything
+would not be evidence that the incentives are relevant, only that nobody looked.
+
+## 5. Evaluating and adjusting excessive pressures
+
+Management and the Board **evaluate and adjust the pressures associated with the achievement of
+objectives as they assign responsibilities, develop performance measures and evaluate performance.**
+Excessive pressure is treated as a cause of control failure and of fraud risk, and it is measured
+rather than sensed.
+
+| How pressure is evaluated | Indicators used | Cadence |
+|---|---|---|
+| Pressure assessment at the point of assigning responsibilities | Is the scope achievable with the resource and time available? Is the deadline externally fixed? Does one person hold too many control duties? | At every assignment and reorganization |
+| Pressure review during the performance cycle | Were targets set at a level that required shortcuts? Did anyone raise a concern about a target? | Semi-annual |
+| Operational pressure indicators | On-call page volume and out-of-hours pages; change-failure rate; overtime; unplanned-work ratio; PTO taken | Monthly |
+| Workforce sentiment | Anonymous survey with specific items on pressure to cut corners and on speaking up | Semi-annual |
+| Ethics channel signal | Any report citing pressure, deadlines or a request to bypass a control | Continuous |
+| Fraud-risk linkage | Pressure is an explicit input to the fraud risk assessment (CC3) | Annual |
+
+**Adjustments actually made in the current period** — the response is to change the pressure, not to
+counsel the person feeling it:
+
+| Pressure identified | Adjustment |
+|---|---|
+| A customer-committed launch date was driving pressure to skip the pre-launch security review | **The date was moved.** Management informed the customer rather than compress the review. Recorded in the Board minutes as a tone-at-the-top demonstration |
+| One engineer held 7 control ownerships plus on-call | Redistributed to 4; a second owner added for two controls |
+| Out-of-hours page volume concentrated on two engineers | Roster expanded to 12 certified on-call engineers; noisy alerts fixed rather than tolerated |
+| Quarter-end commercial pressure coincided with the release freeze, creating pressure to use the emergency change path | Release calendar decoupled from quarter-end; emergency path now blocks the next deploy until reviewed (§1) |
+| Survey showed 18% did not feel able to raise a concern about a deadline | Managers briefed; the "raise-it" recognition introduced; item re-measured at 6% in the following survey |
+| Compliance function under pressure during the examination window | Temporary analyst engaged; the internal audit provider's scope extended |
+
+Two of these adjustments cost the entity something — a moved launch date and additional headcount.
+Pressure management that is free is usually not real.
+
+## 6. Evaluating performance of internal control responsibilities, adherence to conduct standards and competence
+
+Management and the Board **evaluate the performance of internal control responsibilities, including
+adherence to the standards of conduct and expected levels of competence.** The three dimensions are
+evaluated **separately and are not averaged together**, so that strong delivery cannot conceal a
+control or conduct failure.
+
+| Dimension | Evaluated by | Instrument | Cadence | Result form |
+|---|---|---|---|---|
+| **Internal control responsibilities** | Manager, informed by the control register, the quarterly attestations, independent test results and CAP closure | Control-performance section of the review | Semi-annual | Meets / Does Not Meet, with the specific control cited |
+| **Adherence to standards of conduct** | Manager, calibrated by skip-level; the Conduct Panel where a case exists | Conduct rating (GOV-STD-001 §4) | Semi-annual | Meets / Does Not Meet |
+| **Expected levels of competence** | Manager, against the role profile | Competency assessment (HR-POL-004 §4) | Semi-annual | Rating per competency |
+| All three for **officers** | Board / Audit Committee | Officer evaluation against the scorecard, including the control and conduct components | Annual, plus quarterly control review | Board-recorded evaluation |
+| All three for **the CEO** | Board, in camera | CEO evaluation | Annual | Board minute |
+| All three for **directors** | Chair; Chair evaluated by the independent directors | Board effectiveness and skills review (GOV-CHT-002 §3) | Annual | Recorded evaluation with actions |
+| Equivalent for **contractors and vendor personnel** | Engagement owner | Quarterly continue/remediate/remove decision | Quarterly | Recorded decision |
+| Equivalent for **outsourced providers** | Third-Party Risk | Annual provider evaluation covering control obligations and conduct | Annual | Supplier record conclusion |
+
+Managers cannot mark their own team's control dimension without input: the control-performance section
+is pre-populated from the control register, the attestation record and the independent test results, so
+the evaluation is anchored to evidence rather than to impression. Officers and directors are evaluated
+too — an accountability process that stops below the management line is the one auditors find fails.
+
+## 7. Rewards and disciplinary action based on that evaluation
+
+Management and the Board **provide rewards or exercise disciplinary action based on the evaluation of
+performance of internal control responsibilities.** The link from evaluation to consequence is defined,
+so the outcome does not depend on the manager's discretion.
+
+| Evaluation outcome | Consequence — reward | Consequence — disciplinary | Decided by |
+|---|---|---|---|
+| Meets on all three dimensions, strong control performance | Full variable pay eligibility; promotion eligibility; recognition award; equity refresh | — | Manager, calibrated |
+| Exceptional control contribution (self-reported failure, prevented incident, materially improved a control) | Recognition award; cited in the promotion case; spot award | — | Manager + control-owner community |
+| Does Not Meet on **control responsibilities** | Ineligible for variable pay (the §3 gate); promotion blocked for the cycle | Documented improvement plan with a control-specific objective; control may be reassigned | Manager + HR |
+| Does Not Meet on **conduct** | Ineligible for variable pay; promotion blocked | GOV-STD-001 §6 sanctions framework, applied by the Conduct Panel | Conduct Panel |
+| Does Not Meet on **competence** | Promotion blocked | Development plan; role change or exit if unresolved (HR-POL-004 §5) | Manager + Head of People |
+| Deliberate control circumvention, falsified attestation, or falsified record | None | Termination; access revoked immediately; customer notification if results were affected | Audit Committee |
+| Officer or director failing the control or conduct dimension | None | Variable pay forfeiture; formal warning; removal from the role | Board / Audit Committee |
+| Contractor or vendor individual | Renewal; rate review | Removal from the engagement; supplier CAP; supplier termination | Engagement owner + Procurement |
+
+**Applied in the current period:** 4 recognition awards; 2 individuals gated out of variable pay in
+full or in part; 1 member of management forfeited variable pay and received a final written warning
+(D-2026-003); 1 probation failure ended an engagement; 2 elevated roles removed for lapsed screening;
+1 vendor individual removed; 5 promotions granted, each with the control dimension confirmed as Meets.
+Outcomes are analyzed semi-annually for consistency by role, seniority, tenure and employment type.
+
+## 8. Sanctions for privacy policy violations and privacy incidents caused by negligence
+
+The entity **has defined a sanctions process that is applied when an employee violates the entity's
+privacy policies, or when an employee's negligent behavior causes a privacy incident.** The process is
+part of the conduct framework but is set out explicitly here because privacy violations are handled on
+a defined scale regardless of whether harm resulted.
+
+**Scope.** Applies to employees, interns, contractors and vendor personnel. For contractors and vendor
+personnel the sanction is executed through the supplier contract (removal from the engagement, supplier
+corrective action, or termination of the relationship).
+
+**Triggering events.** Accessing personal data without a business need; using personal data for a
+purpose outside the notice or the contract; disclosing personal or confidential data without
+authorization; moving personal data outside approved systems or regions; failing to honor a
+data-subject request within the statutory deadline; retaining personal data past its retention period;
+bypassing a required DPIA; failing to report a suspected privacy incident promptly; and negligent
+behavior — misconfiguration, misdirected communication, lost device, weak handling — that causes or
+could have caused a privacy incident.
+
+**Process.** (1) The DPO is notified and is a mandatory participant. (2) The privacy incident process
+runs in parallel and takes precedence — containment, assessment and any statutory notification are
+never delayed by the disciplinary process. (3) The DPO and HR investigate jointly; the individual is
+heard. (4) The Conduct Panel determines the sanction, with the DPO advising on severity. (5) Cases
+involving a member of management, or any case requiring regulatory notification, go to the Audit
+Committee. (6) The outcome is recorded in the conduct register and reported to the Board.
+
+| Severity | Example | Sanction range |
+|---|---|---|
+| Minor | A single negligent act with no exposure — e.g. personal data pasted into an internal channel with restricted membership, self-reported immediately | Documented coaching; mandatory privacy re-training; access review |
+| Moderate | Repeated negligence, or a negligent act creating real exposure — e.g. a misdirected email containing personal data | Written warning; conduct rating Does Not Meet; variable pay impact; re-training; access restriction |
+| Serious | Accessing personal data without a business need; negligence causing a reportable privacy incident; failure to report a suspected incident | Final written warning to termination; access revoked; role change; notification to the affected customer where required |
+| Severe | Deliberate unauthorized disclosure; using personal data for personal benefit; concealing a privacy incident; obstructing a data-subject right | **Termination**; referral to authorities where legally required; contract termination for a supplier |
+
+**Aggravating factors:** concealment, repetition, seniority, obstruction of the investigation, and
+whether the individual had completed the relevant training. **Mitigating factors:** prompt
+self-reporting, cooperation, and whether a control the entity should have provided was absent — where
+the root cause is a missing control, the corrective action is applied to the control and the individual
+sanction is reduced accordingly. Sanctioning an individual for a systemic failure would suppress
+reporting and leave the actual cause in place.
+
+**Current period:** one privacy-related case (GOV-STD-001 case D-2026-004 — a vendor employee retained
+sample data containing personal data on a personal device). Assessed Serious; the individual was
+removed from the engagement; destruction was attested; the supplier completed corrective action; the
+DPO assessed notification obligations and concluded none were triggered; and the root-cause control gap
+(the sample-data handling standard did not technically prevent local copies) was closed with a CAP. No
+employee privacy sanctions were required.
+
+## 9. Review history
+
+| Version | Date | Change |
+|---|---|---|
+| 2.0 | 2024-12-10 | Established accountability mechanisms and the control-and-conduct gate on variable pay |
+| 3.0 | 2025-09-11 | Added the quarterly control-owner attestation; extended accountability to vendor personnel and providers |
+| 3.1 | 2025-12-18 | December incentive-relevance evaluation: removed the tickets-closed measure, replaced the open-finding-count metric, rejected the compliance-milestone accelerator |
+| 3.2 | 2026-02-19 | Added the explicit privacy sanctions scale (§8), the clawback provision, and the pressure adjustments from the 2026 review |

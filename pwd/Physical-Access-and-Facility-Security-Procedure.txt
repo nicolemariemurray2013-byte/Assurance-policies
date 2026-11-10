@@ -1,0 +1,430 @@
+# Physical Access and Facility Security Procedure
+
+**Document ID:** SEC-PRO-013
+**Version:** 3.2
+**Owner:** AI Security Lead (physical security), jointly with the Head of People (badge lifecycle) and the
+Director, IT Operations (device recovery)
+**Approved by:** CEO 2026-02-19; v3.2 approved by the CEO 2026-08-14; reviewed by the Audit Committee 2026-02-19 and 2026-08-14
+**Next scheduled review:** 2026-12-31 (Annually, and on any facility change, provider change or workforce-model change)
+**Scope:** All entity-controlled facilities across five geographies and two legal entities; all entity
+devices held by 48 personnel and 11 named vendor individuals; and — by reference — the physical security
+of the AWS regions and the colocation facility of the managed SIEM provider, which the entity does not
+control and therefore monitors rather than operates.
+
+---
+
+## 1. Facilities in scope, and the boundary of what the entity controls
+
+The entity operates no data centre of its own. The production service runs entirely in AWS account
+471885797689 in us-west-2, so **the physical protection of production information assets is inherited from
+AWS**, and the entity's own physical controls protect offices, endpoint devices and the small amount of
+physical media that exists.
+
+| Facility / asset location | Control model | Who operates the physical controls | How the entity obtains assurance |
+|---|---|---|---|
+| Headquarters office (primary geography) — 34 desks, one server closet holding network equipment only, no production data at rest | **Entity-operated** | Facilities lead within IT Operations, reporting to the AI Security Lead | Direct testing: badge audit, review log review, tailgating observation, quarterly access review |
+| Secondary office (EU subsidiary) — 9 desks, no server room | **Entity-operated**, landlord-provided building access with entity-controlled suite access | Facilities lead, with the EU subsidiary manager as on-site delegate | Direct testing on the same cadence; landlord's building access reviewed annually against the tenant list |
+| Three co-working locations (three further geographies, 5 personnel) | **Provider-operated** | Co-working operator | Provider assessment; **no entity information asset above Internal classification may be stored on site**; no entity-issued badge is created by the entity for these sites, and the operator's badge list is reconciled quarterly against the entity's personnel roster |
+| Remote/home working — 42 of 48 personnel work primarily remotely | **Individual accountability under a defined standard** | The individual, under the remote-working standard in §8 | Attestation, device posture enforcement, and the no-local-copy technical control |
+| **AWS us-west-2 — all production information assets** | **Provider-operated; not entity-controlled** | AWS | Reviewed annually via the provider's own audit reports and the shared-responsibility allocation; the entity records this as an inherited control and does **not** assert it as its own (GOV-PRO-007 §5, and the CUEC communication in the customer-facing description) |
+| Managed SIEM provider's facility (log copies) | **Provider-operated** | The provider | Annual provider assessment including physical controls; addressed in the requirements annex |
+| Physical media | **Eliminated by design** — no removable media is used for entity or customer data; USB mass storage is blocked by device policy | — | Device-policy compliance report; the absence of an approved media register is itself the evidence |
+
+**Protected information assets requiring physical protection, and where each sits:** production evidence
+and assessment results (AWS only — never on an endpoint, enforced by the no-local-copy control introduced
+after case D-2026-004); network equipment (HQ server closet); endpoint devices (with the individual, or in
+the HQ secure store when spare); signed contracts and statutory records (locked cabinet in HQ, and the EU
+subsidiary's statutory register in its own locked cabinet); HR and screening records (retained
+electronically only, access-controlled — no paper personnel file exists); and printed material, which is
+restricted to Internal classification or below by the print policy, with Confidential printing disabled at
+the device.
+
+## 2. Creating and modifying physical access — authorization required for every population
+
+**Physical access is created and modified for employees, contractors, vendors and business partner
+personnel based on appropriate authorization.** No badge is issued or modified without a named authorizer
+who is not the requester, and the authorization requirement differs by population because the risk does.
+
+| Population | Who must authorize | Prerequisites that gate issuance (all verified before the badge is encoded) | Zones granted by default |
+|---|---|---|---|
+| **Employee** | The hiring manager, and the Head of People confirms the employment record | Signed employment agreement; **screening completed and cleared** (HR-POL-004 §3); confidentiality undertaking signed; Code of Conduct acknowledged; start date reached — a badge is not encoded before the start date | General office areas of their assigned site |
+| **Employee needing the server closet** | AI Security Lead **and** Director, IT Operations — dual authorization | The above, plus a role in the network/infrastructure role profile and a recorded business need | General office + server closet |
+| **Contractor / individually named vendor personnel** (11 individuals) | The engagement owner **and** the Third-Party Risk Manager | Executed contract with the DPA and the requirements annex; **the provider's screening attestation naming that individual** — a hard gate, not a formality; confidentiality undertaking from the individual; a defined engagement end date recorded at issuance | Escorted-visitor status by default; unescorted access only on a separate, explicitly justified authorization, granted to 4 of 11 |
+| **Business partner personnel** (auditors, assessors, integration partners) | The relationship owner **and** the General Counsel | Executed NDA; purpose and date range recorded; identity verified at reception against the pre-registration | Escorted only, day-scoped |
+| **Visitors** (candidates, guests, service technicians) | The host employee, pre-registered at least one business day ahead where practicable | Photo identity checked at reception; sign-in recorded with host, purpose, time in and time out; visitor badge issued and **returned before departure** | Escorted only, reception and meeting rooms; **never the server closet without the dual authorization above** |
+| **Landlord and building service staff** | Building management under the lease; the entity authorizes suite entry | Suite entry only during scheduled hours with entity notification, or escorted for unscheduled work; **the server closet is excluded from all landlord access** and the closet lock is entity-keyed, not part of the building master suite | Suite common areas, scheduled only |
+| **Emergency services** | No prior authorization — access is never obstructed | The entry is recorded after the fact and reviewed | As required |
+
+**Modification** — any change to a zone, to unescorted status or to an expiry date follows the same
+authorization as initial issuance, at the level of the *new* access rather than the old: an employee moving
+into an infrastructure role needs the dual authorization for the server closet, and a contractor moving
+from escorted to unescorted needs the separate justification. Modifications are recorded in the badge
+system with the authorizer's identity, and the quarterly review (§4) tests modifications specifically,
+because an incremental modification is the most common way access accumulates beyond a role.
+
+**Enforcement rather than policy:** the badge system will not encode a badge without a completed
+authorization record and a linked identity record. Two issuances were **refused** this period — one where
+the provider's screening attestation for a named vendor individual had not been received (the individual
+started on escorted access nine days later, once it arrived) and one where a contractor's confidentiality
+undertaking was outstanding. Both refusals are recorded, because a control that has never refused anything
+has not been demonstrated to work.
+
+## 3. Removing physical access when it is no longer required
+
+**Physical access is removed when the individual no longer requires it.** Removal is triggered by an event,
+not by someone remembering, and the trigger is the same HR/vendor event stream that drives logical access
+removal — so the two cannot diverge.
+
+| Trigger | Removal deadline | How the trigger reaches the badge system | Current-period instances |
+|---|---|---|---|
+| Employee departure (resignation or termination) | **Badge deactivated on the last working day**; for involuntary termination, deactivated **before the notification meeting** | The offboarding checklist is initiated by the Head of People and includes badge deactivation as a mandatory item with a timestamp; the checklist cannot be closed with the item open | 3 departures (6% attrition), all deactivated on the last working day; 1 involuntary case deactivated before notification |
+| **Vendor or contractor engagement end** | **Within 1 business day**, and the badge carries a **hard expiry at the recorded engagement end date** so it fails closed if the trigger is missed | Expiry encoded at issuance; the engagement end date in the supplier record drives it | 3 vendor departures, all same-day; the hard expiry has never been the operative control, but 2 badges did reach expiry within the period and were re-authorized rather than silently extended |
+| Role change removing the need for a zone | Within 1 business day of the effective date | The role-change workflow includes a physical-access reassessment step | 2 zone reductions, incl. one server-closet removal on a move out of infrastructure |
+| **Screening lapse** (periodic re-screening not completed, or an adverse result) | Access suspended immediately on lapse, restored only on clearance | The screening record's status drives both logical and physical access | 2 individuals had **privileged logical access and server-closet access removed on a screening lapse**, restored after clearance — the same case recorded in HR-POL-004 §3 |
+| Extended leave over 30 days | Suspended, not deleted, for the duration | Leave record | 1 case |
+| Disciplinary suspension | Immediately, at the same time as logical access | Conduct case workflow | 1 case, coincident with the sanction issued to a member of management (2026-02-05) |
+| Visitor departure | Badge collected at sign-out on the same day | Reception process; unreturned visitor badges are reported | 2 visitor badges not returned (both left in meeting rooms and recovered the same day); both recorded as exceptions and the sign-out prompt was changed at reception |
+| Co-working location no longer used by any personnel | Operator asked to remove all entity personnel within 5 business days, and the removal confirmed in writing | Quarterly reconciliation against the roster | 1 location's list found to still contain a leaver **11 days after departure** — see below |
+
+**A removal failure this period, recorded rather than omitted:** the quarterly reconciliation of the
+co-working operators' access lists found one departed employee still listed at one location 11 days after
+their departure date. The entity's own badge system had been correct; the gap was that the operator's
+removal was requested by email and not confirmed. This is recorded as deficiency **D-2026-011** (Moderate,
+no evidence of any access attempt after departure — verified against the operator's entry logs), and the
+correction is that co-working removal is now a **checklist item with a required written confirmation**
+before the offboarding checklist can be closed, and the reconciliation moved from quarterly to monthly for
+provider-held lists. The provider's own access-removal obligation was added to its requirements annex at
+the same time.
+
+## 4. Periodic review of physical access against job responsibilities
+
+**Physical access is reviewed periodically for consistency with job responsibilities.** The review runs on
+the same quarterly cadence as the logical access review and is deliberately performed together with it, so
+that an inconsistency between what a person can reach physically and what their role requires is visible
+in one place.
+
+| Review | Reviewer | Cadence | What is compared | Outcome required |
+|---|---|---|---|---|
+| **Quarterly badge entitlement review** | Each manager for their own reports; AI Security Lead for privileged zones; Head of People certifies the roster is complete | Quarterly (raised from semi-annual in 2025-12, at the same time as the logical review, because vendor-personnel churn changed the rate of change) | Every active badge and every zone against the individual's current role profile | Confirm, reduce, or revoke in writing; a manager who does not respond has the review escalated to their officer, and unreviewed badges are **suspended** at 10 business days |
+| **Server-closet access review** | AI Security Lead and Director, IT Operations jointly | Quarterly, and after any infrastructure role change | The named list against the current infrastructure roster; target is the minimum number of people who can restore network service | Access is a named list, not a role grant; 6 individuals held it at the start of the period, 5 at the end |
+| **Unescorted contractor status review** | Engagement owner and Third-Party Risk Manager | Quarterly, and on any engagement scope change | The 4 unescorted individuals against their current statements of work and screening currency | Revert to escorted where the justification no longer holds |
+| **Provider-held access list reconciliation** | Facilities lead | **Monthly** (raised from quarterly after D-2026-011) | Co-working and landlord lists against the personnel roster | Written confirmation of every removal |
+| **Badge-system-to-identity reconciliation** | Facilities lead with Security | Quarterly | Active badges against active identity records — catching a badge with no owner, or an owner with no employment record | Any orphan badge is deactivated the same day |
+| Visitor log review | Facilities lead | Monthly | Entries against hosts; unreturned badges; out-of-hours entries | Investigate anomalies; unreturned badges deactivated |
+| Physical access log review for privileged zones | AI Security Lead | Monthly, and event-driven on any out-of-hours entry | Server-closet entries against change records and incident records | Any entry without a corresponding work record is investigated |
+| **Independent test** | Internal audit (second/third line) | Annually | Revocation timestamps against HR and supplier records; a sample of authorizations against their prerequisites; observation of tailgating and reception practice | Findings enter the deficiency register on the same terms as any other control |
+
+**Results this period:** the reviews produced one server-closet removal, two zone reductions, one reversion
+of a contractor from unescorted to escorted after a scope change, one orphan badge (a spare encoded during
+a badge-printer test, never issued — deactivated the same day and the test procedure changed to use a
+non-encoding test card), and the co-working finding at D-2026-011. Internal audit's observation pass found
+that **reception did not challenge an unbadged individual on one of three attempts** during an announced
+walkthrough; this is deficiency **D-2026-012** (Moderate), remediated by adding a challenge script to
+reception onboarding, a standing "challenge, don't assume" item in the quarterly all-hands control briefing,
+and a repeat unannounced test in 2026-Q3 whose result will be reported to the Audit Committee whether it
+passes or not.
+
+## 5. Restricting physical access to facilities and protected information assets
+
+**Physical access to facilities and protected information assets is restricted to authorized personnel.**
+
+| Layer | Control | Type | How it is enforced |
+|---|---|---|---|
+| Building perimeter (HQ) | Landlord-operated access control with 24/7 staffed reception during business hours; after-hours entry requires a building credential and is logged | Preventive + detective | Landlord; tenant list reviewed annually |
+| **Suite entry** | Entity-controlled badge reader on every suite door; no mechanical override key held outside the entity; doors alarmed on prop-open beyond 60 seconds | Preventive + detective | Badge system, entity-administered |
+| Reception | Visitors cannot pass reception unescorted; identity verified against pre-registration; visitor badge visually distinct from personnel badges; **standing instruction to challenge any unbadged individual** | Preventive | Procedure, with the observed weakness at D-2026-012 recorded |
+| **Server closet** | Separate badge reader on a named-individual list, physically keyed independently of the building master suite; entry logged; **entries reviewed monthly against work records**; no landlord access | Preventive + detective | Badge system + a distinct lock; dual authorization to be added to the list |
+| Locked storage — contracts, statutory registers, spare devices | Keyed cabinets; key custody with the General Counsel (records) and IT Operations (device store); key holders on a named list reviewed quarterly | Preventive | Physical key custody |
+| **Protected information assets in production** | Not present in any entity facility. Evidence, assessment results and logs exist only in AWS; the no-local-copy control prevents an endpoint copy, and there is no path by which a production data set reaches a physical location the entity controls | **Preventive, by design** | Architecture + device policy — this is the strongest physical control the entity has, because it removes the asset from the physical attack surface rather than protecting it there |
+| Endpoint devices | Full-disk encryption; screen lock at 5 minutes; MDM with remote wipe; USB mass storage blocked; cable locks available at HQ desks; devices not left in vehicles or checked baggage, per the remote standard | Preventive | MDM, enforced technically |
+| Printing | Confidential printing disabled at the device; badge-release printing at HQ; **no printer at co-working or home locations is permitted for entity material above Internal** | Preventive | Print server configuration |
+| Clear desk and clear screen | Required at all locations; tested during internal audit's walkthrough | Directive + detective | Procedure and observation |
+| Environmental protection (HQ closet) | Landlord-provided cooling with a temperature alarm to IT Operations; smoke detection; no water-bearing services routed through the closet | Detective | Alarm to a monitored channel |
+| Video recording | Building-operated at the perimeter and lobby, landlord-retained per its own schedule; **the entity operates no camera inside its suite** — a deliberate decision recorded on privacy grounds (DPIA reference), with the compensating controls being badge logging and the monthly log review | Detective (limited, disclosed) | Landlord; the limitation is stated rather than implied |
+| Out-of-hours entry | Permitted, logged, and reviewed monthly; **an out-of-hours server-closet entry generates an alert** to the AI Security Lead rather than waiting for the monthly review | Detective | Badge system alerting |
+
+**Limitations stated plainly.** Three of these controls are not fully within the entity's power and are
+recorded as such rather than asserted: the building perimeter and its video retention are the landlord's;
+the co-working locations are the operator's, which is why no asset above Internal may be held there; and
+the physical security of every production information asset is AWS's, which the entity inherits and
+monitors but does not operate. Where the entity has chosen *not* to implement a control — internal video
+recording — the decision, the reason and the compensating controls are recorded, because an unstated
+absence is indistinguishable from an oversight.
+
+## 6. Recovering entity assets — badges, laptops and mobile devices
+
+**The entity obtains or recovers its assets — including access devices, laptops and mobile devices — when
+they are no longer needed.** Recovery is tracked per asset, not per person, so an item cannot be closed out
+because the person left.
+
+| Asset | Recovery requirement | Deadline | Verification | Current period |
+|---|---|---|---|---|
+| **Badge** | Physically collected, or deactivated and recorded as not returned | Deactivation on the last working day; physical collection on or before it | The badge system shows deactivation; the checklist records collected/not-returned | 3 departures: 2 badges physically collected, 1 remote employee's badge returned by courier and confirmed 4 days later — **deactivated on day one, so the physical delay carried no access risk**, and this is recorded as the reason deactivation and collection are tracked as separate items |
+| **Laptop** | Returned to the HQ device store or the EU suite, wiped, and either re-imaged for reissue or securely disposed of with a certificate | Within 5 business days of departure for local staff; **prepaid return shipment issued on the last working day** for remote staff, with escalation at 10 business days | Asset register updated with the return date, the wipe confirmation and the disposition; **MDM remote-wipe is triggered on the last working day regardless of the physical return**, so the data is removed before the hardware comes back | 3 of 3 laptops recovered; one remote return took 12 business days and triggered the escalation — the device had been remotely wiped and locked on day one, and the case is recorded as an exception in the asset register |
+| **Mobile device** — entity-issued to 12 on-call certified personnel | Returned and wiped; for BYOD, the entity work profile is removed remotely and the removal confirmed | On the last working day | MDM enrolment record shows removal | 1 entity-issued phone recovered; 2 BYOD work profiles removed remotely, both confirmed |
+| Hardware security keys / MFA tokens | Collected or deactivated; **deactivation is authoritative** | Last working day | Identity system shows the authenticator removed | Handled as part of logical access removal |
+| Cabinet keys, and the server-closet key where held | Physically collected and the key-holder list updated the same day; **if a key cannot be recovered the affected lock is re-keyed** | Last working day | Key-holder list | No server-closet key holder departed; one records-cabinet key recovered |
+| Physical documents held by the individual | Returned or attested destroyed; the departure attestation covers this explicitly | Last working day | Signed departure attestation | 3 of 3 attestations signed |
+| **Vendor-held entity devices** (2 of 11 vendor individuals hold entity laptops) | Returned per the contract, with the requirements annex naming the deadline and the provider's obligation to confirm the return | Within 5 business days of engagement end | Asset register plus the provider's written confirmation | 3 vendor departures; 1 held an entity laptop, returned in 3 business days |
+
+**Rules that make recovery real:** the asset register is reconciled against the personnel roster quarterly,
+so an unreturned device surfaces even if a checklist was closed prematurely; **remote wipe and access
+deactivation are never dependent on physical recovery**, because the data risk must be closed on day one
+while the hardware risk can take a week; an unrecovered asset past its escalation point is recorded as a
+deficiency with an owner and a date rather than written off quietly; and disposal of any device that held
+entity data requires a certificate of destruction retained with the asset record. The one 12-business-day
+laptop return and the one 4-day badge return are both in the register — the control is credited for the
+day-one wipe and deactivation, and the physical delays are recorded as the exceptions they are.
+
+## 7. Physical access in incidents, changes and continuity
+
+Physical access is treated as part of incident response and continuity, not as a separate discipline:
+
+- **Loss or theft of a device** is a Sev-2 security incident by default and Sev-1 where the device may hold
+  Confidential material. The runbook requires MDM lock and wipe immediately, credential revocation,
+  assessment of whether personal data was involved (routed to the DPO immediately on suspicion, per the
+  1-hour DPO response), and a post-incident review. **One device was reported lost this period** — a phone
+  left in a taxi, reported by the individual within 40 minutes, remote-wiped within 12 minutes of the
+  report, no Confidential material present, no notification required; the post-incident review changed the
+  reporting guidance to name a single number to call rather than an email address.
+- **Facility unavailability** is covered by the continuity plan: because production runs in AWS and 42 of 48
+  personnel work remotely, loss of an office is a low-severity continuity event and the recovery exercise
+  tests it annually. The plan does **not** claim resilience the entity lacks: the single-region dependency
+  on us-west-2 remains the material availability limitation, Board-accepted as **R-022** and conditional on
+  the quarterly restore test passing.
+- **Tailgating and social engineering** are covered in annual security awareness training and tested by
+  internal audit's observation pass; the failed challenge at D-2026-012 is the current open item.
+- **Server-closet work** requires a change record; a closet entry with no corresponding change or incident
+  record is investigated under §4's monthly log review.
+
+## 8. Remote and home working standard
+
+Because 42 of 48 personnel work primarily remotely, the physical control set extends to locations the
+entity cannot inspect. The standard is enforced by what is technically prevented rather than by trust:
+
+1. **No production evidence, assessment result or log may be stored on an endpoint.** This is prevented
+   technically, not requested — the no-local-copy control introduced after case **D-2026-004**, where an
+   individual downloaded sample data to a personal directory. That case is taught as a case study in
+   awareness training with the individual's consent and identity removed.
+2. Full-disk encryption, 5-minute screen lock, MDM enrolment and current OS patch level are conditions of
+   access; a device out of posture loses access rather than receiving a reminder.
+3. Work is not performed on personal or public computers; BYOD is limited to a managed work profile on
+   mobile for on-call notification only.
+4. Screens are not visible to others in shared or public spaces; calls involving Confidential material are
+   not taken in public spaces — reinforced quarterly rather than assumed.
+5. Devices are not left in vehicles or checked baggage, and loss is reported immediately to the single
+   number in the runbook.
+6. No printing of material above Internal classification; no removable media.
+7. The standard is acknowledged annually alongside the Code of Conduct, and the acknowledgement rate is
+   reported to the Audit Committee (48 of 48 for the current period).
+
+**What this standard cannot achieve, stated as a limitation:** the entity cannot verify the physical
+security of 42 home locations, and does not claim to. The compensating control is that there is nothing of
+production value at those locations to protect — the asset is not there — combined with device encryption,
+remote wipe, and access that depends on device posture rather than on physical possession. This limitation
+and its compensating control are recorded in the risk register and disclosed in the customer-facing
+description rather than left for a customer to discover.
+
+## 9. Physical security perimeter — construction, openings and fire doors
+
+**The perimeter of every entity-controlled area is a defined, physically sound boundary, not a notional
+one.** The boundary is drawn at the suite door, because the entity is a tenant: the building envelope is
+the landlord's, and the entity's perimeter is the suite it leases.
+
+| Perimeter element | HQ suite | EU subsidiary suite | Verified how, and when |
+|---|---|---|---|
+| **Walls** | Slab-to-slab partition on all four sides — the demising walls run from the structural floor to the structural slab above, with no plenum bypass over the ceiling grid. Confirmed against the landlord's as-built drawing (drawing set A-201, rev C) and by physical inspection above two ceiling tiles | Slab-to-slab on the corridor and neighbour-facing walls; the window wall is the building curtain wall | Inspection at fit-out and re-inspected at the annual facility walkthrough (2026-02-11); **the drawing reference and the inspection note are retained with this procedure** |
+| **Ceiling and floor voids** | No accessible void connects the suite to a neighbouring tenancy. The raised-floor void terminates at the demising wall with a fire-stopped closure | No raised floor; ceiling void closed at the demising wall | Annual walkthrough; re-checked after any landlord cabling work, which requires an escort under §2 |
+| **External / suite doors** | Two doors, both solid-core with a rated frame, both on the entity badge reader, both alarmed on prop-open beyond 60 seconds, both fitted with a closer so the unattended state is *closed and locked*. **No mechanical override key exists outside entity custody** | One suite door, same specification, landlord building access outside it | Badge-system configuration export, reviewed quarterly with the access review; closer and latch operation tested at the annual walkthrough |
+| **Windows** | 11 windows, all at the 4th floor with no accessible roof, ledge, adjacent structure or fire-escape landing below or beside them — **no window in the HQ suite is ground-level or otherwise reachable without equipment**. All are of the building's fixed and top-hung tilt type; every opening pane carries a **keyed restrictor limiting the opening to 100 mm**, key held with the facilities lead, and each is on the alarm zone in §12 | 4 windows, 2nd floor, facing an enclosed courtyard with no public access. Same keyed restrictors; **the two courtyard-facing panes additionally carry laminated security film** applied at fit-out | Restrictor presence and key custody checked at the annual walkthrough and after any window maintenance; **the fact that no opening is ground-level is the reason no bar or grille is fitted, and that reasoning is recorded here rather than left implicit** |
+| **Ventilation and service penetrations** | HVAC is landlord-provided and ducted through the demising wall; every penetration over 150 mm on the entity boundary is fitted with a **welded anti-intrusion bar grille**, and smaller penetrations are fire-stopped and too small to pass a person or a hand-carried device. There is no independently accessible roof intake serving the suite alone | Same specification; the courtyard intake carries a grille and is within the alarmed zone | Penetration schedule held with the facility file; re-verified after any mechanical work, which is escorted |
+| **Server closet within the suite** | An inner perimeter: slab-to-slab walls, no window, no ventilation penetration larger than 150 mm, its own badge reader on a named-individual list, its own lock keyed independently of the building master suite, and a motion detector in the alarm zone | Not applicable — no server room | Monthly log review (§4) plus the alarm test schedule in §12 |
+| **Fire doors on the escape route** | Two: the suite's escape door onto the protected stair, and the stair door itself (landlord's). The suite escape door is **fire-rated to EN 1634-1 (30-minute integrity, FD30S with intumescent and cold-smoke seals)**, is **alarmed on any opening at all** — not merely on prop-open — reporting to the same monitored channel as the intrusion alarm, and is **fitted with a push-bar that fails safe to unlocked in the outward direction on power loss while remaining a locked, no-handle barrier from the stair side** | One escape door, same specification and rating | **Third-party inspection annually against EN 1634-1 and BS 8214 installation practice** — inspection certificate FD-2026-04 dated 2026-04-08 is retained in the facility file; door-closer force, seal condition, gap tolerance and self-closing operation are each recorded; the alarm on the escape door is included in the quarterly alarm test in §12 |
+
+**The two rules that keep this a control rather than a description.** First, *every* opening on the entity
+boundary — door, window, penetration — appears in exactly one row above and in exactly one alarm zone in
+§12, and the annual walkthrough reconciles the two lists against each other; an opening present in the
+building but absent from both lists is a finding, and reconciling in both directions is what makes an
+omission visible. Second, an unattended perimeter is closed and locked by mechanism, not by intention:
+closers on every door, restrictors on every opening pane, and a prop-open alarm on anything that can be
+held open.
+
+**Limitation, stated.** The building envelope, its ground-floor entrances, its loading bay and its roof are
+the landlord's, and the entity does not assert them as its own controls. What the entity holds is the lease
+schedule of the landlord's obligations, the annual tenant-list reconciliation, and the fact that its own
+perimeter is a *second* boundary inside the landlord's — which is why the suite-level construction above is
+specified at all.
+
+## 10. Delivery, loading and incoming material
+
+The entity receives little physical material — devices from the reseller, returned laptops, and legal post
+— and it receives none of it at a loading bay it controls: HQ deliveries arrive at the building's ground-floor
+goods entrance, which is the landlord's.
+
+- **Access is separated from the rest of the suite.** Deliveries are received *at reception*, which is inside
+  the suite door but is not a route to any working area, the server closet or any locked cabinet — a courier
+  reaching reception has reached a dead end, and couriers are not admitted past it under §2.
+- **Incoming material is inspected before it moves out of reception**, by the receiving facilities lead or
+  the reception delegate. The inspection covers the outer packaging for damage, tampering or signs of
+  concealment, and confirms the consignment against the expected-deliveries list before the packaging is
+  opened. **Anything unexpected, unaddressed, leaking, unusually heavy for its size, or bearing wires,
+  powder or an unexplained odour is not opened and not moved**: it is left in place, reception is cleared,
+  and the runbook's single number is called — the same Sev-2 path as a device loss, escalating to building
+  management and emergency services rather than to a locally improvised decision. Suspected explosive,
+  chemical or otherwise hazardous material is **never** carried further into the suite to be examined
+  somewhere quieter, which is the mistake this rule exists to prevent.
+- **Registration.** Every incoming and outgoing consignment is recorded in the **delivery register** —
+  date, carrier, tracking reference, sender or destination, description, whether it was inspected and by
+  whom, and for anything that is or contains an entity asset, the asset-register identifier that ties it to
+  §6's recovery tracking. 27 incoming and 9 outgoing consignments are recorded for the current period; the
+  register is reviewed with the monthly access-log review, and a returned laptop with no register entry is
+  the trigger that finds a recovery closed prematurely.
+- **Incoming and outgoing are segregated.** Reception holds two separately labelled and physically distinct
+  areas, and an item never occupies both: outbound consignments are staged on the outbound shelf only, with
+  a same-day handover to the carrier where practicable, so an unopened inbound package cannot be handed to
+  a courier and an outbound device cannot be mistaken for an unopened delivery.
+- **The two doors are not open at once.** While the suite door is held open for a handover, the inner
+  reception door to the working area stays closed — the 60-second prop-open alarm in §5 enforces this, and
+  it is the reason the alarm threshold is 60 seconds rather than long enough to complete an unloading.
+- **EU suite and co-working locations.** The EU suite follows the same rule at its own door, with the
+  subsidiary manager as the receiving delegate. **No delivery of any entity asset to a co-working location
+  is permitted** — devices are shipped to the individual's home or to HQ, never to a site operated by
+  someone else, which is why the co-working rows in §1 need no delivery control at all.
+
+## 11. Unobtrusiveness and confidentiality of the entity's locations
+
+**Neither the building nor the suite advertises what is inside it, and the entity does not publish where its
+facilities are.** This is a decision the entity can make cheaply and has: the value it protects sits in AWS,
+so there is nothing to be gained by having its offices findable.
+
+| Measure | HQ | EU suite | Enforced by |
+|---|---|---|---|
+| **Building signage** | The building is a multi-tenant commercial address with no entity name on the façade, the street elevation or any external directory. **The entity has instructed the landlord in writing not to add it**, and the instruction is repeated at each lease renewal | Same; the entity is absent from the building's external tenant board | Written instruction to building management, retained in the facility file; checked at the annual walkthrough |
+| **Internal building directory and lift lobby** | The lobby board shows a floor number only, with no entity name and no indication of purpose | Floor number only | Annual walkthrough; a directory entry appearing after a landlord change is raised as a finding |
+| **Suite door** | No name, no logo, no "server room", "security operations" or similar wording anywhere on the door or visible through it. Interior room labels use neutral designations — the server closet is labelled **"NC-1"**, not "server room" | No name on the door | Walkthrough; the label convention is part of the fit-out standard |
+| **Public maps, directories and listings** | The registered office is the **General Counsel's registered-agent address**, not an operating location. The operating addresses appear in **no** website page, marketing material, business card, email signature, job posting, phone book, business directory, review site or map listing. **No Google Business Profile, Apple Business Connect, Bing Places or equivalent map listing exists for any operating location**, and the absence is re-verified annually by searching for the entity name in each of the four services — the 2026-02-11 check is recorded with the walkthrough | Same; the subsidiary's statutory filing address is its registered agent's | Annual verification search, recorded; **claiming, and then suppressing, a map listing is treated as worse than never creating one, because a claimed-then-hidden listing still carries an address** |
+| **Internal directories** | The internal staff directory holds no facility address: it names a person's *time zone and working pattern*, not a building. Onboarding and visitor logistics deliver an address to the named individual for the specific visit, and the address is not held in a shared page, wiki, ticket template or calendar-invite default | Same | Directory schema; reviewed when the directory is changed |
+| **Delivery addressing** | Consignments are addressed to a person and suite number, never to a department, never "IT" or "Security" — a carrier label is a public artefact | Same | Delivery register practice |
+| **Visibility from outside** | HQ is on the 4th floor with no facing building within sightline of a desk; every window carries a **fixed obscuring film to 1.6 m on the two panes with any external sightline**, screens are positioned so no display faces a window, and the clear-screen rule in §5 applies to a window as much as to a corridor. Meeting rooms used for Confidential discussion are **interior rooms with no external glazing** | The courtyard-facing panes carry security film that is also obscuring; the courtyard has no public access | Walkthrough, including a deliberate look *inward* from every sightline the assessor can reach; **a change in the neighbouring building is a trigger to re-inspect** |
+| **Audibility from outside** | Confidential discussion happens in the two interior meeting rooms, both fitted with **acoustic seals and a door drop**, or on a call taken in a private space under §8's rule. **Reception, the lift lobby and the corridor are treated as public** for the purpose of what may be said, and this is reinforced quarterly rather than assumed | Interior meeting room with the same rule | Procedure and observation during the internal audit walkthrough |
+
+**Where this is inherited rather than operated:** the entity cannot prevent the landlord's own tenant list,
+a co-working operator's directory, or a public land-registry lease filing from naming it. Those exist, are
+known, and are the reason the measure above is *unobtrusiveness*, not concealment — the entity's claim is
+that nothing it controls advertises its locations or their purpose, not that its address is a secret.
+
+## 12. Physical security monitoring — detection, alarms, protection and testing
+
+**The premises are continuously monitored for unauthorized physical access**, and the monitoring is stated
+here in full, including where it is deliberately thinner than a larger organisation's would be.
+
+### 12.1 What monitors, at what times
+
+| Mechanism | Coverage | Occupied hours | Unoccupied hours | Where it reports |
+|---|---|---|---|---|
+| **Badge reader with logging** | Every suite door, the server-closet door, the EU suite door | Every entry logged, identity-resolved | Same, plus **any out-of-hours entry raises an immediate alert**, not a log entry to be read later | Badge system; alert to the AI Security Lead's on-call channel |
+| **Prop-open alarm** | Every suite door and the server-closet door, beyond 60 seconds | Alerts | Alerts | Same channel |
+| **Escape-door alarm** | The fire door in §9, on **any** opening | Alerts | Alerts | Same channel |
+| **Door and window contacts** | All 3 suite/escape doors and all 11 HQ opening panes; 1 door and 4 panes at the EU suite | Zone disarmed; contacts still logged | **Armed** — any contact break is an intrusion alarm | Monitored intrusion panel → **the landlord's 24/7 monitoring centre and the on-call channel simultaneously**, so no single party can absorb an alarm silently |
+| **Passive-infrared motion detection** | The server closet (armed **at all times**, occupied or not, because a legitimate entry is always badge-preceded and change-recorded), reception, and the two open working areas | Working areas disarmed; **closet armed** | All armed | Same panel and channels |
+| **Glass-break acoustic detector** | The two HQ panes with an external sightline; both EU courtyard panes | Armed | Armed | Same panel |
+| **Landlord CCTV** | Building perimeter, ground-floor entrances, goods entrance, lift lobbies — **not inside the suite** | Recording, landlord-retained per its own schedule | Same | Landlord; the entity requests footage by incident reference and has done so once (D-2026-012) |
+| **Entity CCTV inside the suite** | **None — deliberately, on privacy grounds; see §12.4.** The compensating controls are the identity-resolved badge log, the always-armed closet detector, the monthly log review and the change-record reconciliation | — | — | — |
+| **Monthly log review** | Server-closet entries against work and change records; delivery register; out-of-hours entries | Detective, after the fact | | AI Security Lead, with findings to the Audit Committee |
+
+**Continuity of coverage is the property being claimed**, and it is claimed precisely: every opening in §9
+sits in an armed zone whenever the area behind it is unoccupied, the server closet is armed at all times,
+and the badge log is continuous in both states. What is *not* claimed is continuous human observation or
+continuous video of the interior — the entity has neither, says so, and compensates with detection at the
+boundary plus reconciliation of every closet entry against an independently recorded reason.
+
+### 12.2 Protecting the monitoring system itself
+
+A monitoring system that can be read or switched off by an intruder is a description of a control, not a
+control:
+
+- **The design is Confidential.** Zone layout, detector positions and placements, arming schedules, panel
+  location, engineer codes and the monitoring-centre account reference are classified Confidential under the
+  data classification standard and held in the facility file, access-controlled to the AI Security Lead, the
+  Director of IT Operations and the facilities lead — **three named people**. They are not in the staff wiki,
+  not in a ticket, and not in this procedure, which is why the tables above name zones and mechanisms but no
+  detector position, code or account reference.
+- **The panel is inside a zone it protects.** The alarm control panel is mounted **inside the server closet**
+  — behind the badge reader, in the always-armed motion zone — so reaching the panel requires first
+  triggering the detector that reports to it and to the monitoring centre. The panel is not in reception, not
+  in a corridor, and not in the landlord's riser.
+- **Tamper protection is on the panel and on every detector.** The panel enclosure, every contact, every PIR
+  and every glass-break unit carries a **tamper switch monitored on a 24-hour zone**, which reports whether
+  the system is armed or disarmed; the cabling is monitored for open and short circuit; and enclosure
+  opening, detector cover removal, cable cut and detector masking each raise the same alarm path as an
+  intrusion.
+- **It cannot be quietly disabled, locally or remotely.** Disarming requires an individual code — codes are
+  named, never shared, and revoked on the last working day under §3 — and **every arm, disarm, bypass,
+  zone-isolate and code change is logged at the panel and mirrored to the monitoring centre**, which is
+  outside entity control and therefore cannot be edited by an entity insider. **Remote administration of the
+  panel is disabled**; changes are made at the panel by an escorted engineer under a change record.
+  Communication to the monitoring centre is **dual-path (IP with cellular failover) and supervised**, so
+  cutting a line raises a path-fail alarm rather than producing silence, and the panel holds **a 12-hour
+  standby battery** so a power cut is not a coverage gap.
+- **Bypasses are events, not conveniences.** A zone isolation requires the AI Security Lead's approval, is
+  time-boxed at the panel, appears in the monthly review, and is reconciled against a change or maintenance
+  record — the same test §4 applies to closet entries.
+
+### 12.3 Testing, on a schedule, with records
+
+| Test | Cadence | Method | Record | Most recent |
+|---|---|---|---|---|
+| **Full detector walk test** — every contact, PIR, glass-break and tamper switch individually triggered and confirmed at the panel *and* at the monitoring centre | **Quarterly** | Physical activation of each device in turn, with the monitoring centre on the line confirming receipt device by device | Signed test sheet listing every device, pass/fail, and any remediation with an owner and date | 2026-07-14 — 23 devices, 22 pass; **one reception PIR failed to report at the centre** (a mis-provisioned zone at the centre, not a detector fault), corrected the same day and re-tested to pass; recorded as **D-2026-019**, and it is the reason the test confirms at the centre rather than only at the panel |
+| Escape-door and prop-open alarm test | Quarterly, in the same pass | Open each door; confirm alert arrival in the on-call channel | Same sheet | 2026-07-14, pass |
+| Signalling-path test (IP and cellular failover) | Quarterly, plus automatic daily supervision | Force each path; confirm path-fail alarm and restoration | Same sheet, plus the centre's daily supervision report | 2026-07-14, pass |
+| Standby-battery and power-fail test | Annually | Isolate mains; confirm 12-hour endurance and the power-fail signal | Engineer's certificate | 2026-04-08, pass |
+| **Third-party service and inspection** of panel, detectors and fire door | Annually | Engineer service visit, escorted; fire door inspected against EN 1634-1 | Certificate FD-2026-04 and the service report | 2026-04-08 |
+| Code and key-holder reconciliation | Quarterly, with the access review | Panel code list and key-holder list against the personnel roster | Access-review record | 2026-07-14, no orphans |
+| **Response test** — an unannounced activation to time the monitoring centre's call-out and the on-call acknowledgement | Annually | Unannounced activation outside business hours | Result with elapsed times | 2026-04-22: centre called the primary on-call in 2 minutes, acknowledged in 6 minutes, attendance 34 minutes — within the 45-minute contractual target |
+| Tailgating and challenge observation | Annually by internal audit | Observation pass | Audit working paper | **D-2026-012** remains the open item from the last pass |
+
+Test failures are recorded as deficiencies with an owner and a date rather than corrected silently: the
+D-2026-019 zone provisioning error is the only failure this period, and it is in the deficiency register.
+
+### 12.4 The legal basis for monitoring, and the DPIA
+
+Monitoring people's movements is regulated, and the applicable requirements are named rather than gestured
+at. Badge logs, alarm records and the landlord's CCTV are **personal data**:
+
+- **Applicable law.** **EU GDPR** for the EU subsidiary's suite and for EU personnel (Article 6(1)(f)
+  legitimate interests as the lawful basis for badge logging and intrusion detection; Article 13 transparency;
+  Article 35 DPIA where monitoring is systematic; Article 88 and **national employment-monitoring provisions**
+  for workplace monitoring), the **UK GDPR and Data Protection Act 2018** for UK-based personnel, and in the
+  primary geography, **state workplace-privacy and biometric statutes** — no biometric reader is used at any
+  entity door, and that is a deliberate choice made to avoid processing biometric data for a control that a
+  badge already delivers. Employment-law consultation obligations are met through the EU subsidiary's
+  employee-representative consultation, completed at fit-out.
+- **DPIA-2026-002** is the assessment covering physical monitoring: badge logging, intrusion detection, the
+  always-armed closet zone, and reliance on landlord CCTV. It records the purpose, the necessity and
+  proportionality test, the data minimisation applied, the retention periods, the DPO's opinion, and the
+  residual risk with the Board's acceptance. **It is a controlled document in its own right, retained with
+  the privacy record set and provided on request during an assessment** — it is referenced here rather than
+  reproduced, and the reference is to a document that exists rather than to a decision someone remembers.
+  **Its central conclusion is the reason there is no camera inside the suite**: for a 34-desk suite whose
+  protected assets are not physically present, interior video was assessed as neither necessary nor
+  proportionate when badge logging, an always-armed closet zone and monthly reconciliation achieve the
+  detection objective with markedly less personal-data processing.
+- **Transparency and minimisation.** Personnel are told in the privacy notice and at onboarding what is
+  logged, why, how long it is kept and who sees it; **notices at the suite door and at reception** state that
+  entry is access-controlled and logged and that the building operates CCTV, naming the controller and
+  pointing to the notice. Badge and alarm records are retained **13 months** and are accessible only to the
+  three named individuals above plus the DPO; they are used for security and safety purposes only, and
+  **explicitly not for performance or attendance management** — a rule stated in the notice, in the Code of
+  Conduct and in DPIA-2026-002 because it is the misuse a monitoring log most invites.
+- **Landlord CCTV** is the landlord's processing under its own notice and retention schedule; the entity
+  requests footage only by incident reference, records each request, and made one this period (D-2026-012).
+
+## 13. Review history
+
+| Version | Date | Change |
+|---|---|---|
+| 2.0 | 2024-12-05 | Established the facility inventory, badge lifecycle and authorization matrix |
+| 2.5 | 2025-08-14 | Added the remote-working standard; separated deactivation from physical collection after a delayed badge return |
+| 3.0 | 2025-12-03 | Raised the entitlement review to quarterly in step with the logical access review; added the provider-held list reconciliation; documented the decision not to operate internal video recording, with its compensating controls |
+| 3.1 | 2026-02-19 | Recorded D-2026-011 (co-working removal not confirmed) and D-2026-012 (reception challenge failure) with corrections; moved provider-list reconciliation to monthly; added the day-one wipe rule and the recovery exceptions actually experienced |
+| 3.2 | 2026-08-14 | Specified the suite perimeter as built — wall construction, window restrictors, ventilation grilles and the EN 1634-1 fire doors (§9); documented delivery inspection, registration and inbound/outbound segregation (§10); recorded the unobtrusiveness measures and the annual map-listing verification (§11); and set out physical security monitoring in full (§12) — zone coverage and arming states, protection of the monitoring system itself including panel siting and tamper monitoring, the quarterly test schedule with D-2026-019, and the named legal basis with DPIA-2026-002 |

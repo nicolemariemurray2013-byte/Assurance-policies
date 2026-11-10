@@ -1,0 +1,340 @@
+# Information Asset Inventory and Data Classification Standard
+
+**Document ID:** SEC-AST-020
+**Version:** 3.2 — **effective 2026-02-02**, superseding v3.1 of 2025-08-04
+**Owner:** Head of Security Engineering (asset inventory); Data Protection Officer (classification of personal
+information); Service Owner, Compliance Evaluation Service (business ownership of each asset)
+**Approved by:** CISO 2026-01-28; reviewed by the Audit Committee 2026-02-19
+**Next scheduled review:** Annually (next by 2026-12-31), and on any change to the service architecture, to the
+categories of data processed, or to the set of external access points
+
+**Scope.** The production and pre-production environments of the automated compliance evaluation service
+("the service"), comprising the AWS accounts in which the service runs, the governed customer environments the
+service reads, the corporate endpoints from which personnel administer the service, and the SaaS systems that
+hold service records. The reference implementation described throughout is the AI-governance environment
+`rokap-alpha-env` in AWS account **471885797689**, region **us-west-2**.
+
+---
+
+## 1. Why this standard exists
+
+Every other security control in this program depends on knowing **what we have, who owns it, how sensitive it
+is, and who and what can reach it**. An asset that is not in the inventory is not patched, not monitored, not
+backed up, and not decommissioned. A data element that is not classified is protected by accident rather than
+by design. This standard therefore defines four things and holds them together:
+
+1. the **inventory** of information assets — infrastructure, software, and data (§2, §3);
+2. the **classification scheme** applied to data, and the handling rules each class compels (§4);
+3. the **register of access points**, the parties that use each one, and the data that flows through it (§5, §6);
+4. the **access control rules derived from classification** — which is how classification becomes enforcement
+   rather than a label (§7).
+
+The inventory is not a spreadsheet maintained by goodwill. It is **generated from the environment** and
+reconciled against a declared baseline, because a hand-maintained inventory of a cloud environment is wrong
+within a week.
+
+---
+
+## 2. What counts as an information asset
+
+| Asset class | Examples in this service | Inventory system of record |
+|---|---|---|
+| **Cloud infrastructure** | VPC, subnets, security groups, EC2, container runtimes, load balancers | AWS Config + Resource Explorer, reconciled to the IaC repository |
+| **Managed data stores** | DynamoDB tables, S3 buckets, KMS keys | AWS Config + Resource Explorer |
+| **Compute and model runtime** | Bedrock AgentCore runtime, Bedrock agents and the model IDs they invoke | AWS Config + the service manifest in the IaC repository |
+| **Identity objects** | IAM roles, IAM users, IAM policies, federation configuration | IAM + AWS Config |
+| **Application software** | Service source packages, their third-party dependencies, build artifacts | Source control + the build system's dependency manifest |
+| **Data** | Customer evidence documents, scan evidence, assessment results, journals, audit logs, account and user records, personnel records | Data register (§4.4) |
+| **Physical endpoint devices** | Corporate laptops used by personnel to administer the service | Endpoint management system (§3.4) |
+| **Virtual systems** | Container images, ephemeral task instances, build agents | Container registry + build system |
+| **External information systems** | The identity provider, the ticketing system, the source-control host, the observability backend, the corporate email/collaboration suite | Vendor register (§3.5) |
+| **Organizational roles** | The roles that hold entitlements to any of the above | Authority matrix + the entitlement catalog |
+
+A thing is an information asset if it **stores, processes, transmits, or controls access to** service data. The
+test is functional, not budgetary: an asset nobody pays for (a leftover security group, an unattached volume) is
+still an asset and is still inventoried, because the leftovers are what get exploited.
+
+---
+
+## 3. How the inventory is produced and kept current
+
+### 3.1 Continuous discovery is the primary source
+
+The inventory is **machine-generated**, not declared. Three independent discovery mechanisms run continuously
+and are reconciled:
+
+| Mechanism | What it enumerates | Cadence |
+|---|---|---|
+| **AWS Config** | Configuration items for every supported resource type, with full configuration history | Continuous, on change |
+| **AWS Resource Explorer** (index in scope in us-west-2) | All resources across regions, including types Config does not support | Continuous |
+| **Governed-environment discovery** | The resources in scope for a customer environment, as the service itself enumerates them for assessment | Per assessment |
+
+The reference environment's discovered inventory at the last reconciliation held **491 in-scope resources**
+(397 global, 94 in us-west-2): 266 IAM roles, 127 IAM policies, 20 QuickSight data sources, 17 CodeDeploy
+deployment configurations, 12 S3 buckets, 10 EventBridge rules, 4 IAM users, 4 subnets, 2 security groups, and
+one each of KMS key, DynamoDB table, CloudTrail trail, GuardDuty detector, VPC, SNS topic, SQS queue, Bedrock
+agent, AgentCore runtime, and Resource Explorer index. **That count is evidence, not decoration** — the figure
+is what the reconciliation in §3.3 is run against, and a material unexplained change in it is a finding.
+
+### 3.2 Every asset carries an owner and a classification
+
+Each inventoried asset record carries: a stable identifier (ARN where one exists); resource type; account and
+region; **named business owner** and **named technical custodian**; the **highest classification of data it may
+hold** (§4); its environment (production / pre-production); whether it is exposed at an external access point
+(§5); and its backup and retention treatment. Tagging is the enforcement mechanism for owner and
+classification; a resource that cannot carry tags is recorded in the register with the same fields.
+
+**Untagged or unowned resources are a defect, not a gap in the inventory.** They appear on the owner's queue
+within one working day of discovery and must be either claimed or decommissioned within ten working days.
+
+### 3.3 Reconciliation against the declared baseline
+
+Weekly, discovery output is reconciled against the **declared baseline** — the set of resources the
+infrastructure-as-code repository says should exist. Three outcomes:
+
+- **In both** → normal.
+- **In discovery, not in IaC** → *unknown component*. Treated as an unauthorized-component event under
+  CC7.1's detection procedures: the owner is identified from CloudTrail, and the resource is either brought
+  under IaC or removed. Nothing is silently adopted.
+- **In IaC, not in discovery** → drift or failed deployment; raised to the deploying team.
+
+Reconciliation results and the disposition of every exception are recorded and retained for three years.
+
+### 3.4 Endpoint devices
+
+Corporate endpoints used to administer the service are enrolled in endpoint management before they are issued
+and are inventoried with: asset tag, assigned individual, operating system and patch level, disk-encryption
+state, anti-malware agent state, and the date of last check-in. Loss of check-in for 14 days triggers
+follow-up; loss of the device triggers §3.6 and the disposal procedure.
+
+### 3.5 External information systems and their physical location
+
+For each external system that holds service data we record: the vendor, the data categories it holds, the
+classification, **the physical location(s) and legal jurisdiction(s) in which the data is stored**, the
+sub-processors the vendor uses, the contractual protections in force, and the exit/return-of-data mechanism.
+This is the register that answers "where is our information, including the parts of it we do not physically
+control" — including cloud regions, vendor SaaS regions, and any offsite backup location.
+
+Assets held outside our physical security control are flagged as such in the register and inherit the vendor
+oversight regime in the third-party risk procedure rather than our own physical controls.
+
+### 3.6 Custody changes
+
+A custody change — a new custodian, a transfer between teams, a device reassignment, a vendor migration, or an
+asset leaving our control — is recorded against the asset with the date and the authorizing manager.
+Assets leaving our control trigger the sanitization requirements of the media and asset disposal standard
+**before** logical and physical protections are discontinued.
+
+---
+
+## 4. Data classification
+
+### 4.1 The classes
+
+| Class | Definition | Examples in this service |
+|---|---|---|
+| **Restricted** | Disclosure would cause severe harm to a customer, a data subject, or the entity; or the data is a credential | Credentials, private keys, session tokens, KMS key material, security-finding detail for a customer environment, sensitive personal information |
+| **Confidential** | Customer or entity data not intended for disclosure outside a defined need-to-know | Customer evidence documents, scan evidence, assessment results and scores, customer configuration data, contracts, personnel records, non-public financials |
+| **Internal** | Operational data whose disclosure would be unwelcome but not harmful | Runbooks, architecture diagrams, internal metrics, ticket contents |
+| **Public** | Approved for publication | Privacy notice, marketing material, public documentation, status page |
+
+**Default on creation is Confidential.** An asset or data element is Public only by an explicit approval
+recorded by the owner. There is no unclassified state; "we have not looked at it yet" resolves to Confidential.
+
+### 4.2 Personal information is a cross-cutting attribute, not a fifth class
+
+Any data element may additionally be flagged **PI** (personal information) or **SPI** (sensitive personal
+information). The flag is orthogonal to the class and adds the privacy handling obligations in the privacy
+documents on top of the security handling rules of the class. SPI is always at least Restricted.
+
+The service's own design keeps personal information out of the assessment path wherever possible: the service
+evaluates **configuration and control evidence**, and where a customer places personal information inside an
+evidence document, we hold it as a **processor** on the customer's instructions and it inherits the Restricted
+class and the PI flag.
+
+### 4.3 Handling rules compelled by class
+
+| Requirement | Restricted | Confidential | Internal | Public |
+|---|---|---|---|---|
+| Encryption at rest | Required, customer-managed or AWS-managed KMS key | Required | Required | Required (uniform platform default) |
+| Encryption in transit | TLS 1.2+ required and **enforced by policy denial** | TLS 1.2+ required and enforced | TLS 1.2+ | TLS 1.2+ |
+| Access model | Named role, least privilege, **explicit purpose**, access logged and reviewed quarterly | Role-based, least privilege, logged, reviewed quarterly | Role-based | Unrestricted read |
+| May be placed on removable media | No | Only encrypted, with owner approval | Only encrypted | Yes |
+| May leave the production account | No, except to the customer that owns it | Only to the customer that owns it or an approved processor | Approved systems | Yes |
+| Retention | Per data register; shortest defensible | Per data register | Per data register | N/A |
+| Disposal | Cryptographic erasure plus record of destruction | Deletion with verification | Deletion | N/A |
+| Logging of access | Every access, in an immutable log | Every access | Aggregate | None |
+
+### 4.4 The data register
+
+For each data element the register records: element name; class; PI/SPI flag; purpose(s) for which it may be
+used; the systems and stores that hold it; the retention period and its basis; the disposal method; the lawful
+basis and consent linkage where it is PI; the third parties to whom it may be disclosed; and the owner. The
+register is the single artifact that connects **classification** (this document), **retention and disposal**,
+and **the accounting of personal information held** that data subjects and controllers may request.
+
+Categories of personal information held by the service, as recorded in the register: account and user
+identifiers and authentication metadata; the names and business contact details of customer administrators;
+personnel records for our own staff; support and complaint correspondence; security log records that include
+user identifiers and source addresses; and any personal information a customer places inside evidence, held as
+processor. Sensitive personal information is not collected by the service in the controller role; where it
+appears in customer evidence it is handled under §4.2.
+
+### 4.5 Designating confidential information on receipt or creation
+
+Confidentiality is assigned **at the point of receipt or creation**, by three mechanisms working together:
+
+1. **Structural** — data arriving through a channel that only ever carries customer data (the evidence upload
+   path, the scan-evidence path, the assessment result store) is Confidential or Restricted by construction of
+   the store it lands in. No human decision is required for the common case.
+2. **Declared** — the uploading party may mark an evidence document's sensitivity, which can raise but not
+   lower the structural class.
+3. **Reviewed** — the data register is reviewed at least annually and whenever a new data flow is introduced,
+   which is when a new element is classified deliberately rather than by default.
+
+Assessment output is Confidential to the customer that owns the environment, and is Restricted where it
+contains specific exploitable security findings for that environment.
+
+---
+
+## 5. Register of access points
+
+An **access point** is any interface at which data crosses a trust boundary. Each is registered with: the
+interface, the protocol and the activities permitted through it, the parties allowed to use it, the data
+classes that flow through it, the authentication and authorization applied, and the boundary protection in
+force.
+
+| Access point | Direction | Parties | Data classes | Authentication / authorization | Boundary protection |
+|---|---|---|---|---|---|
+| Customer-facing service API | Inbound, external | Customer administrators and their automation | Confidential, PI | Federated identity with MFA for interactive use; signed requests with scoped credentials for automation; tenant-scoped authorization on every call | TLS-only endpoint; per-tenant authorization; throttling; request logging |
+| Evidence upload path | Inbound, external | Customer administrators | Confidential, Restricted, PI | Same as service API, plus project scoping | Content type and size validation; per-tenant isolation; encryption on write |
+| Assessment result delivery | Outbound, external | Authorized users of the owning customer only | Confidential, Restricted | Tenant-scoped authorization on read | TLS-only; no bulk export path; delivery recorded |
+| Governed-environment read path | Outbound, to the customer's own account | The service's evaluator role assuming a customer-provided read role | Confidential | Short-lived vended credentials tied to a signed session token; the assumed role is **read-only** | Write attempts alarm (`AIGov-AgentWriteAttempt`); every assumption logged and alarmed (`AgentCredentialVending`) |
+| Model inference path | Outbound, to the AWS Bedrock service | The service itself | Confidential | Service credentials, scoped to specific model IDs | TLS; no customer data retention by the model provider under the service terms; invocation errors and throttles alarmed |
+| Administrative access to the service accounts | Inbound, internal | Named personnel in the operations and security roles | Restricted | Federated identity, MFA, short-lived role assumption; break-glass path in §7.4 | CloudTrail on every call; `AIGov-UnauthorizedApiCalls` and `AIGov-IamPolicyChanges` alarms |
+| Source control and build pipeline | Inbound, internal | Engineers | Internal, Confidential | Federated identity with MFA; branch protection; review required | Signed commits; pipeline identity separate from human identity |
+| Observability backend | Outbound, internal | The service; on-call personnel | Internal, Confidential | Signed export from the service; federated read for humans | TLS; scoped export credentials |
+| Vendor SaaS integrations | Bidirectional, external | Approved vendors | Internal, Confidential, PI | Scoped API credentials, rotated; vendor-side SSO with MFA | Contractual protections; the vendor register in §3.5 |
+
+**Anonymous or unauthenticated access is not an access point in this service.** There is none: account-level
+S3 public access block is enabled on all four dimensions, no bucket policy grants public access, no bucket is
+configured for website hosting, and there is no unauthenticated API surface.
+
+## 6. Documented data flows
+
+For each flow we record source, destination, data classes, classification, transport protection, authorization,
+volume characteristics, and the control that assures it:
+
+1. **Customer → service (evidence).** Customer administrator uploads an evidence document over TLS to the
+   service API; the document is written to a project-scoped store, encrypted at rest; an evidence record is
+   created carrying the control references that make it visible to an assessment. Confidential/Restricted.
+2. **Customer environment → service (scan evidence).** The service assumes a customer-provided read-only role
+   using short-lived vended credentials, reads configuration through service APIs, and writes structured scan
+   evidence to a tenant-scoped store. Read-only, alarmed on any write attempt. Confidential.
+3. **Service → model provider (inference).** Prompt content derived from evidence is sent over TLS to the model
+   endpoint for evaluation. Confidential. No training use; no retention by the provider.
+4. **Service → assessment store (results).** Requirement-level verdicts, scores, and rationale are written to
+   the tenant-scoped assessment store, encrypted at rest, with point-in-time recovery enabled.
+   Confidential/Restricted.
+5. **Service → customer (delivery).** Authorized users of the owning customer read results through the API.
+   No other party receives them. Confidential/Restricted.
+6. **Service → audit log.** Every API call, credential vend, and configuration change is written to the trail
+   and to the log group, from which metric filters raise the alarms in §5. Internal/Confidential, integrity-
+   protected.
+7. **Service → observability.** Metrics and traces, exported over a signed, TLS-protected channel. Internal.
+8. **Personnel → service accounts (administration).** Federated, MFA-authenticated role assumption from a
+   managed endpoint. Restricted.
+
+Flows are drawn in the architecture record and reviewed whenever a change touches a trust boundary; the
+architecture security review in the logical access standard is the gate at which a **new** flow is assessed
+before implementation.
+
+---
+
+## 7. Turning classification into access control rules
+
+Classification is only useful if it determines enforcement. The rules below are how each class becomes a
+configuration:
+
+### 7.1 Combinations used to build access control rules
+
+| Mechanism | How it is used |
+|---|---|
+| **Data classification** | Selects the encryption, access, logging, and retention treatment (§4.3), which the IaC templates implement per class rather than per resource |
+| **Separate data structures** | Customer data is separated by tenant and by project; assessment results, evidence, and journals are separate stores with separate policies; production and pre-production are separate accounts. Restricted security-finding detail is not co-mingled with account metadata |
+| **Port and protocol restrictions** | Only TLS-protected service protocols are permitted at any access point. In the reference environment there is no inbound network listener at all: both security groups carry **zero** inbound and zero outbound rules, and no network interface is attached to either |
+| **Access protocol restrictions** | Data stores are reachable only through their service APIs over TLS; a `Deny` on `aws:SecureTransport: false` is present on **all 12** in-scope buckets, so a non-TLS request fails regardless of the caller's identity |
+| **User and workload identification** | Every request carries an authenticated identity — a federated human, a role assumed by the service, or a signed session token for an agent invocation. Anonymous access does not exist |
+| **Digital certificates and signed tokens** | TLS server certificates authenticate our endpoints; the agent session token is asymmetrically signed by a KMS-held key and verified by the service before credentials are vended, which authenticates *software* rather than only people |
+| **Purpose limitation** | Restricted and Confidential data carry the purposes for which they may be accessed in the data register; role definitions cite the purpose, and a request for access outside a recorded purpose is denied rather than negotiated |
+
+### 7.2 Restricting confidential information to identified purposes
+
+Access to Confidential data is granted only against a **named purpose** recorded in the entitlement catalog:
+operating the service, responding to an incident, fulfilling a customer request, or meeting a legal
+obligation. Tenant scoping is enforced on every read path so that a role holding "read assessment results"
+can only read the results of the tenant in whose account the role was assumed — cross-tenant reads are not
+prevented by policy alone but are structurally impossible on the delivery path. Bulk export exists for no role.
+
+### 7.3 Restricting personal information to authorized personnel and purposes
+
+Personal information carries the same rules plus three additions: the purposes are those stated in the privacy
+notice and no others; the set of roles that may reach PI is enumerated in the data register and is
+deliberately smaller than the set that may reach Confidential data; and access to PI in the controller role
+(personnel records, account records, support correspondence) is limited to the specific functions that need it
+— people operations, support, and the DPO — rather than to engineering at large. Engineering access to
+production stores that may contain PI is through break-glass (§7.4), not standing entitlement.
+
+### 7.4 Privileged and break-glass access
+
+Administrative entitlement in the reference environment is deliberately small and deliberately visible:
+**two** IAM users hold administrator permissions and are designated break-glass identities used only when
+federation is unavailable; the remaining IAM principals are programmatic identities with scoped policies. No
+IAM user has a console password, so there is no interactive password-authenticated path into the account.
+Administrator-equivalent roles exist for platform services and named human operator roles; each is listed with
+its justification in the entitlement catalog and re-justified at each quarterly review, and any that cannot be
+justified is removed. Root account credentials hold no access keys and are sealed; use of root raises the
+`AIGov-RootAccountUsage` alarm, and changes to IAM policy raise `AIGov-IamPolicyChanges`.
+
+---
+
+## 8. Retention and protection during retention
+
+Confidential information — including customer evidence, scan evidence, and assessment results — is retained for
+**no longer than necessary to fulfil the purpose for which it was received or created**, per the data register,
+unless a law or regulation requires longer. The defaults are: evidence and scan evidence retained for the life
+of the customer relationship plus 90 days; assessment results retained for three years to support the
+customer's own audit obligations; audit logs retained for at least one year online and three years in archive;
+support correspondence for two years.
+
+During the retention period, confidential information is **protected against erasure and destruction** by:
+encryption at rest on every store; deletion protection enabled on the primary assessment table; point-in-time
+recovery enabled on that table so an erroneous or malicious deletion is recoverable; versioning and lifecycle
+policy on the evidence and log stores so an overwrite does not destroy the prior object; separation of the
+identities that may write data from those that may change retention configuration; and alarms on configuration
+changes to the audit path (`AIGov-AuditConfigChanges`) and on unauthorized API calls. Deletion of a store or a
+retention policy is a change-managed action requiring a second approver.
+
+Identification for destruction, the destruction methods themselves, and the record of destruction are governed
+by the retention and disposal standard; this standard's contribution is the class and the retention period that
+determine **when** an element becomes eligible.
+
+---
+
+## 9. Governance of this standard
+
+| Activity | Frequency | Owner | Evidence produced |
+|---|---|---|---|
+| Discovery-to-baseline reconciliation | Weekly | Security Engineering | Reconciliation record with exception dispositions |
+| Untagged/unowned resource sweep | Weekly | Security Engineering | Exception queue and closure record |
+| Data register review | Annually, and on any new data flow | DPO with Service Owner | Updated register, dated |
+| Access point register review | Semi-annually, and on any new access point | Security Engineering | Updated register, dated |
+| Classification spot-check on new stores | Per change | Change approver | Change record |
+| Entitlement and privileged-access review | Quarterly | Security Engineering with owners | Review record, removals effected |
+| External system and physical location register review | Annually, and on vendor change | Vendor Risk with DPO | Updated register |
+| Standard review and approval | Annually | CISO | Approved version, dated |
+
+**Deficiency handling.** A gap found by any of the above is recorded as a deficiency with an owner and a due
+date, tracked to closure in the same register the control monitoring procedure uses, and reported in the
+quarterly control report. Two consecutive reconciliations with the same unresolved exception escalate to the
+CISO.

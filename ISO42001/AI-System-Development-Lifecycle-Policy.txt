@@ -1,0 +1,226 @@
+# AI System Development Life Cycle Policy — Responsible Development Objectives, Processes and Requirements
+
+**Document ID:** AIMS-POL-006
+**Version:** 3.1
+**Owner:** AI Development Lead; approved by the Chief AI Officer
+**Approved by:** AI Governance Board
+**Approval date:** 2026-02-24
+**Next scheduled review:** 2026-12-31
+**Scope:** All AI systems developed or materially enhanced by the organization, including the Bedrock
+agent and AgentCore runtime evaluation system in AWS account 471885797689 (us-west-2).
+
+---
+
+## 1. Objectives for responsible development of AI systems
+
+The organization **identifies and documents objectives to guide the responsible development** of its
+AI systems. Each objective traces to a guiding principle in the AI Policy (AIMS-POL-001), is
+measurable, and names an accountable role.
+
+| # | Responsible-development objective | Measure | Accountable role |
+|---|---|---|---|
+| RD-1 | Every consequential AI output is traceable to the evidence that produced it | 100% of published verdicts cite a source excerpt or a raw API record | AI Development Lead |
+| RD-2 | No requirement is judged non-compliant on evidence that was never read | 0 verdicts of `not_met` derived from a failed or absent read | AI Development Lead |
+| RD-3 | Evaluation accuracy meets or exceeds the agreed threshold before release | ≥ 0.90 per-requirement agreement with labelled ground truth on the held-out test split | AI Development Lead |
+| RD-4 | The system is robust to adversarial and injected input | 100% of the prompt-injection suite blocked; no instruction authority granted to customer-supplied text | AI Security Lead |
+| RD-5 | Human oversight is always available for consequential output | A documented human review and override point for every published verdict | Responsible AI Lead |
+| RD-6 | Fairness: comparable evidence receives comparable verdicts | No material disparity in verdicts across document style, verbosity or service-coverage strata | Responsible AI Lead |
+| RD-7 | Development respects data-protection and licensing obligations | 0 uses of customer data for model training; 100% of corpus entries de-identified | Data Steward |
+| RD-8 | Environmental cost of evaluation is understood and not growing unmanaged | Inference cost and estimated emissions per assessment tracked release over release | AI Operations Lead |
+
+### 1.1 How the objectives are taken into account in design and development
+
+The objectives are not aspirational statements held apart from engineering; each is bound to a
+mechanism in the design and to a gate in the development process:
+
+| Objective | How it is taken into account in design and development |
+|---|---|
+| RD-1 | The evidence model carries the verbatim source (document excerpt, or raw API response per resource) alongside every per-requirement verdict; a verdict without a citation fails validation |
+| RD-2 | A read failure is represented as a distinct state from a compliance failure, and that state is excluded from scoring rather than counted against the customer |
+| RD-3 | The regression evaluation harness runs on the held-out split in the release pipeline; a drop below threshold blocks release |
+| RD-4 | Customer-supplied text is structurally marked as data, never instructions; the trust boundary is enforced in the prompt contract and covered by adversarial tests in the pipeline |
+| RD-5 | Results are published with per-requirement rationale for human review; reviewers hold documented authority to override |
+| RD-6 | Rubrics score on the presence of required elements rather than on length or polish; the corpus includes terse compliant documents as a fairness stratum |
+| RD-7 | Inference-only model APIs are used; the de-identification step is a required stage in corpus assembly |
+| RD-8 | Token and inference cost per assessment is instrumented and reported per release |
+
+### 1.2 Requirements, guidelines and measures integrating the objectives into each stage
+
+| Life-cycle stage | Required measure integrating the objectives |
+|---|---|
+| Requirements | Responsible-AI acceptance criteria recorded with functional requirements; impact assessment triggered (§2.4) |
+| Design | Threat model covering AI-specific threats; documented human oversight point; traceability design review |
+| Development | Peer review mandatory; no direct-to-production change; customer text treated as data by construction |
+| Verification and validation | Accuracy, consistency, fairness-stratum and adversarial suites all executed; results recorded |
+| Release | Release criteria in §3 met and signed off; unmet criteria require an AIGB-approved exception |
+| Operation | Monitoring against design goals; drift and error-rate alerting; incident process |
+| Change | Impact analysis and regression re-run; material change re-triggers the impact assessment |
+| Decommissioning | Data deletion and retention obligations discharged and evidenced |
+
+## 2. Documented processes for responsible design and development
+
+### 2.1 Applicable life cycle stages
+
+The defined stages are: **inception and requirements → impact assessment → design → data preparation
+→ development → verification and validation → release approval → deployment → operation and
+monitoring → change management → decommissioning.** Every stage has a named accountable role in
+AIMS-POL-003 and defined entry and exit criteria. No stage may be skipped; stages may be re-entered
+on iteration, and re-entry re-applies that stage's exit criteria.
+
+### 2.2 Testing requirements and planned means for testing
+
+| Test class | Planned means | Stage | Pass condition |
+|---|---|---|---|
+| Unit and contract tests | Automated test framework in the build | Development | 100% pass; no reduction in coverage |
+| Deterministic scoring tests | Unit tests over the scoring formula and status mapping | Development | 100% pass |
+| Evaluation accuracy | Regression harness against the labelled held-out test split | V&V | ≥ 0.90 agreement (RD-3) |
+| Run-to-run consistency | Repeated runs on identical inputs | V&V | Verdicts stable across repeats |
+| Adversarial and prompt injection | Injection suite embedded in customer-controlled fields | V&V | 100% blocked (RD-4) |
+| Fairness strata | Evaluation across document-style and service-coverage strata | V&V | No material disparity (RD-6) |
+| End-to-end integration | Local harness driving the real graph against a non-production stage | V&V | Full path green, no warnings |
+| Staged live verification | Promotion through alpha → beta → gamma before production | Deployment | Each stage healthy for its dwell time |
+
+### 2.3 Human oversight requirements and tools
+
+- **Requirement.** Every published verdict is reviewable and overridable by a qualified human. The AI
+  system never has final authority over a customer's compliance outcome.
+- **Tools.** Per-requirement rationale and cited evidence excerpts in the console; the assessment
+  journal exposing every phase, tool call and intermediate result; annotation and override
+  facilities; the ability to halt an assessment or suspend the system entirely (AIGB authority).
+- **Competence.** Overrides are exercised only by compliance analysts qualified in the framework
+  under assessment (AIMS-REG-004).
+
+### 2.4 Stages at which AI system impact assessments are performed
+
+An AI system impact assessment (AIMS-PRO-005) is performed: **(a)** at inception before design is
+committed; **(b)** before first release; **(c)** on any material change — new model family, new data
+category, new customer-facing output, or a change to the human oversight point; **(d)** annually
+regardless of change; and **(e)** after any substantiated concern or Severity 1 incident. Design may
+not proceed past the design gate without a current impact assessment.
+
+### 2.5 Training data expectations and rules
+
+- The organization performs **no model training or fine-tuning**; foundation models are used by
+  inference only.
+- **Customer data is never used for training, tuning or evaluation-corpus assembly** without an
+  explicit contractual permission; the default is prohibition.
+- Evaluation-corpus data must be lawfully obtained, de-identified before use, labelled by two
+  independent qualified analysts with recorded inter-rater agreement, and split so that the test
+  portion is never used for tuning.
+- Data entering any corpus must have documented provenance and a recorded last-updated date
+  (AIMS-REG-006 §3.1).
+
+### 2.6 Required expertise and training for developers
+
+Developers on AI systems must hold, or obtain within 90 days of assignment: secure-coding
+certification; the organization's responsible-AI training module; and training on the AI-specific
+threat catalogue (injection, poisoning, model stealing, inversion). Reviewers of evaluation logic
+additionally require domain competence in the frameworks being assessed. Competence is recorded in
+AIMS-REG-004; an unmet requirement means the person is not assigned the activity.
+
+## 3. Approvals, sign-offs and release criteria
+
+| Gate | Criteria to pass | Sign-off |
+|---|---|---|
+| Design gate | Current impact assessment; threat model complete; human oversight point defined | AI Development Lead + Responsible AI Lead |
+| Development exit | Peer review complete; all automated tests green | AI Development Lead |
+| V&V gate | Every test class in §2.2 passed at its stated condition | AI Development Lead + Responsible AI Lead (responsible-AI criteria) |
+| Security gate | Threat model reviewed; adversarial suite fully blocked | AI Security Lead |
+| Release authorization | All gates above signed; deployment plan (AIMS-PLAN-008) current; rollback rehearsed | **AI System Accountable Owner** — and the AIGB for any high-impact system |
+| Post-release verification | Staged dwell healthy; monitoring and alerting confirmed live | AI Operations Lead |
+
+**Segregation of duties:** the role that develops and validates the system (AI Development Lead) is
+never the role that authorizes its production release (AI System Accountable Owner). An unmet release
+criterion blocks release; proceeding requires a dated, AIGB-approved exception under AIMS-POL-001 §4.
+
+## 4. Change control
+
+All changes are version-controlled, peer-reviewed and promoted through the staged pipeline; there is
+**no direct-to-production change path** and no manual production provisioning. Each change is
+classified:
+
+| Class | Examples | Requirement |
+|---|---|---|
+| Minor | Refactor, logging, documentation | Peer review + automated tests |
+| Standard | Prompt or rubric change, dependency update | Peer review + full V&V regression re-run |
+| Material | Model family change, new data category, change to a human oversight point or to scoring semantics | Full V&V + **re-run impact assessment** + release re-authorization + user communication |
+| Emergency | Production incident fix | Expedited review by two engineers, retrospective within 5 business days, full regression within 48 hours |
+
+Every change records: what changed, why, its class, its test results, its approver, and its rollback
+plan. Material changes are communicated to users before deployment.
+
+## 5. Usability, controllability and interested-party engagement
+
+- **Usability.** Verdicts are presented per requirement with plain-language rationale and cited
+  evidence, so a reader can act on the result without reading raw API output. Remediation is
+  expressed as specific, requirement-tied tasks rather than generic advice.
+- **Controllability.** Operators can scope an assessment, halt it, override any verdict, suspend the
+  system, and roll back a release. The system is asynchronous and never blocks a user-facing path.
+- **Interested-party engagement.** Design and development engage: **customers** (advisory sessions
+  each quarter and structured feedback on verdict quality), **compliance analysts and auditors** (the
+  primary human reviewers, consulted on rubric changes), **Legal and Privacy** (at the design gate),
+  **security reviewers** (threat modelling), and **the AIGB** (representing wider interested parties,
+  including the assessed organizations' end users). Feedback is recorded and dispositioned; feedback
+  that reveals a new impact re-triggers §2.4.
+
+## 6. AI system requirements and specification
+
+### 6.1 Specification of requirements
+
+Requirements and specifications are **specified and documented for every new AI system and every
+material enhancement** (per §4 classification) in the AI System Requirements Specification
+(AIMS-SPEC-007), before design is committed. The specification is version-controlled, peer-reviewed
+and approved at the design gate.
+
+### 6.2 Rationale, goals and reason for developing the system
+
+The evaluation AI system exists because compliance assessment against frameworks such as ISO/IEC
+42001 was performed manually: slow, inconsistent between assessors, and impossible to run at the
+cadence that continuous assurance requires. **Business case:** deliver continuous, evidence-cited
+compliance assessment at a fraction of manual cost, as the core of our assurance product.
+**Customer request:** assessed organizations asked for per-requirement findings with cited evidence
+and actionable remediation rather than a single opaque score. **Goals:** reduce assessment turnaround
+from weeks to minutes; produce a defensible audit record; never assert non-compliance without
+evidence. The business case, its owner and its approval date are recorded in AIMS-SPEC-007 §1.
+
+### 6.3 Intended training approach and how data requirements are achieved
+
+The intended approach is deliberately **inference-only with no model training or fine-tuning**: the
+domain requires traceable reasoning over customer-specific evidence rather than a learned classifier,
+and inference-only operation removes the risk of customer data entering model weights. Consequently
+the data requirements are: (a) authoritative framework requirement text — achieved through the
+curated managed control catalogue; (b) representative labelled examples for verification — achieved
+through the de-identified regression corpus with dual independent labelling and a held-out test
+split; and (c) per-assessment evidence — achieved at run time from customer uploads and fresh
+authorized reads of the customer's environment. Data quality expectations for each are in
+AIMS-REG-006 §3.4. If a future system requires training, §2.5 rules apply and a material-change
+impact assessment is mandatory.
+
+### 6.4 Requirements span the entire life cycle
+
+The specification covers the whole life cycle, not initial development alone. It carries explicit
+requirements for: operational monitoring and alerting thresholds; support and incident response;
+retention of assessment records and event logs; update and communication obligations; drift
+detection; decommissioning and data deletion; and portability of the assessment record if the
+customer leaves. Each life-cycle requirement names the role accountable for it in operation.
+
+### 6.5 Revisiting requirements
+
+Requirements and specifications are revisited whenever **the system cannot operate as intended** or
+**new information arises that could improve them**, specifically on: a missed release criterion; a
+production incident or substantiated concern; accuracy regression observed in operation; drift
+detection; customer or auditor feedback identifying a gap; a new legal or contractual obligation; a
+newly identified threat class; or a supplier change (model deprecation or behaviour change). The AI
+Development Lead raises the revision, it is reviewed at the design gate, and material revisions
+re-trigger the impact assessment. Two revisions in the current version arose this way: the
+`unable_to_assess` state (RD-2) was added after review found read failures were being reported as
+customer non-compliance, and the document-supplements-scan rule was added after customers showed that
+requirements no API can observe were being scored as gaps.
+
+## 7. Review history
+
+| Version | Date | Reviewer | Outcome |
+|---|---|---|---|
+| 2.0 | 2025-06-11 | AI Development Lead | Added adversarial testing as a release criterion |
+| 3.0 | 2025-12-05 | AI Development Lead | Added the responsible-development objectives table and stage-integration map |
+| 3.1 | 2026-02-24 | AI Development Lead, approved by AIGB | Added RD-8; documented the two requirement revisions in §6.5; confirmed suitable, adequate and effective |

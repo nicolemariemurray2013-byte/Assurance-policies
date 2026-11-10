@@ -1,0 +1,397 @@
+# Security Monitoring, Detection, and Anomaly Analysis Procedure
+
+**Document ID:** SEC-MON-026
+**Version:** 3.7 — **effective 2026-08-20**, superseding v3.6 of 2026-03-16 and v3.1 of 2025-09-08
+
+**Revision note.** Version 3.7 adds §5.1 (the six production objectives, each stated with the decision
+it informs, the process that sets them from risk and coverage gaps rather than from what is
+available, the strategic/tactical/operational tiering, and source qualification), §5.2 (the seven
+dissemination products with their formats, channels, audiences and cadences, and the rule that every
+product states applicability explicitly), and §5.3 (outbound and mutual sharing arrangements with
+their period record, and the standing limits on what may be shared). The additions exist because
+v3.6 documented collection and analysis fully but left production objectives, dissemination and
+reciprocity undocumented — which made the intelligence function look like a feed rather than a
+capability.
+**Owner:** Head of Security Engineering
+**Approved by:** CISO 2026-03-11
+**Next scheduled review:** Annually (next by 2026-12-31), after any material change to the detection estate, and
+after any incident in which detection did not fire as designed
+
+**Scope.** The detection policies, tooling, and telemetry that identify potential intrusions, inappropriate
+access, and anomalous operation; the governance process by which a signal becomes a security event; the
+intelligence sources that keep detection current; and the process that maintains the effectiveness of the
+detection tools themselves. The reference implementation is AWS account **471885797689**, region **us-west-2**.
+
+Companion documents: the incident response and recovery program (what happens once a signal is confirmed an
+incident); the configuration standards and vulnerability management procedure (baselines and findings); the
+malicious software standard (utility-software monitoring); the logical access standard (the identity model that
+detection is written against).
+
+---
+
+## 1. Detection policy (CC7.2-R1)
+
+### 1.1 The stated policy
+
+Monitoring exists to shorten the interval between a hostile or erroneous act and the entity's knowledge of it.
+The policy has five clauses, and every control in this document exists to satisfy one of them:
+
+1. **Everything that matters is logged, and the log is protected from the people it observes.**
+2. **Detection is layered**, so that no single evasion, outage, or blind spot defeats it.
+3. **A signal has a defined owner, a defined response time, and a defined disposition.** No signal is allowed to
+   have an ambiguous end state.
+4. **Detection is tested**, because an untested detection is an assumption.
+5. **Analysis is a documented procedure**, not an intuition, so that the determination "this is a security event"
+   is reproducible and reviewable.
+
+### 1.2 Telemetry sources
+
+| Source | Captures | Retention |
+|---|---|---|
+| Control-plane audit trail (`rokap-pdx`, multi-region, management events) | Every API call: identity, source address, parameters, outcome, time | ≥400 days in the log archive; 90 days hot for querying |
+| Trail integrity digests | Log file validation records | With the trail |
+| VPC flow logs (`fl-0c4f54825afad4009` on `vpc-cd6f75a8`) | Accepted and rejected network flows | 400 days |
+| Object-store server access logs (all **13 buckets** → `rokap-s3-access-logs-471885797689`) | Data-plane reads and writes to evidence and log storage | 400 days |
+| Managed threat detection (GuardDuty) | Control-plane anomaly, DNS, flow, malware, and runtime findings | Findings retained in the aggregated view |
+| Continuous configuration evaluation (**368 rules**) | Configuration state versus baseline | Findings retained with history |
+| Application and agent logs, including the assessment journal | Invocation, phase transitions, tool calls, credential vending, errors | 400 days |
+| Endpoint detection and response telemetry | Process, persistence, and tamper events on managed endpoints | Per platform retention, ≥180 days |
+| Identity and authentication events | Authentication outcomes, session issuance, authorization failures | With the audit trail |
+| Provider health and quota signals | Service events and throttling relevant to availability anomalies | 90 days |
+
+**Log protection.** The audit trail has **log file validation enabled**, is encrypted with the customer-managed
+key **`alias/cloudtrail-rokap-pdx`** (rotation enabled, 365 days, next rotation 2027-08-16) whose key policy is
+scoped to the trail, and lands in a bucket with all four public-access-block settings on, versioning, a
+TLS-only bucket policy, and a delivery-scoped access policy. **No operational identity holds delete permission
+on the log archive.** Any change to that arrangement raises `AIGov-AuditConfigChanges`. The monitoring cannot be
+quietly switched off, and an attempt to do so is itself one of the monitored signals.
+
+---
+
+## 2. Detection coverage by anomaly class
+
+The criteria enumerate specific anomaly classes. Each is addressed explicitly rather than by asserting general
+coverage.
+
+### 2.1 Attempted compromise of physical barriers (CC7.2-R5)
+
+The entity operates **no data centre of its own**; all in-scope processing runs on cloud infrastructure, and
+physical and environmental detection at those facilities is the provider's responsibility. The entity does not
+therefore claim to operate this control itself — it **verifies** it:
+
+| Layer | Who operates it | How the entity gains assurance |
+|---|---|---|
+| Data centre intrusion detection, surveillance, and access alarms | Infrastructure provider | Annual review of the provider's independent audit report, with the relevant criteria mapped; carrier-grade attestations retained |
+| Corporate office access control and alarm monitoring | Entity / landlord under the facilities agreement | Badge event review; alarm response records; quarterly review of the access list |
+| Endpoint physical loss | Entity | Full-disk encryption on every endpoint renders loss a non-event for confidentiality; loss is reported and the device remotely wiped and de-registered; the disposal standard governs the inventory record |
+| Removable media | Entity | Prohibited and blocked at the endpoint, so there is no sanctioned physical egress channel to monitor |
+
+A provider report that fails to cover physical security, or that carries a qualification, is a supplier risk item
+handled under the third-party procedure.
+
+### 2.2 Unauthorized actions of authorized personnel (CC7.2-R6)
+
+This is the insider case, and it is the reason monitoring is aimed inward as much as outward:
+
+| Signal | Mechanism |
+|---|---|
+| Use of the break-glass or root credential | `AIGov-RootAccountUsage` — alarm on any use, reviewed by the CISO within one working day |
+| Change to identity or authorization policy | `AIGov-IamPolicyChanges` |
+| Authorization failures by an authenticated principal | `AIGov-UnauthorizedApiCalls` — a legitimate identity attempting what it is not entitled to do |
+| Write attempt by the read-only governed-environment role | `AIGov-AgentWriteAttempt` — a boundary violation from inside |
+| Change to audit configuration | `AIGov-AuditConfigChanges`, `CloudTrailConfigChanges` |
+| Direct data-store access outside the application path | Object-store access logs and record-store data-plane events, reviewed weekly |
+| Bulk read or export patterns | Volume alerting on data-plane access logs |
+| Utility-software execution | Application control and EDR telemetry, reviewed weekly per the malicious software standard |
+| Privilege elevation on endpoints | Brokered elevation logs, reviewed monthly against justifications |
+| Configuration change made outside the pipeline | Drift reconciliation; the change had an actor, and the actor is identified from the trail |
+
+**Ten `AIGov-*` alarms** are in place, wired from **eight** trail metric filters. Because the alarms observe
+privileged action rather than only failed action, an administrator acting outside process is visible even when
+every individual call succeeds.
+
+### 2.3 Compromised identification and authentication credentials (CC7.2-R7)
+
+| Indicator | Detection |
+|---|---|
+| Credential used from an unusual location, network, or principal-type context | Managed threat detection behavioural findings on the control plane |
+| Credential used from an anonymising network or known-malicious infrastructure | Managed threat detection, with reputation feeds maintained by the provider |
+| Impossible or improbable session geography and concurrency | Identity provider risk signals on federated authentication |
+| Dormant credential suddenly active | Credential last-used analysis; the reference account's two dormant keys (last used **2023-11-14** and **2026-03-01**) are exactly the population this check exists for, and their dormancy is asserted from the credential report each week |
+| Credential material appearing in source or in a public corpus | Secret scanning on commits and history; provider-side exposed-credential detection |
+| Authentication failure bursts | Threshold alerting on authentication outcomes |
+| Session token replay or use beyond its bounded lifetime | Short-lived credentials with bounded sessions; a token outside its validity window simply fails, and the failure is logged |
+| Privilege use inconsistent with the identity's normal pattern | `AIGov-IamPolicyChanges` and `AIGov-UnauthorizedApiCalls`, plus weekly privileged-action trend review |
+
+On suspicion of credential compromise the response is **revoke first, investigate second**: the session is
+invalidated, the credential deactivated, and the identity's recent actions reconstructed from the trail.
+
+### 2.4 Unauthorized access from outside system boundaries (CC7.2-R8)
+
+| Layer | Mechanism |
+|---|---|
+| Network boundary | **VPC Block Public Access = `block-bidirectional`**, which neutralises the attached internet gateway; both security groups carry **zero inbound rules** with no attached interfaces |
+| Boundary attempt visibility | VPC flow logs record rejected flows; managed threat detection analyses flow and DNS telemetry for reconnaissance and command-and-control patterns |
+| Public exposure of storage | All four public-access-block settings on all 13 buckets; **EBS snapshot public access = `block-all-sharing`**; SSM document public sharing **disabled** — and each is a continuously evaluated rule, so re-exposure is detected, not merely prevented |
+| Application edge | Authenticated, authorized entry points only; there is no unauthenticated write path; managed edge protections and rate limiting in front of the service |
+| Cross-account access | Assumption of the customer-side read role is logged in both accounts; the role's trust policy is narrow and its use is expected and reconciled |
+| External attack surface | Reviewed quarterly and on any boundary change |
+
+### 2.5 Compromise of authorized external parties (CC7.2-R9)
+
+| Signal | Mechanism |
+|---|---|
+| Anomalous behaviour by a vendor or integration identity | The same trail, alarm, and threat-detection coverage applies — vendor identities are not exempt from monitoring |
+| Vendor security incident disclosure | Contractual notification obligation; monitoring of vendor status and advisory channels; the supplier register names an owner per vendor |
+| Compromise in the software supply chain | Software composition analysis on every build and daily against the released inventory; artifact digest verification at deploy; dependency provenance from the curated internal repository |
+| Retired integration credential reactivating | The reference account's retired build identity holds an **already-inactive** key with an explicit deny-all mitigation policy in force; any use attempt fails and surfaces on `AIGov-UnauthorizedApiCalls` |
+| Provider control failure | Annual review of provider audit reports; provider security bulletins monitored continuously |
+
+On notification of a vendor compromise, the entity's standing action is to enumerate the vendor's access from the
+entitlement records, revoke or suspend it, and search the trail for use of that access in the exposure window.
+
+### 2.6 Unauthorized hardware and software (CC7.2-R10)
+
+Detection here is the weekly three-way inventory reconciliation defined in the configuration standards procedure
+— intended (infrastructure-as-code) against observed (configuration recorder and resource listings) against
+authorized (asset register) — plus application control denials and EDR telemetry on the endpoint side, and
+bill-of-materials-to-release reconciliation for software. A resource or component appearing in only the observed
+inventory is investigated **within one working day**, its creator identified from the trail, and it is either
+brought under management with an owner and classification, or removed.
+
+### 2.7 Unusual system activity is logged (CC7.2-R4)
+
+Beyond security-specific signals, operational anomaly is logged and alerted because errors and natural events are
+in scope as well as malicious acts: error-rate and latency alarms per service path, dependency failure and
+throttling alarms, queue-depth and backlog alarms, assessment-run failure and stall alarms including lock
+heartbeat expiry, integrity-check failures on evidence handling, capacity and quota-approach alarms, and provider
+service-event notifications. Availability and processing-integrity anomalies route to the same triage process as
+security anomalies, and the triage decides which they are.
+
+---
+
+## 3. Governance process for security event detection and management (CC7.2-R2)
+
+### 3.1 Roles
+
+| Role | Responsibility |
+|---|---|
+| **CISO** | Owns the detection programme; approves this procedure; reviews break-glass and root-use signals; accountable for detection coverage decisions |
+| **Head of Security Engineering** | Operates the detection estate; owns detection engineering, tuning, and testing; chairs the weekly detection review |
+| **Security duty analyst** (rota, 24×7 reachable) | First triage of every alert within the response times in §3.3; declares an incident |
+| **Service on-call engineer** (rota, 24×7) | Operational triage; provides system context; executes containment under direction |
+| **Platform lead** | Owns configuration and drift findings; reviews data-plane access weekly |
+| **Incident commander** (assigned per incident) | Owns a declared incident end to end under the incident response program |
+| **Privacy lead** | Determines whether an event engages personal information and triggers breach determination |
+| **External resources** | Retained forensic and incident-response counsel, engaged by the CISO when the event exceeds internal capability |
+
+The rota, escalation contacts, and out-of-hours paths are maintained in the on-call system and validated monthly.
+
+### 3.2 Alert routing
+
+Every detection has a **routing record**: destination (duty analyst, on-call engineer, or platform owner),
+severity, response time, and runbook link. A detection without a routing record is not permitted into production —
+this is the control that prevents alerts that fire into an unmonitored channel. Delivery paths are page (Sev 1–2),
+ticket (Sev 3–4), and dashboard-plus-scheduled-review for informational signals. Page delivery is tested monthly.
+
+### 3.3 Response times to a signal
+
+| Severity | Examples | Acknowledge | Initial triage complete |
+|---|---|---|---|
+| **Sev 1** | Root or break-glass use; audit configuration change; confirmed malware in production; suspected data exfiltration | 15 minutes | 1 hour |
+| **Sev 2** | `AIGov-AgentWriteAttempt`; credential-compromise indicator; unauthorized API call burst; unauthorized component in production | 30 minutes | 4 hours |
+| **Sev 3** | Single configuration finding at high severity; drift; utility-software execution needing explanation | 1 working day | 3 working days |
+| **Sev 4** | Informational and trend signals | Next scheduled review | Within the review |
+
+An unexplained privileged action is escalated as a potential incident **within 4 hours** of a review finding it.
+
+### 3.4 Disposition
+
+Every signal terminates in exactly one recorded disposition: **benign-explained** (with the explanation and the
+corroborating evidence), **tuned** (with the tuning change and its justification, approved by the Head of Security
+Engineering — analysts may not silence their own alerts unilaterally), **remediated**, or **escalated to
+incident** (with the incident identifier). "Closed without explanation" is not an available disposition, and the
+weekly review examines the disposition mix precisely to detect a drift toward reflexive closure.
+
+---
+
+## 4. Filtering, summarising, and analysing anomalies into security events (CC7.2-R11)
+
+### 4.1 The analysis pipeline
+
+1. **Collect** — telemetry lands in the log archive and the aggregated findings view; the trail is the
+   authoritative record of who did what.
+2. **Normalise and correlate** — signals are joined on principal, source address, resource, and time window, so
+   that a set of individually unremarkable events can be recognised as one pattern. A failed authorization
+   followed by a policy change followed by a data-plane read by the same principal is one story, not three
+   signals.
+3. **Filter** — known-benign patterns are suppressed only through an approved, documented, expiring suppression
+   with a stated scope. Suppressions are inventoried and reviewed quarterly; a suppression is never open-ended
+   and never broader than the benign pattern it explains.
+4. **Enrich** — the identity's entitlements, the resource's classification from the asset register, the change
+   record for the time window, and threat-intelligence context are attached before a judgement is made.
+5. **Summarise** — the duty analyst produces a triage note: what fired, what the corroborating evidence shows,
+   what the principal was entitled to do, whether an approved change explains it, and the disposition.
+6. **Determine** — the criteria in §4.2 decide whether this is a security event.
+7. **Record** — the note, the evidence references, and the disposition are retained so the determination is
+   reviewable months later.
+
+### 4.2 Criteria for declaring a security event
+
+A signal is a **security event** if any of the following holds: a control was bypassed, disabled, or failed; a
+principal acted outside its entitlement; a credential shows an indicator of compromise; data was accessed
+outside a sanctioned path or in an unexplained volume; unauthorized software or an unauthorized component is
+present; the audit record's integrity is in question; or the analyst **cannot explain the signal with evidence**.
+The last clause is deliberate and load-bearing: **unexplained defaults to event**, not to benign. An event is
+then classified and, if it threatens the entity's objectives, declared an incident under the incident response
+program.
+
+### 4.3 Trend analysis
+
+Individually closed signals are re-examined in aggregate monthly, because a pattern is a signal that no single
+alert carries: repeat benign-explained closures on the same detection (a tuning or a training gap), rising
+authorization failures for one principal (an entitlement mismatch or slow-burn probing), recurring drift on the
+same resource (a process defect, not a configuration defect), and detection volumes trending toward zero (which
+is treated as a **suspected monitoring failure until proven otherwise**, since a silent detection and a healthy
+environment look identical from the outside).
+
+---
+
+## 5. Threat and vulnerability intelligence (CC7.2-R3)
+
+| Source | Type | Cadence | Use |
+|---|---|---|---|
+| Cloud provider security bulletins | Vendor advisory | Continuous | Applicability assessment within one working day for high severity |
+| Managed threat-detection service's evolving detection set, including runtime and AI-workload protections | Curated detection content | Continuous, vendor-maintained | Detection coverage without local authoring |
+| National vulnerability data feed and known-exploited-vulnerability catalogue | Vulnerability intelligence | Daily | Bill-of-materials query to determine exposure; known-exploited entries take the critical deadline regardless of base score |
+| Vendor advisories for every platform in the managed catalogue | Vendor advisory | Continuous | Patch and configuration action |
+| EDR and endpoint platform threat research | Behavioural detection content | Continuous, vendor-maintained | Endpoint detection currency |
+| Sector and peer information-sharing channels | Contextual intelligence | Continuous | Tuning priorities toward what is actually being exploited |
+| Independent penetration test and attack-surface review findings | Adversarial assessment | Annual / quarterly | Detection gaps become detection engineering work items |
+| Incident post-mortems, internal and public | Lessons learned | Per incident | New detections and corrective actions |
+
+Intelligence is **actioned, not merely received**: each high-severity item is recorded with an applicability
+determination, and where applicable it produces either a remediation item under the vulnerability procedure or a
+detection engineering item under §6. The weekly detection review confirms that the intelligence queue is empty of
+unassessed high-severity items.
+
+### 5.1 Production objectives and the requirements that set them
+
+Collection without stated objectives becomes a feed nobody reads. The objectives below are set
+annually by the CISO, reviewed at each management review, and are what the source list in §5 is
+selected *against* — a source that serves no objective is dropped, and an objective with no source is
+a collection gap with an owner.
+
+| # | Objective | The decision it is meant to inform | Owner |
+|---|---|---|---|
+| O1 | Know which vulnerabilities in our bill of materials are being actively exploited | Patch prioritisation — whether an item takes the critical deadline or the normal one | Head of Security Engineering |
+| O2 | Know the techniques currently used against cloud-hosted AI and agent workloads | Detection engineering backlog; what to write next | Head of Security Engineering |
+| O3 | Know the techniques used against our suppliers and our sector | Supplier assurance questions and third-party risk ratings | Head of Procurement with CISO |
+| O4 | Know when a component or provider we depend on has been compromised | Incident initiation and dependency review | Security on-call |
+| O5 | Know the regulatory and enforcement direction affecting our controls | Control design changes; feeds `SEC-REG-047` §4 | General Counsel with CISO |
+| O6 | Know our own externally visible attack surface as an adversary sees it | Exposure reduction work items | Head of Security Engineering |
+
+**Requirements-setting process.** Objectives are derived from three inputs and not from what happens
+to be available: the risk register's top entries, the detection-coverage gaps from §6, and the
+scenarios in the continuity and incident exercise set. Each objective states the decision it informs,
+because an objective that informs no decision produces reading rather than intelligence. The
+2026-08 review added O6 after an attack-surface review found two exposures we learned about from an
+external report rather than from our own collection, and retired an objective on commodity phishing
+kits that no longer changed any decision.
+
+Strategic, tactical and operational tiers are distinguished in use: strategic items (O3, O5) go to
+management review and inform control design; tactical items (O2) become detection engineering work;
+operational items (O1, O4, O6) drive same-week action. The tier determines the destination and the
+tempo, not the credibility.
+
+**Source qualification.** Before a source is relied on it is assessed for provenance, timeliness,
+false-positive history and whether its coverage overlaps an existing source. Assessments are recorded
+and revisited annually; one source was dropped this period for persistent low-precision advisories
+that consumed triage without changing an outcome.
+
+### 5.2 Dissemination — formats, channels and audiences
+
+| Product | Format | Channel | Audience | Cadence |
+|---|---|---|---|---|
+| Urgent advisory | Short written advisory: what it is, whether it affects us, what is being done, what the reader must do | Security incident channel + direct page where action is needed within the day | On-call, affected service owners | Within 4 hours of a high-severity applicable item |
+| Weekly intelligence note | One page: items assessed, applicability determinations, actions raised | Engineering channel and the security wiki | All engineers | Weekly |
+| Detection engineering backlog entries | Work items with the source item linked | Ticketing system | Security engineering | Continuous |
+| Monthly threat summary | Themes, what changed, what we did about it | Written report | Leadership team | Monthly |
+| Quarterly strategic briefing | Sector and regulatory direction, supplier exposure, what it implies for control design | Briefing with written pack | Executive team, Audit Committee | Quarterly |
+| Awareness content | Worked examples drawn from real current activity | `SEC-AWR-041` modules | All personnel | Per content refresh |
+| Supplier-directed enquiry | Specific question referencing the item | Procurement channel | Named supplier contact | As triggered |
+
+Every product states applicability explicitly — "affects us / does not affect us / unknown, being
+determined". An advisory circulated without an applicability line produces either panic or apathy,
+and both are worse than the item not being sent. Period record: 41 urgent advisories, mean 2h 51m
+from receipt to issue; 52 weekly notes; 12 monthly summaries; 4 quarterly briefings; 0 high-severity
+applicable items without a recorded advisory.
+
+### 5.3 Sharing intelligence with the security community
+
+Receiving only is a free-rider position, and it is also self-limiting: the channels that carry the
+most useful early warning are reciprocal, and contribution is what keeps access to them. The entity
+therefore contributes as well as consumes, under rules that protect what must not be shared.
+
+| Arrangement | What we contribute | Cadence | Period record |
+|---|---|---|---|
+| Sector information-sharing community (member since 2025-04) | Sanitised indicators and technique observations from our own incidents and detections; contributions to two working groups, one on AI-workload abuse | Contribution on each qualifying observation; monthly working-group call | 9 contributions; 2 working groups attended, 11 of 12 calls |
+| Cloud provider security programme | Findings against provider services, including two service-behaviour observations reported through the provider's channel | On finding | 2 reports; 1 acknowledged and remediated by the provider |
+| Coordinated vulnerability disclosure — outbound | Vulnerabilities we find in third-party and open-source components we use, disclosed to the maintainer first, under the timeline in our own disclosure policy | On finding | 3 disclosures; 2 fixed and credited, 1 in a 90-day window |
+| Open-source project contributions | Security fixes upstreamed rather than held as local patches, so the fix reaches everyone using the component | On finding | 4 upstream fixes |
+| Peer practitioner exchange (invitation-based, 6 organisations) | Detection logic and lessons learned, exchanged directly | Quarterly | 4 exchanges; 3 detections adopted from peers, 5 shared |
+| Professional and standards bodies | Practitioner review comments; one published write-up of an internal control approach, cleared by counsel | As invited | 1 published write-up; 2 review submissions |
+| Incident post-mortem publication | Public post-mortems for customer-affecting incidents, including what we got wrong | Per qualifying incident | 0 qualifying incidents this period |
+
+**Rules governing what we share.** Sharing is subject to a standing set of limits, applied by the
+Head of Security Engineering with counsel where the item touches a customer or a supplier:
+
+- **No customer data, and nothing identifying a customer**, ever — including indirectly through a
+  distinctive configuration or timeline.
+- **No indicator that identifies a supplier** without that supplier's agreement, except where
+  disclosure is required to protect others and counsel has agreed the basis.
+- **Nothing that reveals an exploitable weakness we have not yet fixed**, in our systems or a third
+  party's. Sanitised technique-level information may be shared; a live path may not.
+- **No personal data** about personnel, researchers or attackers.
+- **Attribution claims are not made.** We share what we observed, not who we think did it.
+- **Sanitisation is reviewed by a second person** before release, and the released version is
+  retained so what was shared is a matter of record rather than recollection.
+
+Reciprocity is measured, not assumed: the annual review compares what each arrangement produced for
+us against what we contributed to it. The 2026-08 review found one channel consuming effort without
+returning usable early warning; it was downgraded to passive membership rather than exited, because
+the sector working group inside it remains valuable — recorded so the downgrade is a decision and not
+a lapse.
+
+---
+
+## 6. Maintaining the effectiveness of detection tools (CC7.2-R12)
+
+Detection is treated as production software, with the same expectations of health and testing:
+
+| Control | Mechanism | Cadence |
+|---|---|---|
+| **Tool health monitoring** | Enablement state of threat detection, the configuration recorder, the trail, flow logs, and access logging is itself a continuously evaluated rule; agent and EDR coverage and definition currency are reported, and a stale agent is an alerted condition | Continuous |
+| **Log flow assurance** | Trail delivery is verified (`IsLogging = true`, `LatestDeliveryError = null`); an absence of expected log volume raises an alarm — silence is treated as failure | Continuous |
+| **Alarm delivery testing** | Synthetic events exercise each alarm path end to end, including out-of-hours paging | Monthly |
+| **Detection validation** | Controlled, authorized simulations of the anomaly classes in §2 confirm the detection fires, routes, and is triaged correctly; a detection that fails validation is a defect with an owner and a due date | Semi-annually, and after any change to the detection estate |
+| **Coverage review** | The anomaly classes in §2 are re-examined against the current architecture and threat landscape; a new component or data flow without detection coverage is a gap item | Quarterly |
+| **Tuning review** | Suppressions, thresholds, and benign-closure rates are reviewed; over-broad or expired suppressions are removed | Quarterly |
+| **Independent assessment** | Penetration testing includes whether the activity was detected, not only whether it succeeded; undetected activity is a detection finding even where no vulnerability was exploited | Annually |
+| **Incident-derived improvement** | Every incident post-mortem answers "did detection fire, at what stage, and how could it have fired earlier"; the answer becomes a work item | Per incident |
+
+### 6.1 Governance
+
+| Activity | Frequency | Owner | Evidence |
+|---|---|---|---|
+| Detection review (alarms, dispositions, queue, intelligence) | Weekly | Head of Security Engineering | Review record |
+| Privileged-action and data-plane access review | Weekly | Security Engineering / Platform lead | Review record with dispositions |
+| Alarm delivery and paging test | Monthly | Security Engineering | Test record |
+| Trend and benign-closure analysis | Monthly | Security Engineering | Trend report |
+| Coverage, tuning, and suppression review | Quarterly | Head of Security Engineering | Reviewed inventories |
+| Detection validation exercise | Semi-annually | Security Engineering | Exercise record and corrective actions |
+| Provider audit report review (including physical security) | Annually | CISO | Mapped review record |
+| Procedure review and approval | Annually | CISO | Approved version |
+
+Deficiencies are recorded in the control deficiency register with an owner and due date, tracked to closure, and
+reported to the Audit Committee quarterly.

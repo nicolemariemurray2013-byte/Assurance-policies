@@ -1,0 +1,349 @@
+# Asset Return and Intellectual Property Rights Standard
+
+**Document ID:** SEC-AST-041
+**Version:** 2.0 — **effective 2026-03-16**, superseding v1.2 of 2025-07-21
+**Owner:** General Counsel, jointly with the Director IT Operations for asset recovery execution
+**Approved by:** CISO 2026-03-11
+**Next scheduled review:** Annually (next by 2026-12-31), and on any change to the endpoint fleet platform, to the
+software catalogue, or to a licence agreement material to the service
+
+**Scope.** Two closely related obligations: recovering **every asset** the entity has issued or entrusted to a
+person when their employment, contract or agreement changes or ends; and protecting **intellectual property
+rights** — the entity's own and other parties' — in the software and information the entity uses and produces.
+Applies to all 48 personnel, the **11 named vendor individuals** with access to entity information, and all
+contractors. The production environment is AWS account **471885797689**, region **us-west-2**.
+
+Companion documents: HR-PRO-042 (the termination and change-of-employment process this standard plugs into, and
+the confidentiality agreements that survive it); SEC-AST-020 (the asset inventory and classification scheme this
+standard depends on); SEC-END-043 (endpoint and remote-working controls, including remote wipe); SEC-MED-046
+(destruction methods for recovered media and equipment); SEC-IAM-021 (revocation of logical access);
+SEC-MAL-024 (application control, which is also the enforcement mechanism for licensed-software compliance).
+
+---
+
+## Part A — Return of assets (5.11)
+
+## 1. The complete asset set that must be returned (5.11-R6)
+
+The obligation cannot be met if the set is left implicit. Every issuable asset class is identified in
+SEC-AST-020, is recorded against a named custodian at issue, and appears as a line on the return checklist. A
+class with no instance for a given person is marked *not issued* rather than left blank, so a blank is always a
+missing return.
+
+| Asset class | Instances in the entity | Recorded at issue | Return / recovery method |
+|---|---|---|---|
+| User endpoint device (laptop) | One per person, 48 in the fleet, all centrally enrolled | Serial, model, assignee, encryption key escrow ref | Physical return; wipe and re-image before reissue |
+| Mobile device (entity-owned) | 9 issued to on-call and executive roles | IMEI, assignee | Physical return; factory reset verified in the platform |
+| Personally owned device with a managed container (BYOD) | 31 registered, email and chat only | Device ID, container ID, user consent record | **Container wipe** (business data only); attestation of no local copy |
+| Portable storage device | **None issued.** Removable media is prohibited for entity data and USB mass storage is blocked by device policy | n/a | Line marked *not issued*; a device found in use is an incident |
+| Authentication hardware (FIDO2 security key) | 2 per person, 96 in the register | Serial, assignee, credential IDs | Physical return; credentials deleted from the identity provider on receipt |
+| Break-glass credential material | 1 set for the `mac` break-glass IAM user, held in a sealed envelope in the HQ safe | Custodian, seal number | Custody transferred and the credential rotated, not merely returned |
+| Physical access badge | One per person; 3 co-working site passes | Badge ID, assignee | Physical return or, where the pass is site-issued, cancellation with the site operator |
+| HQ / EU office keys and safe combinations | 6 key holders, 2 safe combination holders | Holder register | Physical return; combination changed on any holder change |
+| Specialist equipment | Monitors, docks, headsets, 2 hardware test devices | Serial, assignee | Physical return or written off with approval |
+| Physical copies of information | Rare by design: Confidential printing is disabled at the device and there is no paper personnel file | Print exception record, if any | Return for shredding in the locked console; attestation of none held |
+| Software licences assigned to an individual | Per the licence register in Part B | Seat assignment | Seat reclaimed and reassigned; see §7 |
+| Corporate card and expense credentials | 11 holders | Holder register | Cancellation with the issuer |
+| Credentials and secrets | Federated identities, repository access, vendor portal logins | Identity inventory | Revoked, not returned — see §3 |
+
+## 2. The formalized change-and-termination process (5.11-R1, 5.11-R2)
+
+Return is a step in the single offboarding-and-change workflow in HR-PRO-042, not a side conversation. The
+workflow is initiated by Head of People on notice, or by the engagement owner for a contractor or vendor
+individual, and it does not close until every line reconciles.
+
+1. **T-minus.** On notice, the workflow generates the person's asset list **from the inventory**, not from
+   memory, covering both physical and electronic assets owned by or entrusted to the entity.
+2. **Return instructions.** Because **42 of 48 personnel work primarily remotely**, the default return path is a
+   pre-paid tracked courier with a prepared packing list; the tracking number is recorded in the workflow. HQ
+   and EU office staff return in person to IT Operations against the same checklist.
+3. **Last working day.** Devices, security keys, badges, keys and specialist equipment are due **by the last
+   working day**. Logical access is revoked on the last working day at the recorded end time regardless of
+   whether physical assets have arrived (§3).
+4. **Receipt and verification.** IT Operations records receipt per line, verifies serials against the inventory,
+   confirms full-disk encryption state, and moves the record to *returned — pending sanitization*.
+5. **Sanitization or reissue.** Recovered equipment is wiped and re-imaged before reissue, or disposed of, under
+   SEC-MED-046. The inventory record is closed with the method, date and verifier.
+6. **Reconciliation and escalation.** An outstanding line at last working day +2 working days escalates to the
+   manager; at +5 to the department head and the CISO; at +10 it becomes a recorded deficiency, and where the
+   asset held Confidential or Restricted data it is treated as a potential incident under SEC-IRP-027 with a
+   remote wipe issued immediately.
+7. **Closure.** Head of People closes the workflow only on a fully reconciled checklist. The completed checklist,
+   courier records, wipe verifications and any exception approvals are retained for **seven years**.
+
+**Change of employment** runs the same workflow with a different endpoint: assets required in the new role are
+re-recorded against it, assets not required are returned on the effective date, and access is re-granted from
+zero rather than added to (SEC-IAM-021). A change is treated as a termination of the old responsibilities plus an
+initiation of the new ones — the same construction used in HR-PRO-042 §4.
+
+## 3. Assets that cannot be handed back: information on personal or purchased equipment (5.11-R3)
+
+Three cases arise, and each has a defined procedure because "return the laptop" does not cover them.
+
+**(a) Personally owned equipment used for entity work (BYOD).** Permitted only for email and chat through a
+managed container with its own encryption and independent wipe. On change or termination the container is wiped
+from the management console and the wipe is confirmed in the platform log; the individual additionally attests in
+the offboarding record that no entity information remains outside the container. **Customer data is never
+downloaded to endpoints** (a requirement hardened after case **D-2026-004**), so the exposure surface of a BYOD
+device is limited by design, not only by the wipe.
+
+**(b) An individual purchases their entity device.** Permitted by exception with Director IT Operations approval
+and only after: all relevant entity information has been **traced and transferred** to the entity (§4); the
+drive has been **cryptographically erased and then sanitized with verification**, or physically destroyed and
+replaced, under SEC-MED-046; entity labels, asset tags, certificates, licensed software and configuration
+profiles have been removed; the device has been un-enrolled from management; and the sale is recorded with the
+inventory record closed as *sold — sanitized, verified*. Purchase of a device that held Restricted data is
+refused rather than sanitized.
+
+**(c) A contractor's or vendor individual's own equipment.** Where an engagement permits work on
+vendor-owned equipment, the contract imposes a **wipe-and-attest obligation at engagement end**, verified before
+the final invoice is approved, and tracked by the Third-Party Risk Manager in the vendor register. Where entity
+information may have been held, a certificate of destruction is required within 30 days. Non-return or
+non-attestation is a contractual breach and a recorded deficiency.
+
+In all three cases the trace-and-delete step is evidenced: the data set concerned, the transfer destination, the
+deletion method, the verification, the date and the verifier.
+
+## 4. Knowledge important to ongoing operations (5.11-R4)
+
+Knowledge does not travel in a courier box, so it is captured deliberately:
+
+- **Handover record.** Every leaver and every person changing role completes a handover record naming: the
+  systems, controls and processes they own; runbook and documentation locations; in-flight work and known risks;
+  vendor and customer contacts they hold; undocumented operational knowledge; and any credential, key or
+  break-glass custody they hold.
+- **Named successor.** Each item is assigned to a named successor with a date; unassigned items escalate to the
+  department head. Control and policy ownership transfers are reflected in GOV-STR-003 and in the control
+  register, so no control is left ownerless (this is the same mechanism HR-PRO-042 §5 relies on).
+- **Documentation-before-departure.** Where knowledge is undocumented, documenting it is a deliverable of the
+  notice period, reviewed by the successor and the manager. A leaver in a single-point-of-failure role triggers a
+  documented overlap period where the notice period allows.
+- **Verification.** The successor confirms in writing that they can operate the handed-over items. Head of People
+  will not close the workflow without that confirmation for any item on the critical list.
+
+## 5. Preventing unauthorized copying during and after notice (5.11-R5)
+
+Notice is the period of highest data-exfiltration risk and is treated as such. On notice being given or received:
+
+| Measure | What happens | Enforcement point |
+|---|---|---|
+| Heightened monitoring | The individual's access is flagged for enhanced review for the notice period and 30 days after | SEC-MON-026; DLP and access-log review, proportionate and disclosed in the privacy notice for personnel |
+| Access right-sizing | Access beyond what the remaining work needs is removed on notice, not on the last day; production and customer-data entitlements are removed first | SEC-IAM-021 |
+| Egress paths | No bulk export capability exists; removable media is prohibited and USB mass storage is blocked; outbound mail and file-share DLP blocks Restricted content and requires justification for Confidential | SEC-DLP-023 |
+| Repository controls | Cloning and download activity is logged; secret scanning and large-file detection run on push; personal repository forks are not permitted | ENG-SDL-048 |
+| Printing | Confidential printing is disabled at the device; a print exception during notice requires manager approval and is logged | SEC-PHY-044 |
+| Reminder of duties | The individual is reminded in writing, at notice and at exit, of the surviving confidentiality and IP obligations in their agreement and of the consequences of breach | HR-PRO-042 §3 |
+| Post-departure detection | Access attempts by a revoked identity raise an alert (`AIGov-UnauthorizedApiCalls`); repository and SaaS audit logs are reviewed once at 30 days post-departure | SEC-MON-026 |
+| Legal remedy | Confirmed misappropriation of intellectual property is pursued under the agreement and, where applicable, referred; the entity does not rely on goodwill alone | General Counsel |
+
+The measures apply symmetrically to a resignation, a dismissal and a contract non-renewal, and to external
+personnel. They are proportionate, disclosed in the personnel privacy notice, and are not a substitute for the
+preventive controls — they are the detective layer over them.
+
+---
+
+## Part B — Intellectual property rights (5.32)
+
+## 6. Topic-specific policy and compliance procedures (5.32-R1, 5.32-R2, 5.32-R8)
+
+**Policy statement.** The entity respects the intellectual property rights of others and protects its own. Every
+person may use only software and information products the entity has acquired the right to use, only within the
+terms of that right, and only for entity purposes. Infringement — of copyright, licence terms, trade marks,
+patents or database rights — is a disciplinary matter and, for the entity, a legal and contractual risk to the
+service.
+
+The policy is issued under GOV-POL-040, published on the policy portal, communicated at onboarding, in the
+quarterly briefing and on any material change, and **acknowledged** by every person under GOV-POL-040 §5.2.
+Vendors and contractors receive it as a contractual annex.
+
+**Compliance procedures — what compliant use means (5.32-R2):**
+
+1. **Use only from the managed catalogue.** Software is installed only from the entity's managed catalogue by
+   application control (SEC-MAL-024); users hold no local administrator rights by default and elevation is
+   brokered, time-bound and logged. An unlisted product requires a request, which triggers the licence and
+   security review in §7.
+2. **One person, one seat.** Named-user licences are not shared, and shared accounts are prohibited by
+   SEC-IAM-021.
+3. **No unlicensed copies, no circumvention.** Copying, key-sharing, keygen use, licence-server tampering and
+   use of cracked or unlicensed builds are prohibited absolutely.
+4. **Respect the field of use.** A licence granted for evaluation, development, education, personal or
+   non-commercial use is not used in production or for commercial purposes. Free-for-personal-use tools are not
+   used for entity work.
+5. **Open source is licensed software.** Its terms are honoured — attribution, notice files, source
+   availability, and copyleft reciprocity. Licence classes are pre-classified as allowed, allowed-with-conditions
+   or prohibited in ENG-SDL-048; a prohibited class fails the build.
+6. **Content, not just code.** Documents, standards, articles, images, fonts, datasets, model weights and
+   training data are all subject to this standard (§10, §11).
+7. **AI-assisted development** is permitted only with approved tooling configured so that entity code is not
+   used for provider training, and output is reviewed for licence provenance before merge (AIMS-POL-003).
+8. **Maintaining licence conditions (5.32-R8).** Each licence in the register has a named owner responsible for
+   renewal dates, seat counts, notice files, attribution obligations and any audit clause. Renewals are calendared
+   with 60 days' notice; a licence approaching expiry without a renewal decision escalates to the General
+   Counsel. Conditions that require an ongoing action — publishing notices, providing source, reporting usage
+   metrics — are recorded as scheduled control activities with evidence, not as one-off tasks at acquisition.
+
+## 7. Acquisition only through known and reputable sources (5.32-R3)
+
+- **Single procurement path.** All software, whether paid, free or open source, is acquired through the
+  procurement and vendor-risk process in TPR-PRO-016. Direct purchase by an individual, download from an
+  unofficial mirror, or use of a personal licence for entity work is prohibited.
+- **Source verification.** Acquisition is from the publisher, an authorized reseller, or the canonical package
+  registry for the ecosystem. Artefacts are verified by **checksum or signature**, and container images by
+  **digest, never by mutable tag** (ENG-SDL-048). A package whose provenance cannot be verified is not used.
+- **Registry discipline.** Dependencies resolve through the entity's proxy registry with pinned versions and a
+  lockfile; typosquat and dependency-confusion detection runs on resolution; a new external dependency requires
+  review of its licence, maintenance history and security record before first use.
+- **Records retained at acquisition.** Purchase order, invoice, licence agreement or terms accepted, the version
+  and edition, the entitlement quantity, the download location and its checksum, and the accepting approver.
+- **Second-hand and transferred licences** are acquired only where the publisher confirms transferability in
+  writing; without it the licence is treated as absent.
+
+## 8. Asset registers identifying IP-protected assets (5.32-R4)
+
+Two registers are maintained inside the inventory framework of SEC-AST-020, and both are reconciled rather than
+merely held:
+
+**(a) The software and licence register** — every software asset with: product, publisher, version, licence type
+(perpetual, subscription, named-user, per-CPU, per-resource, open source class), entitlement quantity and metric,
+seats or resources consumed, licence owner, cost centre, renewal or expiry date, proof-of-entitlement reference,
+audit clause, attribution or notice obligations, and the environments in which it may be used.
+
+**(b) The entity's own intellectual property register** — the service source code, the assessment methodology and
+control mappings, the evidence-analysis prompts and templates, documentation, brand and marks, and datasets the
+entity has created. Each entry records the owner, its classification under SEC-AST-020 (all of it Confidential or
+Restricted), where it is held, who may access it, and any third-party rights embedded in it.
+
+Additionally, the **software bill of materials** for the service is generated on every build and retained with
+the release record, so the open-source components in any shipped artefact are enumerable after the fact. Third-
+party components embedded in the entity's own products are cross-referenced between (a) and (b) so that an
+obligation attached to a component is visible from the product that ships it.
+
+## 9. Proof of entitlement (5.32-R5)
+
+Evidence of ownership is stored centrally in the licence repository, not on the purchaser's laptop or in a
+mailbox: licence agreements and accepted terms, purchase orders and invoices, licence keys and entitlement
+certificates, publisher portal entitlement exports, manuals and any media, open-source licence texts and notice
+files, and the SBOMs. Each item is linked from its register entry. Records are retained for the **licence term
+plus seven years**, because an audit or a dispute can arrive after the product is retired. Access to the
+repository is restricted to the General Counsel, the Director IT Operations and named licence owners.
+
+## 10. Not exceeding permitted users or resources (5.32-R6)
+
+- **Reconciliation.** Consumption is reconciled against entitlement **quarterly** for every licence in the
+  register, and **monthly** for the ten highest-risk licences (by cost, by audit clause, or by proximity to the
+  entitlement limit). Sources are the identity provider group memberships, the vendor portal seat reports and,
+  for resource-metered licences, the infrastructure inventory in account **471885797689**.
+- **Resource-metered licences** — per-CPU, per-vCPU, per-core, per-instance, per-host — are reconciled against
+  actual deployed resources. The current production footprint is small and fully enumerated (no running EC2
+  instances, no NAT gateways, managed serverless compute only), so resource-metered exposure is low; that fact is
+  re-established at each reconciliation rather than assumed, because a change of architecture could change it
+  overnight.
+- **Prevention before detection.** Seats are provisioned through the identity provider on a joiner-mover-leaver
+  basis, so a seat is released automatically on departure or role change (§2); where the vendor supports a hard
+  entitlement cap, it is enabled.
+- **Over-consumption handling.** An overage is remediated within **10 working days** by reclaiming seats or
+  purchasing entitlement, is recorded as a deficiency, and its cause is addressed. Deliberate over-deployment to
+  avoid cost is a disciplinary matter.
+- **Under-consumption** is also acted on: unused seats are reclaimed at renewal, which keeps the register
+  credible rather than generous.
+
+## 11. Reviews for authorized and licensed software only (5.32-R7)
+
+| Review | Frequency | Method | Output |
+|---|---|---|---|
+| Endpoint installed-software inventory vs the register | Continuous collection, **monthly** review | Device management inventory across the 48-device fleet | Unauthorized installations list; removal within 5 working days |
+| Application-control block report | Monthly | SEC-MAL-024 allowlist denials | Attempted unauthorized installs; user follow-up or catalogue addition |
+| Production dependency scan vs licence classes | Every build, blocking | SCA on the SBOM; prohibited class fails the build | Build pass/fail; exception record if any |
+| Cloud and SaaS discovery vs the vendor register | Quarterly | Egress destination review, expense analysis, SSO app inventory | Shadow-IT findings; onboarded or blocked |
+| Licence entitlement reconciliation | Quarterly (monthly for the top ten) | §10 | Reconciliation record; overage remediation |
+| Register completeness and owner currency | Annually | Register vs procurement records vs SBOMs | Corrections; ownerless entries reassigned |
+| Attribution and notice-file verification for shipped artefacts | Per release | Notice file generated from the SBOM and compared to the prior release | Notice file published with the release |
+
+Findings are recorded in the deficiency register with an owner and due date and reported to the Audit Committee
+quarterly. Repeat findings against the same individual route to the disciplinary process.
+
+## 12. Disposal or transfer of software (5.32-R9)
+
+- **Retiring software.** The licence owner initiates retirement: the product is removed from the managed
+  catalogue and from every device (verified by the next inventory cycle), any licence server or key is
+  decommissioned, entitlement is cancelled or allowed to lapse with a recorded decision, and the register entry
+  is **closed rather than deleted**, retaining the entitlement history and the proof of entitlement for the
+  retention period in §9.
+- **Data first.** Where the software held data, the data is exported or destroyed under PRV-RET-036 and
+  SEC-MED-046 **before** the licence lapses, so retention obligations do not outlive the means to read the data.
+- **Transferring software to another party.** Permitted only where the licence is transferable, and then only
+  with: written publisher confirmation; a written transfer agreement; removal of the entity's data,
+  configuration and credentials; removal of the entity's labels and identifiers; and a record of what was
+  transferred, to whom, when and under what authority. Media and keys are handed over or destroyed under
+  SEC-MED-046. Where transferability cannot be confirmed, the software is destroyed rather than transferred.
+- **Never bundled with hardware.** Licensed software is removed from any equipment being sold, donated or
+  recycled (§3(b) and SEC-MED-046); a device leaves the entity re-imaged, with no entity-licensed software on it.
+- **Entity-owned IP is not transferred** — licensed, contributed to open source, or assigned — without General
+  Counsel approval, an IP clearance check against the register in §8(b), and, for open-source contribution,
+  confirmation that no third-party or customer-derived material is included.
+
+## 13. Third-party and commercial material (5.32-R10, 5.32-R11, 5.32-R12)
+
+- **Material obtained from public networks and outside sources (5.32-R10).** Anything downloaded — code,
+  libraries, container images, datasets, model weights, fonts, images, templates, standards, research — is used
+  only within its stated terms and conditions, which are read and recorded before first use. Where terms are
+  absent or unclear, the material is treated as **all rights reserved** and is not used. Provenance and the
+  applicable terms are recorded in the register entry; publicly available does not mean freely usable, and
+  scraped or unlicensed datasets are prohibited as inputs to the AI system under AIMS-POL-003 and the data
+  acquisition record (AIMS-REC-005).
+- **Commercial recordings (5.32-R11).** Commercial video and audio recordings are **not duplicated, converted to
+  another format, or extracted from** other than as expressly permitted by copyright law or the applicable
+  licence. Purchased or licensed training video is consumed through the provider's platform; it is not recorded,
+  re-hosted, screen-captured or re-distributed internally. Where the entity wants internal reuse, it licenses
+  that right explicitly, and the licence is registered under §8(a).
+- **Standards, books, articles and reports (5.32-R12).** These are **not copied in full or in part** other than
+  as permitted by law or licence. The entity's ISO and other standards documents are held under **named-user
+  licences with the seat count reconciled under §10**; they are not shared beyond their seats, posted to internal
+  wikis, or attached to email. Quotation for internal analysis stays within the licence's permitted extent with
+  attribution; where a control mapping needs to reproduce requirement text, the entity uses licensed material
+  within its terms or paraphrases. Research reports and subscription analyst material are shared only per their
+  redistribution terms.
+- **Awareness.** These three rules are the most commonly breached in good faith, so they are called out
+  explicitly in onboarding and in the annual refresher, with concrete examples, rather than left to a general
+  "respect copyright" statement.
+
+---
+
+## 14. Roles, evidence and governance
+
+| Role | Responsibility |
+|---|---|
+| General Counsel | Owns the IP policy and this standard; approves transfers, contributions and non-standard licences; holds the entitlement repository |
+| Director IT Operations | Executes asset recovery, sanitization and reissue; owns the managed catalogue and endpoint inventory; runs the monthly installed-software review |
+| Head of People | Owns the offboarding and change workflow; will not close a workflow on an unreconciled checklist; tracks handover confirmations |
+| Head of Security Engineering | Owns DLP, monitoring during notice, secret scanning and application control |
+| Head of Platform Engineering | Owns SCA, SBOM generation, licence-class gating in the build, and dependency provenance |
+| Licence owners | Own renewal, seat counts, notice obligations and reconciliation for their licences |
+| Third-Party Risk Manager | Tracks vendor and contractor wipe-and-attest obligations and certificates of destruction |
+| Managers | Confirm handover completeness; approve print and access exceptions during notice |
+| Internal assessment | Samples completed return checklists, sanitization verifications, reconciliations and unauthorized-software findings |
+| Audit Committee | Receives quarterly reporting on outstanding returns, overages and IP findings |
+
+| Activity | Frequency | Evidence |
+|---|---|---|
+| Return checklist reconciliation per leaver / role change | Per event | Completed checklist, courier tracking, receipt records |
+| Wipe, sanitization and reissue verification | Per asset | Platform wipe log, sanitize verification, destruction certificate |
+| Outstanding-return ageing and escalation | Weekly | Ageing report; escalations at +2, +5, +10 days |
+| Handover record and successor confirmation | Per event | Handover record; successor sign-off; control register updates |
+| Notice-period monitoring review | Per event, plus 30 days post-departure | Review record |
+| Installed-software vs register review | Monthly | Inventory diff; removals |
+| Licence entitlement reconciliation | Quarterly; monthly top ten | Reconciliation record; overage remediation |
+| SaaS and shadow-IT discovery | Quarterly | Discovery record; onboarding or blocking decisions |
+| Register and entitlement-evidence completeness | Annually | Completeness review record |
+| Standard review and approval | Annually | Approved version |
+
+---
+
+## 15. Review history
+
+| Version | Date | Change | Approved by |
+|---|---|---|---|
+| 1.0 | 2025-02-17 | Initial standard, return of assets only | CISO |
+| 1.1 | 2025-05-06 | IP rights part added; licence register formalized | CISO |
+| 1.2 | 2025-07-21 | Out-of-cycle: EU office opened; local key-holder and badge provisions added | CISO |
+| 2.0 | 2026-03-16 | Annual review. Notice-period controls in §5 strengthened after case D-2026-004; BYOD container-wipe attestation added; per-CPU/resource reconciliation and the top-ten monthly cycle introduced; §13 split out so commercial recordings and standards are addressed explicitly | CISO |

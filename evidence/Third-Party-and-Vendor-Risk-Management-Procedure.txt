@@ -1,0 +1,387 @@
+# Third-Party and Vendor Risk Management Procedure
+
+**Document ID:** TPR-PRO-016
+**Version:** 4.1
+**Owner:** Third-Party Risk Manager (within Legal & Privacy), accountable to the General Counsel; each
+engagement has a named entity-side **engagement owner** who is accountable for the outcome of the service
+**Approved by:** CEO 2026-02-19; reviewed by the Audit Committee 2026-02-19
+**Next scheduled review:** 2026-12-31 (Annually, on the addition or removal of any Tier 1 or Tier 2 provider, and on any)
+change to a provider's scope, sub-processors or control environment
+**Scope:** All vendors, service providers, business partners, sub-processors and contracted individuals whose
+products or services could affect the entity's security, availability, processing integrity, confidentiality
+or privacy objectives — currently **7 outsourced providers** and **11 named vendor individuals**, plus the
+cloud provider, across both legal entities and five geographies.
+
+**Standing principle:** accountability for a control does not transfer with the work. Where a provider
+operates a control, the entity remains accountable for the outcome, and the provider's performance of that
+control is **monitored rather than assumed**.
+
+---
+
+## 1. Requirements established for every engagement
+
+**The entity establishes specific requirements for vendor and business partner engagements covering scope of
+services and product specifications, roles and responsibilities, compliance requirements, and service
+levels.** No engagement proceeds to contract without all four recorded, and for Tier 1 and Tier 2 they are
+captured in a **requirements annex** attached to the contract, control by control.
+
+| Requirement category | What must be specified | Where it is recorded | Enforcement |
+|---|---|---|---|
+| **Scope of services and product specifications** | The precise service; the systems and data it touches; the **data categories and classifications** the provider may access; the environments (production / non-production); named permitted sub-processors; permitted processing locations; **what the provider is expressly not permitted to do** — including using entity or customer data to train models, which is prohibited in every agreement that touches data | Statement of work plus the DPA's processing schedule | Access is provisioned only to the recorded scope; a scope change requires a contract change, and **one provider's scope was restricted to non-production** during the period as a corrective action |
+| **Roles and responsibilities** | A control-by-control allocation in the requirements annex — which controls the provider operates, which the entity operates, and which are shared with the split stated; the provider's named operational and security contacts; the entity's named engagement owner; escalation paths on both sides; the provider's obligation to notify before a material change | Requirements annex | The annex is the document tested at each assessment; a control claimed by neither party is a gap raised before signature |
+| **Compliance requirements** | Confidentiality obligations at least equivalent to the entity's own (§11); privacy obligations and the DPA (§13); security requirements (encryption in transit and at rest, MFA, least privilege, logging, vulnerability management, secure development); **screening attestations for named individuals**; incident notification with a **maximum notification time**; audit and evidence rights (the right to receive audit reports and, for Tier 1, the right to audit); sub-processor approval and flow-down; data return and deletion on exit; insurance minima and indemnity; applicable law and cross-border transfer mechanism | Requirements annex, DPA and the master agreement | Screening attestation is a **hard gate on access** for named individuals; the notification time is tested at assessment |
+| **Service levels** | Availability, response and resolution times, notification times, recovery objectives, accuracy or quality measures where applicable, and **the consequence of a miss** — service credits, corrective action, scope restriction, or termination | Service level schedule | Measured in the performance assessment (§8); a miss triggers §9's issue procedure |
+
+**Where a provider will not accept a requirement**, that is recorded as a decision with the residual risk
+named, not quietly dropped. Two instances this period: one provider would not grant an on-site audit right
+(accepted, with its independent audit report plus an expanded evidence request as the compensating measure),
+and one small provider could not meet the encryption-key-management requirement (**the engagement was
+refused** by the Third-Party Risk Manager exercising the negative authority in GOV-STR-003, and an
+alternative was selected).
+
+## 2. Evaluating vulnerabilities arising from the relationship, including third-party access and network connections
+
+**The entity evaluates vulnerabilities arising from vendor and business partner relationships, including
+third-party access to the entity's IT systems and connections with third-party networks.** The evaluation is
+about the *path the relationship opens*, which is distinct from the provider's own control maturity.
+
+| Vulnerability class | How it is evaluated | Current position |
+|---|---|---|
+| **Human access to entity systems** | Every provider individual with access is named, screened (attestation held), competence-reviewed with a right of rejection, granted least-privilege scoped roles with a **hard expiry at the engagement end date**, and reviewed quarterly | 11 named individuals; 4 hold unescorted physical access; **2 individuals were rejected on competence** and one start was delayed 9 days pending a screening attestation |
+| **Privileged access held by a provider** | Assessed specifically: what could the provider reach beyond its stated scope? Break-glass and administrative paths are enumerated | The managed SIEM provider holds read access to log data only; no provider holds administrative access to the production account. The **administrative-access breadth finding** concerns entity identities, not providers, and is recorded as open |
+| **Network connections and integrations** | Every inbound and outbound connection is inventoried with its protocol, direction, authentication and data flow; connections are point-to-point and authenticated, with no flat network trust | Log egress to the SIEM provider; model-provider API calls outbound; identity federation inbound; payments and payroll outbound. **No site-to-site VPN or flat network extension to any provider exists** — a deliberate design choice recorded as such |
+| **API and credential exposure** | Provider credentials held in central secret management, scoped, rotated, and never embedded in code (SAST blocks credentials in code); a provider's compromise is assumed and the blast radius bounded | **R-009** in the register; per-provider credential scope reviewed at each assessment |
+| **Data-flow vulnerability** | What data leaves, to where, under what mechanism, and whether it could include personal data or customer confidential evidence | Data map maintained per provider; the SIEM log flow assessed for incidental personal data and configured to minimize it |
+| **Sub-processor / fourth-party exposure** | Named sub-processors reviewed; flow-down of obligations required; the provider must notify before adding one | **R-006** — a sub-processor breach is a register risk with its own incident runbook; one provider's proposed new sub-processor was reviewed and approved with a transfer mechanism check |
+| **Software supply chain** | Open-source and third-party components scanned continuously (SCA); provenance and known-vulnerability status assessed; a component is a vendor relationship even without a contract | Continuous scanning; severity-based SLAs |
+| **Provider's own supply chain and concentration** | Whether several providers depend on the same underlying provider — the concentration is evaluated at the portfolio level, not per engagement | **The dominant concentration is the cloud provider itself, which is not diversifiable and is recorded as R-022 (single-region) and its sibling single-provider dependency, Board-accepted** |
+| **Model provider specifically** | Assessed as a processing-integrity vulnerability as well as a security one: model behaviour change, deprecation, availability, and data-use terms | Mitigated by entity ownership of prompts, logic and the regression suite, so substitution does not require rebuilding the product; a substitute must pass the accuracy floor or the verdict class is suspended |
+| **Physical access by provider personnel** | Escorted by default; unescorted only on separate justification; server closet excluded from landlord access | SEC-PRO-013 §2 and §5 |
+| **Insider risk within the provider** | Addressed through the screening attestation per named individual, least privilege, access logging, and the provider's own conduct obligations | Attestation is a hard access gate — the control that delayed one start by 9 days |
+
+Vulnerabilities identified here feed the entity's own risk register rather than living in a separate list, so
+a third-party vulnerability competes for remediation attention on the same scale as an internal one.
+
+## 3. Inventory and risk tiering
+
+**The entity inventories and tiers vendors and business partners by risk.** The inventory is maintained by the
+Third-Party Risk Manager and is reconciled quarterly against **accounts payable and the identity provider**,
+so a provider engaged without going through the process is discovered rather than invisible. Two such
+providers were found this period by that reconciliation and brought into the process retrospectively; that is
+recorded as a deficiency in the intake control, not as a success of the reconciliation alone.
+
+**Tiering criteria** — a provider's tier is the highest that any single criterion warrants:
+
+| Tier | Criteria | Diligence | Assessment cadence | Population |
+|---|---|---|---|---|
+| **Tier 1 — Critical** | Access to customer evidence, assessment results or production systems; or a service whose failure breaches an availability or processing-integrity commitment; or processing of personal data at scale | Full assessment: independent audit report reviewed with **CUECs and exceptions read, not just the opinion**; security questionnaire; architecture and data-flow review; DPA and requirements annex; named-individual screening; financial check; insurance certificates; exit plan; **right to audit** | **Annually, plus within 30 days of any material change; quarterly performance monitoring** | 3 — the cloud provider, the model provider, the managed SIEM provider |
+| **Tier 2 — Significant** | Access to internal or confidential data, or to identity, or a service whose failure degrades operations materially | Assessment: audit report or equivalent evidence; questionnaire; DPA where personal data is involved; requirements annex; insurance; exit plan | Annually; semi-annual performance review | 4 — identity provider, payroll/HR provider, contracted security engineering firm, payments provider |
+| **Tier 3 — Limited** | No access to confidential data or production systems; failure is inconvenient | Lightweight review: security posture attestation; standard terms; confidentiality clause | Every 2 years, or on change | 9 corporate tools and services |
+| **Named individuals** (contractors and vendor personnel, 11) | Tiered by the access they hold, **not by their employer's tier** | Screening attestation; competence review with a right of rejection; confidentiality undertaking; scoped access with hard expiry | Quarterly access and status review | 11 |
+| **Business partners** (auditors, assessors, resellers, integration partners) | Tiered by data access and by whether they represent the entity to customers | NDA; scope and purpose recorded; where they access confidential material, Tier 2 treatment | Annually | 4 |
+
+Each inventory record holds: the service, tier, engagement owner, contract and DPA references, the
+requirements annex, data categories and classifications accessed, systems and network connections, named
+individuals, named sub-processors and processing locations, assessment history and due date, performance
+results, open issues, insurance and indemnity position, notice period, and the **exit plan**.
+
+## 4. Periodic assessment of threats — including fourth parties, financial failure, security, disruption and regulatory failure
+
+**The entity periodically assesses threats arising from relationships with vendors and business partners (and
+those entities' vendors and business partners), covering financial failure, security vulnerabilities,
+operational disruption, and failure to meet business or regulatory requirements**, and the vulnerability of
+its own objectives to those threats.
+
+| Threat class | How it is assessed | Frequency | What was found this period |
+|---|---|---|---|
+| **Financial failure** | Financial statements or credit assessment for Tier 1 and 2; funding and ownership changes tracked; concentration of the entity's spend; for small providers, the risk that the entity is a material portion of their revenue | Annually and on any adverse signal | One Tier 3 provider showed distress signals; its data was minimized and an alternative identified before any disruption occurred |
+| **Security vulnerabilities** | Independent audit reports read in full including **exceptions and CUECs**; questionnaires; penetration-test summaries; vulnerability-management evidence; public breach history; the vulnerability path analysis in §2 | Annually for Tier 1/2; on any reported incident | One provider's report contained an exception relevant to secure development → corrective action plan and **scope restriction to non-production** until closed |
+| **Operational disruption** | The provider's own resilience: RTO/RPO, redundancy, its dependency on *its* providers; against the entity's RTO/RPO in BCM-STD-015 §1; substitution time estimated and the exit plan tested for feasibility | Annually and in the annual continuity exercise | Provider-originated disruption tabletop held 2026-01, producing the requirement that every annex name a notification contact and a **maximum notification time** |
+| **Failure to meet business or regulatory requirements** | Compliance obligations mapped per provider (privacy, transfer mechanisms, sectoral requirements, sanctions); the provider's certifications' currency and scope checked — **scope, because a certificate covering a different service is not evidence**; regulatory actions against the provider tracked | Annually and on any legal change (feeds **R-047**) | One certificate found to cover a different product line than the service consumed → additional evidence requested and the finding recorded |
+| **Fourth-party / sub-processor threats** | Named sub-processors of each Tier 1/2 provider are reviewed for the same four threat classes, at a depth proportionate to their role; flow-down of obligations verified in the provider's contract text rather than accepted as asserted | Annually, and before any new sub-processor is approved | One new sub-processor approved after a transfer-mechanism check; **R-006** carried in the register with a dedicated runbook |
+| **Concentration and correlation** | Portfolio-level: do multiple providers share an underlying dependency? Would one event affect several? | Annually | The **cloud-provider concentration is confirmed as not diversifiable**, recorded as an accepted risk with the rebuild-from-IaC and restore-test mitigations rather than presented as managed away |
+| **Insider and personnel threats within providers** | Screening attestations; competence reviews; access reviews; the provider's own conduct obligations | Quarterly for access; annually for the programme | 2 individuals rejected on competence; 1 start delayed pending screening |
+| **AI-specific threats** | For the model provider: model deprecation and behaviour change, data-use terms, and whether entity or customer data could be used for training (prohibited contractually) | Annually and on any provider announcement | Terms re-verified at renewal; substitution path exercised in the annual exercise |
+
+**Assessment results flow into the entity's own risk register** — **R-006** (provider/sub-processor breach)
+and **R-024** (critical provider failure) are scored from these assessments — and into the Audit Committee's
+quarterly reporting.
+
+## 5. Assigned responsibility and accountability for managing vendors and changes to their services
+
+**The entity assigns responsibility and accountability for the management of risks and changes to services
+associated with vendors and business partners.**
+
+| Role | Responsibility | Named accountability |
+|---|---|---|
+| **Engagement owner** (a named individual per provider, never a team mailbox) | Day-to-day relationship; service-level monitoring; raising issues; approving or refusing a scope change; **accountable for the outcome of the service to the entity's customers** | Named in the inventory record per provider; a hand-off notice is required on any change of owner so an engagement is never silently un-owned |
+| **Third-Party Risk Manager** | The programme: intake, tiering, assessment, the register, the annexes, monitoring cadence, exit plans; **holds the record independently of the engagement owner** so the person who wants the service is not the person who certifies it; holds a **negative authority to refuse an engagement** | Third-Party Risk Manager, reporting to the General Counsel |
+| **General Counsel / DPO** | Contract and DPA terms; transfer mechanisms; privacy commitments; the DPO independently assesses any provider processing personal data and holds a **launch veto** | General Counsel; DPO for privacy |
+| **AI Security Lead** | Security requirements, the vulnerability path analysis, provider security incidents, and a **block on any security-relevant change** to a provider's integration | AI Security Lead |
+| **Control owners** | Where a provider operates a control on the entity's behalf, the entity-side control owner remains the accountable owner in the control register and must obtain the evidence | Named per control in CTL-POL-012 §8 |
+| **CFO** | Spend, financial-failure assessment, insurance and indemnity adequacy | CFO |
+| **Audit Committee** | Oversight of the programme; reviews Tier 1 assessments, material issues and terminations quarterly | Committee chair |
+
+**Changes to provider services are governed as changes, not as account management.** Every Tier 1/2 contract
+obliges the provider to notify before a material change — scope, sub-processor, processing location,
+architecture, security control, or ownership. On notification: the engagement owner logs it; the change is
+assessed within **30 days** under RSK-PRO-009 §14's change-assessment procedure; the DPO assesses any privacy
+dimension and may veto; the AI Security Lead may block a security-relevant change; the requirements annex and
+inventory record are updated; and where the change reduces the provider's control coverage, the entity's own
+control register is updated so a control does not silently become unowned. A provider change discovered
+*after* the fact rather than notified is a service-level failure and is recorded as such — which is what
+happened with the late incident notification that moved one provider to quarterly assessment.
+
+## 6. Communication and resolution protocols
+
+**The entity establishes communication and resolution protocols for service or product issues related to
+vendors and business partners.** Protocols are agreed at contracting so that a live issue does not begin with
+finding out who to call.
+
+| Element | What is defined | Recorded where |
+|---|---|---|
+| **Named contacts on both sides** | Provider operational, security and executive contacts; entity engagement owner and escalation chain — **individuals with a phone route, not a support portal alone** | Requirements annex and the inventory record; verified at each annual assessment because contacts go stale |
+| **Routine communication** | Cadence per tier: monthly service review for Tier 1, quarterly for Tier 2, annual for Tier 3; agenda includes service levels, open issues, planned changes and security posture | Annex |
+| **Issue raising** | Any entity personnel may raise a provider issue through the engagement owner or directly to Third-Party Risk; provider issues are logged in the same issue register as internal ones so they are not tracked more leniently | Procedure |
+| **Severity and response protocol** | Issue severities with the provider's committed response and resolution times, mirroring the entity's own incident severities so an event does not translate badly at the boundary | Service level schedule |
+| **Security incident notification** | The provider's obligation to notify within a **maximum notification time**, to a named entity contact, with defined minimum content; the entity's obligation to engage the provider on its own incidents where relevant; **integration of the provider's alerts into the entity's paging system rather than a portal someone must check** | Annex; SEC-PRO-014 §3 |
+| **Escalation ladder** | Engagement owner → Third-Party Risk Manager → General Counsel / accountable officer → executive-to-executive; with defined trigger points rather than discretion | Annex |
+| **Resolution and closure** | Root cause required for significant issues; corrective action plan with dates; **closure verified by the entity, not asserted by the provider** | Issue register |
+| **Dispute resolution** | Contractual mechanism, governing law, and the commercial levers available (service credits, scope restriction, withholding, termination) | Master agreement |
+| **Customer-facing coordination** | Where a provider issue affects customers, the entity communicates to its own customers under its own name and timers (24 hours for Sev-1) — **the entity does not wait for the provider's public statement**, and does not pass the provider's language through unexamined | SEC-PRO-014 §3 |
+
+**Exercised in practice this period:** the provider that notified an incident later than its annex required
+was escalated to the General Counsel level, its supplier record annotated, its assessment cadence raised to
+quarterly, and its annex amended to name a contact and a maximum time. The protocol worked in the sense that
+the escalation happened; it also revealed that the original annex had not named a notification time at all,
+which is recorded as a defect in the entity's own contracting standard.
+
+## 7. Exception handling
+
+**The entity establishes exception handling procedures for service or product issues related to vendors and
+business partners.** An exception is any departure from the agreed requirements — a missed service level, a
+requirement the provider cannot meet, an assessment finding, an unapproved change, or a request to operate
+outside the recorded scope.
+
+| Exception type | Handling |
+|---|---|
+| **A requirement a provider cannot meet at contracting** | Recorded before signature with the residual risk named, a compensating measure identified, and authorization at the tier appropriate to the risk — Tier 1 exceptions require the accountable officer, and any High+ residual requires the Board under RSK-PRO-009. Two this period: the refused on-site audit right (accepted with expanded evidence) and the key-management shortfall (**engagement refused**) |
+| **A missed service level** | Logged against the provider; root cause requested; service credits or remedies applied; repeat misses raise the assessment cadence and can trigger scope restriction |
+| **An assessment finding** | Corrective action plan with dates, tracked in the supplier record and in the entity's deficiency register; **interim compensating controls applied on the entity's side**, since the entity cannot make a provider move faster than it will. The secure-development exception led to a **non-production scope restriction** until closure |
+| **A request to operate outside the recorded scope** | Refused by default; requires a contract and annex change with the same authorization as the original engagement — never granted informally by the engagement owner |
+| **A temporary exception with a time limit** | Recorded with an expiry date and an owner; **it expires rather than lapsing quietly**, and expiry without closure escalates to the accountable officer |
+| **An emergency engagement** (a provider needed faster than diligence allows — e.g. incident response support) | Permitted with the accountable officer's authorization and a **restricted, time-boxed scope**, followed by full diligence within 30 days; used once this period for specialist support, with diligence completed retrospectively and the record noting it |
+| **An unapproved provider discovered in the reconciliation** | Brought into the process retrospectively, with the intake failure recorded as a deficiency; two instances this period |
+| **A provider's own exception affecting the entity** (an exception in its audit report, or its own sub-processor issue) | Assessed for entity impact; the entity's control register updated if a relied-upon control is not operating; **a CUEC the entity is not meeting is a finding against the entity, not the provider** — this is checked explicitly at each Tier 1 assessment |
+
+Exceptions are reported quarterly to the Audit Committee with their age, and an exception past its expiry is
+reported as overdue in the same way as any overdue remediation.
+
+## 8. Performance assessment, at a frequency warranted by risk
+
+**The entity assesses the performance of vendors and business partners at a frequency commensurate with the
+risk associated with each.** Performance assessment is distinct from the control assessment in §4 — one asks
+whether the service is being delivered, the other whether the controls are operating.
+
+| Tier | Performance assessment | Frequency | What is measured |
+|---|---|---|---|
+| **Tier 1** | Formal quarterly performance review plus a monthly service review | **Quarterly formal, monthly operational** | Availability against the service level; incident count, severity and **notification timeliness**; response and resolution times; change notification compliance; open corrective actions; evidence delivery on request; sub-processor changes; for the model provider, **accuracy contribution measured through the entity's own regression suite and expert-agreement sampling** |
+| Tier 2 | Formal semi-annual review | Semi-annually | Service levels; incidents; responsiveness; corrective actions; certification currency |
+| Tier 3 | Reviewed at renewal | Every 2 years or on change | Whether the service is still needed; any incidents; posture attestation |
+| **Risk-adjusted uplift** | A provider with an open finding, a missed notification, a distress signal or a scope restriction moves to a **higher cadence irrespective of tier** | Immediately on the trigger | The specific issue plus the standard measures |
+| Named individuals | Competence and conduct reviewed with the engagement owner; access reviewed | Quarterly | Performance, competence, access appropriateness, screening currency |
+
+**Results this period:** 7 of 7 providers assessed on schedule; **one provider moved from annual to quarterly**
+after the late incident notification; one Tier 1 provider met all service levels; one Tier 2 provider had a
+secure-development exception with a corrective action plan and a **non-production scope restriction**; one
+Tier 3 provider showed financial distress signals and had its data minimized with an alternative identified;
+two named individuals were **rejected on competence** and one start delayed 9 days pending a screening
+attestation. The model provider's contribution to assessment accuracy was measured through the entity's own
+regression suite rather than accepted from the provider's claims — which is the only performance measure the
+entity considers reliable for that engagement.
+
+## 9. Addressing issues identified during assessments
+
+**The entity implements procedures for addressing issues identified with vendor and business partner
+relationships.** An assessment finding is not a filed observation; it enters the same deficiency register as
+an internal finding, with the same 2-business-day capture rule, the same severity scale and the same
+requirement that closure be **verified by someone other than the owner**.
+
+| Step | Action | Timing |
+|---|---|---|
+| 1. Record | Finding logged in the supplier record **and** the entity's deficiency register, with severity | Within 2 business days |
+| 2. Communicate | Raised formally with the provider's named contact and, for significant findings, at the escalation level warranted | Within 5 business days |
+| 3. **Protect the entity's own position first** | Interim compensating controls applied on the entity's side — reduced scope, additional monitoring, data minimization, or restricting the provider to non-production — because the entity cannot make the provider move at the entity's pace | Immediately, before the provider's plan is agreed |
+| 4. Corrective action plan | Obtained from the provider with dated milestones and a named provider owner; recorded in the supplier record | Within 30 days |
+| 5. Track | Monitored at the (risk-uplifted) assessment cadence; overdue items escalate on the ladder | Continuous |
+| 6. Escalate | Escalation ladder to executive-to-executive; commercial levers where progress stalls: service credits, withholding, **scope restriction**, cadence increase, or termination | On the trigger points in the annex |
+| 7. **Verify closure** | The entity verifies closure with evidence — a provider's assertion of closure is not closure | Before the finding is closed |
+| 8. Reassess the risk | The register entries (R-006, R-024) and the entity's own control register are updated; where a relied-upon provider control was not operating, the entity's assertion is corrected | At the next quarterly review, or immediately if material |
+| 9. Feed back into contracting | Where the finding reveals a defect in the entity's own standard, the standard changes — as with the annex that had not named a notification time | On identification |
+
+**Live examples:** the secure-development exception (corrective action plan + non-production scope
+restriction, tracked to closure); the late notification (escalated, cadence raised, annex amended, recorded in
+the supplier record and reported to the Audit Committee); the mis-scoped certificate (additional evidence
+obtained, and the assessment checklist changed to check certificate **scope** rather than existence); the
+distressed Tier 3 provider (data minimized, alternative identified); the two unapproved providers found in
+reconciliation (brought into process, with the intake control recorded as deficient).
+
+## 10. Terminating relationships, on predefined considerations
+
+**The entity implements procedures for terminating vendor and business partner relationships based on
+predefined considerations, including safe return of data and its removal from the provider's systems.**
+
+**Predefined termination considerations — decided in advance so a termination decision is not improvised:**
+
+| Consideration | Threshold |
+|---|---|
+| Material breach of security, confidentiality or privacy obligations | Immediate termination right; exercised at the entity's discretion after impact assessment |
+| A security incident revealing systemic control failure | Grounds for termination; at minimum a scope restriction pending remediation |
+| Repeated service-level failure | Defined miss counts in the schedule trigger a right to terminate |
+| Failure to remediate an assessment finding within the agreed plan | Escalation, then termination right |
+| A change the entity will not accept — an unapproved sub-processor, a new processing location without a lawful transfer mechanism, ownership change to an unacceptable party, or a change in data-use terms | Grounds for termination; the DPO's veto applies to the privacy dimension |
+| Financial failure or insolvency | Immediate; the exit plan is activated on the distress signal, not on the insolvency |
+| Sanctions or legal disqualification | Immediate |
+| Loss of the business need, or consolidation | Ordinary notice per the contract |
+| **The entity's inability to obtain the evidence it needs to support its own assertions** | Grounds for termination — an unverifiable provider cannot support an assurance service |
+
+**Exit procedure**, with the data steps as hard requirements rather than best endeavours:
+
+1. **Decision and authorization** — engagement owner recommends; the accountable officer authorizes; Tier 1
+   terminations are reported to the Audit Committee.
+2. **Activate the exit plan** held in the inventory record: the named alternative, the migration steps, the
+   estimated substitution time, and — for Tier 1 — the tested feasibility of the plan.
+3. **Transition** with an agreed plan and, where needed, a transition-services period; the entity's control
+   register is updated so no control becomes unowned during the transition.
+4. **Access removal** — all provider access, all named individuals, all credentials and API keys, and all
+   physical access, removed **within 1 business day** of the effective date, with removal timestamps
+   verified by internal audit against the supplier record.
+5. **Safe return of data** — the entity's and customers' data returned in an agreed, usable format,
+   integrity-verified on receipt, before deletion is requested.
+6. **Deletion from the provider's systems** — **required in writing, with a defined deadline, covering backups
+   and any sub-processors**, and evidenced by a certificate of deletion or equivalent written confirmation.
+   The obligation and the deadline are in the contract at signature, because they cannot be negotiated
+   afterwards. Where a provider's backup retention prevents immediate deletion, the retention period and its
+   expiry date are recorded and tracked to expiry rather than accepted as complete.
+7. **Sub-processor deletion** — confirmed through the provider, since the entity has no direct relationship;
+   this is the step most likely to be skipped and is therefore a required checklist item.
+8. **Asset recovery** — any entity devices or credentials held by provider individuals recovered per
+   SEC-PRO-013 §6, with the provider confirming the return in writing.
+9. **Records** — the contract, DPA, assessments, findings and the deletion evidence are retained per the
+   entity's retention schedule (a legal and evidential need that survives the relationship).
+10. **Post-exit review** — did the exit plan work? Was the substitution time as estimated? The answer updates
+    the remaining providers' exit plans.
+
+**This period:** no Tier 1 or Tier 2 termination occurred. Three named individuals' engagements ended — access
+removed same-day, one entity laptop returned in 3 business days with the provider's written confirmation. One
+Tier 3 provider was replaced (the key-management refusal), with data returned and deletion confirmed in
+writing. The distressed Tier 3 provider's exit plan is activated to the point of having an alternative
+identified and data minimized, without termination — recorded so that the state of readiness is visible.
+
+## 11. Confidentiality commitments from providers, consistent with the entity's own
+
+**The entity obtains confidentiality commitments from vendors and business partners who have access to
+confidential information, consistent with the entity's own confidentiality commitments and requirements.**
+This is a flow-down requirement: the entity's commitments to its customers set the floor, and no provider
+agreement may fall below it.
+
+| Element | Requirement | Status |
+|---|---|---|
+| Written confidentiality obligation | In every agreement where the provider may access Confidential information; **at least equivalent to the entity's commitments to its customers**, checked clause by clause against the customer template rather than accepted as "standard" | In place for all 7 providers and all 4 business partners |
+| Definition of confidential information | Broad enough to cover customer evidence, assessment results, and the fact of an assessment's outcome | Verified at contracting |
+| Permitted purpose | Use strictly for delivering the contracted service; **no use for product improvement, benchmarking, publication, or model training** | Explicit prohibition in every data-touching agreement |
+| Onward disclosure | Only to approved sub-processors under equivalent written terms; **flow-down verified in the sub-processor contract text**, not accepted as asserted | Verified for each named sub-processor |
+| Personnel obligations | Each named individual under a personal confidentiality undertaking, in addition to the corporate obligation | 11 of 11 held |
+| Survival | Obligations survive termination, without a time limit for customer evidence | Verified in each agreement |
+| Return and destruction | On termination or on request, per §10 | Contractual, with the deadline stated |
+| Security requirements supporting confidentiality | Encryption, access control, logging, segregation of the entity's data from other clients' | In the requirements annex per provider |
+| Breach notification | Within the maximum notification time, with defined content | In place; **one late notification recorded** and the annex amended |
+| Remedies | Injunctive relief, indemnity, and insurance minima | In place for Tier 1/2 |
+| Business partners (auditors, assessors) | NDA before any access; purpose and date range recorded; **the auditors' own confidentiality obligations checked** rather than assumed from their profession | 4 of 4 |
+
+## 12. Assessing providers' compliance with confidentiality commitments
+
+**On a periodic and as-needed basis, the entity assesses compliance by vendors and business partners with the
+entity's confidentiality commitments and requirements.** Holding a commitment is not evidence of compliance,
+so compliance is assessed separately from contracting.
+
+| Assessment method | Applied to | Frequency | Result this period |
+|---|---|---|---|
+| Independent audit report review with **confidentiality-relevant controls, exceptions and CUECs read specifically** | Tier 1/2 | Annually, on report issue | Exceptions reviewed; the secure-development exception addressed as above |
+| Requirements annex walkthrough — each confidentiality control confirmed as operating, with evidence | Tier 1/2 | Annually | Evidence obtained for all; one provider's evidence required a second request |
+| **Access-log review of what the provider actually accessed**, against its recorded scope | Providers with access | Quarterly with the access review | No out-of-scope access identified |
+| Named-individual access and status review | 11 individuals | Quarterly | Scope confirmed or reduced; one reverted from unescorted to escorted after a scope change |
+| Sub-processor confirmation — the current named list against the approved list, and flow-down terms | Tier 1/2 | Annually and on notification | One new sub-processor approved with a transfer check |
+| Data-flow verification — what actually leaves the environment, compared to the data map | All with a data flow | Annually, and on any integration change | Log flow re-verified and personal-data content minimized |
+| Confidentiality incident review | All | On any incident | The late-notification case; no confidentiality breach identified |
+| Certificate and attestation currency **and scope** | All | Annually | **One certificate found to cover a different product line** → additional evidence obtained and the checklist changed |
+| Right to audit / additional evidence request | Tier 1 | As needed | Exercised once, in place of the on-site right one provider declined |
+| **The entity's own DLP and egress monitoring** | Provider integrations | Continuous | Anomalous egress alerting covers provider paths as well as internal ones |
+
+**Corrective action is taken where compliance is not demonstrated** — the scope restriction, the cadence
+increase, and the additional evidence requests above are all instances. Where the entity cannot obtain
+sufficient evidence, the position is recorded as an unverified reliance in the control register rather than
+credited; the rule that **an untested control cannot be credited** (RSK-PRO-009 §13) applies to provider
+controls too.
+
+## 13. Privacy commitments from providers, consistent with the entity's own
+
+**The entity obtains privacy commitments from vendors and business partners who have access to personal
+information, consistent with the entity's own privacy commitments and requirements.** The DPO — reporting to a
+Board committee rather than to management, and holding a launch veto — assesses every engagement involving
+personal data independently of the engagement owner.
+
+| Element | Requirement | Status |
+|---|---|---|
+| **Data processing agreement** | Required before any personal data is shared; terms at least equivalent to the entity's obligations to its own data subjects and to its customers' DPAs | In place for all 5 providers processing personal data |
+| Role clarity | Controller / processor / joint controller determined and stated in writing | Determined per engagement; recorded |
+| Documented instructions | Processing only on the entity's documented instructions; the processing schedule states purposes, categories, data subjects and duration | In every DPA |
+| **Purpose limitation and no secondary use** | No use for the provider's own purposes; **explicit prohibition on training models on personal data** | Explicit in all 5 |
+| Security of processing | Technical and organizational measures specified, not left generic | Requirements annex per provider |
+| **Sub-processor control** | Prior approval; equivalent obligations flowed down in writing; the provider remains liable | In place; verified in contract text |
+| **Cross-border transfers** | A lawful transfer mechanism for each processing location, recorded per provider; **no new processing location without a DPO check** — the no-new-region-without-DPO gate | Verified; one new sub-processor's location checked before approval |
+| Data subject rights assistance | Obligation to assist within a timeframe that lets the entity meet the statutory period (the internal target is 60% of it) | In every DPA |
+| Breach notification | **Without undue delay and within the annex's maximum notification time**, so the entity can meet its own 72-hour obligation with the clock started at discovery | In place; the one late notification is recorded as a failure of this commitment |
+| Retention and deletion | Deletion on instruction and on termination, covering backups and sub-processors, with written evidence (**R-045**) | Contractual; evidenced at the retention conformance check, **including deletion at sub-processors** |
+| Audit and evidence rights | Audit reports, and audit rights for Tier 1 | In place, with the one declined on-site right recorded and compensated |
+| Personnel obligations | Confidentiality and training obligations on the provider's personnel; screening attestation per named individual | 11 of 11 |
+| Assistance with DPIAs | Obligation to provide the information the entity needs | In every DPA |
+| Liability and indemnity | Privacy-specific indemnity; insurance minima | Tier 1/2 |
+
+## 14. Assessing providers' compliance with privacy commitments, and corrective action
+
+**On a periodic and as-needed basis, the entity assesses compliance by vendors and business partners with the
+entity's privacy commitments and requirements and takes corrective action as necessary.** The DPO owns this
+assessment, which is deliberately separate from the security assessment because a provider can be secure and
+still non-compliant.
+
+| Assessment activity | Frequency | Method | Result this period |
+|---|---|---|---|
+| **DPA and processing-schedule currency review** — does the recorded processing match what actually happens? | Annually and on any change | Comparison of the schedule to the data map and to the actual integration | One schedule updated where a data category had drifted from the record |
+| Sub-processor list verification and transfer-mechanism check | Annually and on notification | The provider's current list against the approved list; mechanism per location | One new sub-processor approved after the check; **no unapproved sub-processor found** |
+| **Deletion and retention conformance, including at sub-processors** | Quarterly retention conformance check | Deletion instructions issued and **written evidence obtained**, not assumed | Findings on data held past its period → deleted, deletion evidenced including at sub-processors, and enforcement tightened (**R-045**) |
+| Data subject rights assistance test | Annually | A live or simulated request routed through the provider, measuring its response time against the DPA | Providers met the timeframe; all entity DSRs completed within the statutory period |
+| Breach-notification obligation test | Annually, plus after any real event | The provider-originated incident tabletop; and review of any actual notification against the annex | **The late notification is recorded as non-compliance with the commitment** — escalated, cadence raised to quarterly, annex amended to name a contact and a maximum time |
+| Independent audit report review for privacy-relevant controls and CUECs | Annually | Report read in full | Reviewed; the CUECs the entity must meet were checked against the entity's own controls |
+| Cross-border transfer review | Annually and on any legal change (**R-047**) | Obligation inventory per jurisdiction, across two legal entities and five geographies | Mechanisms current; one review triggered by a legal change and completed |
+| DPIA review where the provider's processing changed | On change | DPO assessment, with a **launch veto** available | Exercised as a veto once in the period on an unrelated internal launch; no provider change required a veto |
+| Personnel screening and training attestations | Annually, and per individual at onboarding | Attestation held per named individual as a **hard access gate** | 11 of 11 held; one start delayed 9 days pending the attestation |
+| **Corrective action tracking** | Continuous | Findings in the entity's deficiency register with owners, dates and independent closure verification | The late-notification corrective actions, the schedule update, and the deletion-evidence findings are all tracked to closure; **the deletion enforcement item remains open with a named owner and date** |
+
+**Corrective actions taken this period, in summary:** an assessment cadence raised to quarterly; an annex
+amended to name a notification contact and maximum time; a scope restriction to non-production pending
+remediation of a secure-development exception; two named individuals rejected on competence; one start
+delayed pending screening; additional evidence obtained where a certificate's scope was wrong; a processing
+schedule corrected; deletion evidence obtained including at a sub-processor; a Tier 3 provider's data
+minimized on distress signals; an engagement refused outright on key management; and the entity's own
+contracting standard and intake control corrected where the assessments revealed defects in them rather than
+in the providers.
+
+## 15. Review history
+
+| Version | Date | Change |
+|---|---|---|
+| 3.0 | 2024-10-30 | Established the inventory, tiering, diligence set and DPA requirements |
+| 3.5 | 2025-07-16 | Added the requirements annex allocating controls party by party, after a control was found claimed by neither side |
+| 4.0 | 2025-12-03 | Added the named-individual screening attestation as a **hard access gate**; quarterly access review for provider individuals; the AP-and-identity reconciliation that finds unapproved providers |
+| 4.1 | 2026-02-19 | Added the maximum notification time and named contact to every annex after a late notification; certificate **scope** check after a mis-scoped certificate; sub-processor deletion made a required checklist item; exit-plan activation on distress signals rather than insolvency; recorded the refused engagement and the two rejected individuals |

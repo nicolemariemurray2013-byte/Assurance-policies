@@ -1,0 +1,234 @@
+# Organizational Structure, Reporting Lines and Authority Matrix
+
+**Document ID:** GOV-STR-003
+**Version:** 3.3
+**Owner:** Chief Executive Officer
+**Established by:** Management, with Board oversight — Board resolution 2026-02-19
+**Next scheduled review:** 2026-12-31 (Annually, and on any reorganization, new legal entity, new region, new)
+outsourced provider, or material change to legal or contractual obligations
+**Scope:** The compliance-evaluation service operated in AWS account 471885797689, us-west-2.
+
+---
+
+## 1. All structures of the entity are addressed
+
+Management and the Board **consider the multiple structures used to support the achievement of
+objectives** — operating units, legal entities, geographic distribution and outsourced service
+providers. Each is enumerated below with its accountable owner and how it is overseen; a structure
+that is not on this list is not authorized to process entity or customer data.
+
+### 1.1 Operating units
+
+| Operating unit | Objective it supports | Head | Reports to |
+|---|---|---|---|
+| Platform Engineering | Build and run the evaluation service | VP Engineering | CEO |
+| AI/Assessment Engineering | Model selection, prompts, evaluation quality | Chief AI Officer | CEO |
+| Security & Infrastructure | Security, availability, infrastructure controls | AI Security Lead | VP Engineering, with a direct line to the Security & Privacy Committee |
+| Compliance & Assurance | Control operation, evidence, examinations | Compliance Manager | General Counsel |
+| Customer Operations | Onboarding, support, incident communication | Director, Customer Ops | CEO |
+| Legal & Privacy | Legal, privacy, contracts | General Counsel / DPO | CEO, with a direct line to the Board |
+| People Operations | Hiring, background screening, competence, conduct | Head of People | CEO |
+| Finance & Procurement | Financial control, supplier onboarding | Head of Finance | CEO |
+
+### 1.2 Legal entities
+
+| Legal entity | Jurisdiction | Role | Controls applied |
+|---|---|---|---|
+| Parent operating company | United States (Delaware) | Contracting party; operates the service; controller/processor of record | Full control set; owns the SOC 2 assertion |
+| EU subsidiary | Ireland | EU/EEA contracting party and EU representative for privacy purposes | Full control set; intra-group data processing agreement; SCCs where transfers occur |
+
+The intra-group data processing agreement between the two entities is executed and reviewed annually
+by the General Counsel; it defines controller/processor roles, transfer mechanism, sub-processor
+consent and audit rights. The Board reviews the legal-entity structure annually because a structure
+change alters who owes which obligation to whom.
+
+### 1.3 Geographic distribution
+
+| Location | Function | Data resident there | Control consideration |
+|---|---|---|---|
+| us-west-2 (AWS) | Production system of record | Customer scan evidence, documents, assessment results | Primary control boundary; all production controls |
+| us-east-1 (AWS) | Reserved for planned cross-region backup replication (not yet configured; backup standard §6.5) | None today | Backup controls (A1); no compute, no access path for personnel |
+| United States (remote workforce) | Engineering, operations | No local storage permitted; access via managed endpoints only | Endpoint controls, MDM, no-local-copy standard |
+| Ireland (remote workforce) | EU customer-facing, privacy | No local storage permitted | Same, plus EU privacy oversight |
+| India (contracted engineering, 1 supplier) | Non-production tooling only | No customer data — enforced by account separation | Vendor personnel controls; access limited to non-production accounts |
+
+Geographic distribution is a control consideration in its own right: personnel located outside the US
+create cross-border transfer obligations, which is why the vendor engineering location is denied
+production access by account boundary rather than by policy alone.
+
+### 1.4 Outsourced service providers
+
+| Provider | Service outsourced | Data exposure | Owner | Oversight mechanism |
+|---|---|---|---|---|
+| AWS | Cloud infrastructure, Bedrock model inference | Processes customer evidence in-region | AI Security Lead | Annual SOC 2 report review; shared-responsibility matrix; CC9 supplier record |
+| Identity provider (SSO/MFA) | Authentication | Employee identity data | AI Security Lead | Annual SOC 2 review; configuration reviewed quarterly |
+| Managed SIEM/monitoring provider | Log analysis, alerting | Security telemetry, which may contain identifiers | AI Security Lead | Annual SOC 2 review; DPA; log-minimization requirement |
+| Contracted engineering supplier | Non-production tooling | None (account-separated) | VP Engineering | Quarterly personnel review; no production access |
+| Independent internal audit provider | Control testing | Read access to evidence under NDA | Audit Committee | Engagement letter; reports to the Committee, not management |
+| Payroll/HR SaaS | Employee records | Employee PII | Head of People | Annual SOC 2 review; DPA |
+| Independent penetration testing firm | Security testing | Access to a non-production replica | AI Security Lead | Scoped engagement; results to the Security & Privacy Committee |
+
+Every provider above is in the supplier register with a risk tier, a current DPA where personal data is
+involved, and an annual review — the mechanism is defined in AIMS-PRO-010 and CC9. Outsourcing
+transfers execution, never accountability: each provider has a named internal owner who remains
+answerable for the control.
+
+## 2. Reporting lines are designed and evaluated
+
+Management **designs and evaluates lines of reporting for each entity structure** to enable execution
+of authorities and responsibilities and the flow of information needed to manage the entity's
+activities.
+
+**Design principles.** Every operating unit has exactly one primary reporting line; every control
+owner can reach a decision-maker with authority to stop work; assurance functions (Security,
+Compliance, Legal/Privacy, Internal Audit) hold a **secondary reporting line that bypasses the
+management chain they assure**, so a control concern cannot be suppressed by the person it concerns.
+
+| Structure | Primary line | Secondary / escalation line | Why the secondary line exists |
+|---|---|---|---|
+| Platform Engineering | VP Engineering → CEO | — | — |
+| Security & Infrastructure | AI Security Lead → VP Engineering | **→ Security & Privacy Committee directly** | Security must be able to report on the engineering organization it assures |
+| Compliance & Assurance | Compliance Manager → General Counsel | **→ Audit Committee directly** | Control failures must reach the Board unfiltered |
+| Legal & Privacy (DPO) | General Counsel → CEO | **→ Board directly**; the DPO cannot be instructed on the substance of privacy advice and cannot be dismissed for it | Privacy law requires an unconflicted advisory line |
+| Internal audit provider | — | **→ Audit Committee only** | Independence from management |
+| Any employee or contractor | Line manager | **→ Ethics channels, incl. the Audit Committee Chair** (GOV-STD-001 §5) | A report about management must not route through management |
+| Incident reporting | On-call → Incident Commander | → CEO and Board for Severity 1 within 24h | Time-critical information must not queue behind hierarchy |
+| Outsourced providers | Named internal owner | → Third-Party Risk → CC9 register | External activity must enter the entity's information flow |
+
+**Evaluation of the reporting lines** is performed annually, and is a genuine evaluation rather than a
+re-publication of the chart:
+
+- 2025-09 evaluation found the AI Security Lead reported solely through VP Engineering, meaning
+  security findings about Platform Engineering were filtered by the accountable manager. **Action
+  taken:** the direct line to the Security & Privacy Committee was added (v3.0).
+- 2026-02 evaluation found that Customer Operations learned of degraded assessment quality only after
+  customers reported it, because the quality metric flowed up Engineering and not across. **Action
+  taken:** a standing cross-functional quality review was added, and the processing-integrity metric
+  is now distributed to Customer Ops directly (v3.3).
+- The evaluation also tests information flow the other way — whether the Board's decisions reach the
+  people who must act on them. Two of eleven Board actions in 2025 had not been communicated to the
+  accountable owner within a week; a Board-action register with named owners now closes that loop.
+
+## 3. Authority is delegated, responsibilities defined, and duties segregated
+
+Management and the Board **delegate authority, define responsibilities, and use appropriate processes
+and technology to assign responsibility and segregate duties** at the various levels of the entity.
+Delegation is written and bounded; where an authority is enforced by technology, the technical control
+is named, because a documented limit that the platform does not enforce is advisory only.
+
+### 3.1 Authority matrix
+
+| Decision / action | Delegated to | Limit | Enforced by (technology / process) |
+|---|---|---|---|
+| Accept a risk within appetite | Accountable Owner | Within the Board-approved appetite; above it → Board | Risk register requires the approver's identity and the appetite band |
+| Accept a risk outside appetite | Board | None | Board minute required before the risk may be accepted |
+| Approve a production change | Change approver ≠ author | Standard changes only; emergency path requires post-hoc review within 24h | **Branch protection: pull request + 1 approving review, author cannot self-approve; CI gate** |
+| Deploy to production | CI/CD pipeline identity | Humans cannot deploy directly | **No human principal holds deploy permission; pipeline role is the only deployer** |
+| Grant or change production access | AI Security Lead + resource owner | Time-bound; least privilege | **IAM permission boundary; access requests recorded; break-glass alarmed** |
+| Use break-glass/elevated access | Two-person authorization | Session recorded and reviewed within 1 business day | **CloudTrail alarm on privileged action → SNS to Security; MFA required** |
+| Approve a new supplier / sub-processor | Third-Party Risk + General Counsel | No production data access before DPA execution | Procurement gate; register entry required |
+| Disclose confidential customer information | General Counsel | Contract or law only; logged in the disclosure register | Disclosure register; legal review recorded |
+| Respond to a data-subject request | DPO | Statutory deadlines | Request tracker with a deadline clock |
+| Publish or amend an assessment result | Assessment pipeline only | **No manual override of a verdict; corrections require a new assessment with evidence** | **No human write path to the result store; changes are appended and journalled** |
+| Change model, prompt or evaluation logic | Chief AI Officer + Responsible AI Lead | Requires evaluation-set regression pass | CI evaluation gate blocks merge on regression |
+| Declare a Severity 1 incident | Any on-call engineer | No approval needed to declare or to stop the service | Runbook authority; no gate by design |
+| Approve expenditure | Head of Finance / CEO by threshold | Tiered thresholds; two signatures above the top tier | Purchasing system approval chain |
+| Terminate access on departure | People Ops triggers, Security executes | Same business day for involuntary; ≤ 24h otherwise | Offboarding workflow with a verification step |
+
+### 3.2 Segregation of duties
+
+| Duties kept separate | Why | How the separation is enforced |
+|---|---|---|
+| Authoring a change ↔ approving it | Prevents unilateral change to the production system | Branch protection rejects self-approval |
+| Approving a change ↔ deploying it | Prevents bypassing review | Only the pipeline identity can deploy |
+| Requesting access ↔ granting access | Prevents self-provisioning of privilege | Access workflow requires a second party; IAM denies self-grant |
+| Operating a control ↔ testing it | Preserves assurance validity | Internal audit provider reports to the Audit Committee |
+| Producing an assessment result ↔ reviewing quality | Preserves processing integrity | Responsible AI Lead samples results and is outside the delivery line |
+| Managing suppliers ↔ approving supplier payments | Reduces fraud opportunity | Procurement/Finance split; two signatures above threshold |
+| Administering identity ↔ approving privileged roles | Prevents privilege self-escalation | Role changes require resource-owner approval; break-glass alarmed |
+| Investigating a conduct case ↔ being its subject | Prevents self-exoneration | Conduct Panel; Audit Committee handles management cases |
+
+**Where segregation is not achievable**, the compensating control is recorded rather than the gap
+being left implicit. The entity is small enough that the AI Security Lead both administers identity
+and holds break-glass. Compensating: every break-glass session raises a CloudTrail alarm to the
+Security & Privacy Committee's mailbox (not only to Security), sessions are reviewed by the Compliance
+Manager who is outside the reporting line, and quarterly the independent internal audit provider
+re-performs the review. This is documented in the risk register as R-041 with the Board's acceptance.
+
+## 4. Security, availability, processing integrity, confidentiality and privacy requirements are addressed when defining authorities and responsibilities
+
+Management and the Board **consider requirements relevant to all five trust services categories when
+defining authorities and responsibilities**. Each category has a named accountable owner at management
+level, a Board-level overseer, and specific authorities allocated to make the responsibility
+executable.
+
+| Category | Accountable owner | Board overseer | Authorities specifically allocated to discharge it |
+|---|---|---|---|
+| **Security** | AI Security Lead | Security & Privacy Committee | Grant/revoke access; block a release on a security finding; require break-glass review; commission penetration testing |
+| **Availability** | VP Engineering | Security & Privacy Committee | Declare an incident; allocate capacity; require a restore test; authorize failover |
+| **Processing integrity** | Chief AI Officer, with the Responsible AI Lead | AI Governance Oversight Committee | Block a model/prompt change on regression; suspend a control's automated assessment; require re-assessment |
+| **Confidentiality** | General Counsel | Audit Committee | Approve or refuse any disclosure; require disposal; classify information |
+| **Privacy** | DPO (General Counsel) | Security & Privacy Committee | Decide data-subject requests; halt a processing activity that lacks a lawful basis; require a DPIA before launch |
+
+Two of these are deliberately negative authorities — the right to **stop** something (block a release,
+halt a processing activity). A responsibility for a trust services category without the authority to
+prevent the thing that would breach it is not a control.
+
+## 5. Interaction with, and monitoring of, external parties
+
+Management and the Board **consider the need to interact with and monitor the activities of external
+parties when establishing structures, reporting lines, authorities and responsibilities**. Every
+external party category has an internal owner, a defined interaction channel, and a monitoring
+mechanism.
+
+| External party | Internal owner (structure) | Interaction channel | How their activities are monitored |
+|---|---|---|---|
+| Customers | Customer Ops; General Counsel for contracts | Support channel, status page, contractual notices | SLA reporting; complaint register; commitments tracked against contract terms |
+| Outsourced service providers / sub-processors | Named owner per §1.4; Third-Party Risk coordinates | Contract, DPA, annual review meeting | Annual SOC 2 / attestation review; incident notification obligation; access reviewed quarterly; register entry |
+| Vendor and contractor personnel | Engagement owner | Onboarding through the entity's own access process | Same conduct evaluation as employees (GOV-STD-001 §4); quarterly continue/remove decision |
+| Business partners and integrators | VP Engineering | Partner agreement with a conduct and disclosure annex | Annual review; integration security review |
+| Regulators and supervisory authorities | General Counsel / DPO — **sole authorized channel** | Formal correspondence only | Correspondence register; Board notified |
+| Service auditor | Audit Committee (engaged), Compliance Manager (coordinates) | Examination process | Reports to the Audit Committee |
+| Independent testers and advisors | Relevant Board committee | Engagement letter | Report directly to the committee, not to management |
+| Data subjects | DPO | Privacy request channel published in the notice | Request tracker with statutory deadlines |
+| Security researchers / external reporters | AI Security Lead | Vulnerability disclosure channel | Triage SLA; findings enter the remediation register |
+
+Two structural choices follow from this analysis. First, the DPO and General Counsel are the **only**
+authorized channel to regulators, so an engineer cannot inadvertently make a statement that binds the
+entity. Second, independent testers report to a Board committee rather than to the management they
+test, which is what makes their monitoring of external-facing controls meaningful.
+
+## 6. Legal and contractual privacy requirements in the structure
+
+Management **addresses legal and contractual privacy requirements and objectives when establishing
+structures, reporting lines and authorities**. The privacy obligations drive specific structural
+features, not merely a policy document.
+
+| Legal / contractual privacy requirement | Structural consequence — deliberately adopted |
+|---|---|
+| An unconflicted privacy advisory function is required, and its advice must not be overridden by commercial pressure | The **DPO role is formally designated**, is held by the General Counsel, reports to the CEO **and directly to the Board**, cannot be instructed on the substance of privacy advice, and cannot be dismissed or penalized for performing the role |
+| Controller/processor roles must be allocated and documented | Roles are allocated per legal entity in §1.2 and per customer contract; the DPA and intra-group agreement record them |
+| An EU/EEA presence and representative may be required for EU customers | The **Ireland subsidiary** exists in part for this purpose; the EU representative function is assigned there |
+| Cross-border transfers require a lawful transfer mechanism | Transfer mechanism (SCCs) and the transfer impact assessment are owned by the DPO; **no new region or offshore supplier may be added without the DPO's approval** — a hard gate in the procurement and infrastructure change processes |
+| Sub-processors require customer notice/consent and flow-down obligations | Sub-processor list is maintained by the DPO and published; adding one requires DPA execution and customer notification before processing begins |
+| Data-subject rights must be honored within statutory deadlines | DPO holds the authority to decide requests and to compel any operating unit to act; deadline clock in the request tracker |
+| A DPIA is required before high-risk processing | The DPO holds a **launch veto**: no processing activity assessed as high risk proceeds without a completed DPIA |
+| Privacy incidents require notification within statutory windows | Incident structure names the DPO as a mandatory Severity-1 participant with authority to start the notification clock, independent of management's view of severity |
+| Sanctions must apply to privacy policy violations | Conduct framework covers privacy violations explicitly (GOV-STD-001 §6) |
+| Records of processing must be maintained | ROPA owned by the DPO; each operating unit has a named contributor |
+
+## 7. Board oversight of the structure
+
+The Board reviews this structure annually and on material change: new legal entity, new region, new
+outsourced provider with data access, a change to segregation of duties, or a change in legal or
+contractual privacy obligations. The 2026-02-19 resolution approved v3.3, and specifically approved
+the compensating control for the identity/break-glass segregation limitation in §3.2 as an accepted
+risk (R-041) with quarterly independent re-performance.
+
+| Version | Date | Change |
+|---|---|---|
+| 2.0 | 2024-10-15 | Established the structure, authority matrix and segregation of duties |
+| 3.0 | 2025-09-11 | Added the Security direct line to the Security & Privacy Committee after the reporting-line evaluation |
+| 3.1 | 2025-11-20 | Added the EU subsidiary, the EU representative function and the DPO launch veto |
+| 3.2 | 2026-01-15 | Enumerated outsourced providers and vendor-personnel oversight; added the no-new-region-without-DPO gate |
+| 3.3 | 2026-02-19 | Added cross-functional quality reporting after the 2026 reporting-line evaluation; recorded R-041 and its compensating control |

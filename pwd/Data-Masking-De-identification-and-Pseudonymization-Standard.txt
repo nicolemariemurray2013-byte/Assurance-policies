@@ -1,0 +1,339 @@
+# Data Masking, De-identification and Pseudonymization Standard
+
+**Document ID:** SEC-MSK-043
+**Version:** 2.1 — **effective 2026-08-14**, superseding v1.4 of 2025-09-30
+**Owner:** Data Protection Officer (policy and adequacy); Head of Platform Engineering (implementation)
+**Approved by:** CISO 2026-08-14; DPO 2026-08-14; General Counsel 2026-08-12 (legal and regulatory positions)
+**Next scheduled review:** Annually (next by 2026-12-31), and on any change to the data inventory, to applicable
+privacy or payment legislation, or to the access control policy this standard is aligned to
+
+**Scope.** Every use of masking, obfuscation, pseudonymization, anonymization, tokenization, redaction and
+aggregation applied to sensitive data held or processed by the entity — customer evidence documents and their
+contents, assessment results, personal data of customer personnel and of the entity's own personnel, credentials
+and secrets, and any extract of the above taken for development, testing, support, analytics, audit or
+demonstration. The reference implementation is AWS account **471885797689**, region **us-west-2**.
+
+Companion documents: the logical access control and authentication standard (the access control policy this
+standard is aligned to); the information asset inventory and data classification standard (what is sensitive, and
+at what level); the cryptographic standard and key management procedure (the key material tokenization and
+deterministic pseudonymization depend on); the audit testing procedure (isolated copies for audit); the privacy
+notice and the choice, consent and collection limitation procedure (the lawful basis and purpose limits masking
+operates inside).
+
+---
+
+## 1. Policy, and what it is aligned to
+
+**Masking is a means of enforcing the access control policy where access itself cannot be withheld.** Where a
+person or process has no business need for a data element, the first control is to deny access to it; masking is
+used when access to the surrounding record is legitimate but access to the element is not, or when a copy of data
+must exist outside its original protective boundary. Masking is therefore never a substitute for access control —
+it is applied **in addition** to it, and a masked dataset remains subject to the classification, retention and
+access rules of the data it derives from unless it has been shown to be anonymous under §4.
+
+Four requirements govern every masking decision, and each is recorded for each decision:
+
+1. **The access control policy.** The logical access control and authentication standard defines least privilege,
+   role-based entitlement, need-to-know and the joiner-mover-leaver process. Masking implements the same rule at
+   field level: a role sees the minimum data elements its function requires, and no more. The role definitions in
+   §3 are the same role definitions used for entitlement, not a parallel set — a divergence between the two would
+   mean a role could see through one control what the other denied.
+2. **Business requirements.** Masking must leave the data fit for the purpose it is being used for; an
+   unusable dataset drives people to request the unmasked one, which is the failure mode this standard exists to
+   prevent. Each masking rule in §3 records the purpose it serves and the utility it must preserve (format,
+   referential integrity, distribution, or none).
+3. **Applicable legislation and regulation.** Positions taken with the General Counsel and DPO, recorded in the
+   legal, regulatory and contractual requirements register: **GDPR/UK GDPR** — pseudonymized data remains personal
+   data (Article 4(5)) and stays in scope for rights, security and breach obligations, while pseudonymization is
+   an explicit Article 32 security measure and supports Article 25 data-protection-by-design; genuinely anonymous
+   data falls outside the Regulation, but only where re-identification is not reasonably possible, which is what
+   §4 tests. **CCPA/CPRA** — de-identified data is excluded from "personal information" only where the business
+   maintains the technical safeguards, business processes prohibiting re-identification, and the process
+   preventing inadvertent release that §3 and §5 provide, so the exclusion is conditional on the controls being
+   operated. **PCI DSS** — the entity does not store, process or transmit cardholder data; the position is
+   maintained by the input controls in §3.6 and is re-tested annually rather than assumed. **HIPAA** — not
+   applicable; no protected health information is in scope, and the classification standard's ingest controls are
+   the mechanism that keeps it so. Where a customer's own regulator imposes a masking requirement on data the
+   customer sends the entity, it is captured as a contractual requirement in the register and implemented as an
+   entity obligation, not left to the customer.
+4. **The classification of the data.** Restricted and Confidential elements are masked by default in every
+   context other than the one that requires them; Internal and Public elements are not masked, because masking
+   data that does not need it degrades utility for no gain and trains people to work around the control.
+
+**Standing prohibitions.** Production customer data is not used in development or testing (see the change
+management policy §3.4). Unmasked Restricted data is not exported to any endpoint, spreadsheet, ticket,
+screenshot, chat message or third-party tool. Re-identification of de-identified data is prohibited except under
+the narrow, approved path in §5. No person may build or hold a mapping table, cross-reference or "helpful export"
+that would defeat a masking control.
+
+---
+
+## 2. Which data is sensitive, and where masking applies
+
+| Data element | Classification | Where it exists | Default treatment outside its purpose |
+|---|---|---|---|
+| Customer evidence document **content** | Restricted (customer confidential; may contain the customer's personal data) | Object storage, encrypted with a customer-scoped key; processed in memory by the assessment runtime | Not exported. Where a fragment must be shown outside the service (a support investigation, a defect reproduction), it is **redacted** to the minimum span needed and the redaction is recorded |
+| Customer personnel identifiers — names, email addresses, job titles, comment authorship | Confidential, personal data | Assessment records, comments, audit trail | **Pseudonymized** in any extract; displayed in the product only to entitled users of that customer's tenant |
+| Assessment results, scores, control verdicts, identified gaps | Restricted (customer confidential; commercially sensitive) | Primary data store | Not exported outside the tenant boundary. Aggregate benchmark statistics are produced only under §3.5 |
+| Cloud resource identifiers read from a customer environment (account ids, ARNs, resource names) | Confidential | Scan evidence records | **Tokenized** in any extract; account identifiers are treated as identifying the customer |
+| Entity personnel data — HR records, training and screening records, disciplinary records | Confidential, personal data | HR system of record (a processor) | Access is role-restricted rather than masked, because the population entitled to it is small and defined; extracts for analysis are aggregated per §3.5 |
+| Authentication secrets, API keys, tokens, private keys | Restricted | Secrets manager and KMS; never in application data | **Never displayed, never logged, never masked-but-present**: secrets are referenced, not copied, and any secret found in data is treated as a leaked credential and rotated |
+| Log and telemetry records | Confidential | Central logging account | Structured logging **excludes** Restricted content by construction (§3.4); identifiers appear tokenized |
+| Support and correspondence records | Confidential | Support system | Customers' evidence content is not attached to tickets; references are used instead |
+| Cardholder data | **Out of scope** | Not held — payment processing is delegated entirely to a PCI-compliant processor | Blocked at input and monitored for (§3.6) |
+
+The authoritative list is the information asset inventory; this table is its masking-relevant view and is
+reconciled against the inventory at each annual review.
+
+---
+
+## 3. The masking techniques, and where each is used
+
+Technique selection is a recorded decision, because the techniques are not interchangeable: they differ in
+whether the original value can be recovered, whether equal inputs produce equal outputs, and how much utility
+survives.
+
+| Technique | What it does | Reversible? | Preserves | Used for |
+|---|---|---|---|---|
+| **Access denial** | The element is not returned at all | n/a | Nothing | The default whenever the purpose does not need the element. Preferred over every technique below |
+| **Redaction / suppression** | The value is removed and its absence marked | No | Record structure | Evidence fragments shown outside the service; documents shared with a third party; screenshots in defect reports |
+| **Partial masking (obfuscation)** | A defined portion is replaced with a fixed character, leaving a stated remainder | No | Format, and a limited ability to recognise a value one already knows | Support views: email as `j•••••@customer.example`, last 4 of an identifier, first octet of an IP |
+| **Deterministic pseudonymization (keyed HMAC)** | The identifier is replaced by a stable surrogate derived under a secret key | Only by the key holder, which is a separate, restricted service | **Referential integrity** across tables and over time, and the ability to count and join | Analytics, defect reproduction, and any extract needing joins. The key lives in KMS with a policy denying the analytics roles, so a holder of the extract cannot reverse it |
+| **Tokenization (random surrogate + vault)** | The value is replaced by an unrelated token; the mapping is held in a restricted vault | Only through the vault, whose use is logged and alarmed | Referential integrity | Cloud resource identifiers and account numbers in extracts, where reversal must be possible for a named operational purpose but must leave a trail |
+| **Encryption of the field** | The value is present but unreadable without the key | Yes, by the key holder | Nothing about the value | At-rest protection of Restricted fields; not counted as masking, because the ciphertext is still the data |
+| **Generalization / banding** | A precise value is replaced by a range or category | No | Distribution, analytic utility | Dates to month, ages to bands, counts to buckets, geography to country |
+| **Perturbation / noise** | A small bounded random change | No | Aggregate statistics | Benchmark statistics where an exact value could single out a customer |
+| **Synthesis** | Wholly artificial data generated to the real schema and distribution | n/a — no real value is present | Schema, distribution, volume | **The default for development and test data.** Nothing derived from real data is safer than data that never contained any |
+| **Aggregation with a minimum cell size** | Only group results are released, and only above a threshold | No | Group-level insight | Benchmarks and management reporting (§3.5) |
+| **Nulling** | The field is emptied | No | Schema only | Fields no downstream purpose needs, in extracts |
+
+**Choosing between them, and choosing how strong.** The rule is: deny access first; if a copy must exist, prefer
+**synthesis**; if real records are unavoidable, prefer **irreversible** techniques (redaction, generalization,
+synthesis) over reversible ones; use **deterministic pseudonymization** only where joins are genuinely required
+and **tokenization** only where reversal is genuinely required. Strength is set against the **assessed
+re-identification risk and the recipient's context**, and the decision is recorded with its reasoning in the
+masking register — including what was rejected. The recorded factors are: the sensitivity of the element and the
+harm from disclosure; who will hold the output and what else they can already see (an internal engineer under
+contract and monitoring is a different context from an external analyst); whether the output leaves the entity's
+control; the size of the population, because small populations are easy to single out; and how much utility the
+purpose truly requires, which is often less than requested. Where the assessment is finely balanced, the stronger
+technique is used: the cost of over-masking is inconvenience and the cost of under-masking is a disclosure.
+
+### 3.1 Minimum necessary access, enforced at field level
+
+The product and internal tooling apply masking by role, and the role set is the entitlement role set:
+
+| Role | Sees unmasked | Sees masked or not at all | Basis |
+|---|---|---|---|
+| Customer's own entitled users | Their tenant's evidence content, results, and their colleagues' names | Nothing of any other tenant — enforced by tenant isolation, not by masking | The customer's own data, under their own access decisions |
+| Assessment runtime (machine) | Evidence content in memory for the duration of the assessment | Persists no evidence content outside the encrypted store; emits no content to logs | Purpose limitation: it needs the content to do the work |
+| Customer Support (tier 1) | Tenant name, assessment status, timestamps, error codes | **Evidence content: not at all.** Customer personnel identifiers: partially masked | Support resolves process failures, which does not require reading the customer's evidence |
+| Customer Support (tier 2 / escalation) | As tier 1, plus **specific, named** evidence metadata (file name, size, type, ingest result) | Evidence content still withheld; access to a content fragment requires the §5 path | Escalation needs the shape of the object, not its substance |
+| Engineering (defect investigation) | Pseudonymized extracts and synthetic reproductions | Production customer content, unless the §5 path is followed | Almost all defects reproduce without real content; the exception is handled explicitly rather than by standing access |
+| Data analysis and product analytics | Deterministically pseudonymized, generalized datasets | Direct identifiers, evidence content, free text | Joins and trends need surrogates, not identities |
+| Security operations | Security telemetry with tokenized identifiers; unmasked identity data during a confirmed incident under the incident program | Evidence content | Proportionality: detection works on metadata; investigation may need more, and is authorized when it does |
+| Compliance and internal audit | Control operation records; metadata; masked samples | Evidence content, unless sampling requires it, in which case the audit testing procedure's isolated-copy path applies | Testing a control needs the record of its operation, not the customer's substance |
+| External auditor | Masked or de-identified samples in an isolated copy; on-behalf-of access to the live system where a real record is unavoidable | Bulk unmasked data; standing access of any kind | Audit testing procedure §5 |
+| Third-party processors | Only the fields their service requires, per the DPA annex | Everything else | Data minimization in the contract, enforced by what is sent |
+
+Masking is applied **server-side, before the response is formed**. A masked value is not sent to the client and
+hidden there, because a hidden value in a payload is not masked — it is merely inconvenient to read.
+
+### 3.2 Test, development and demonstration data
+
+Lower environments hold **synthetic data by default**, generated from committed generators that reproduce the
+production schema, referential structure, volume and distribution — including the awkward cases (very large
+documents, unusual encodings, adversarial content) that make synthetic data a better test corpus than a copy of
+production. Demonstration tenants use a curated synthetic dataset with a fictional company.
+
+Copying production data into a lower environment requires **DPO and data-owner approval**, is time-bounded, is
+recorded, and is de-identified before it lands unless the approval specifically records why it could not be.
+In this period **0** such copies were made.
+
+### 3.3 Extracts and analytics
+
+Any dataset leaving the primary store for analysis goes through a single, reviewed extraction path that applies
+the register's rules by classification — direct identifiers pseudonymized under the analytics key, free text
+excluded (free text is where identifiers hide), dates generalized to month, and cell sizes enforced. Ad-hoc export
+from the production store is not available to any human role; an analyst cannot construct a different extract by
+choosing different SQL, because the extract, not the query, is the interface.
+
+### 3.4 Logs, telemetry, errors and screens
+
+Structured logging **excludes Restricted content by construction**: log helpers accept an allowlist of fields, so
+including evidence content requires changing reviewed code rather than adding a variable. Identifiers are
+tokenized in logs. Exception handlers emit types and stack traces, never payloads. A **secret and PII detection
+pass** runs continuously over the log store, and a hit is an incident: the record is purged under the two-person
+path and the emitting code is fixed, because a masking failure in logs is a masking failure everywhere the logs
+go. Screens showing Restricted data may not be screenshotted or photographed except through the redacting support
+workflow (see the awareness programme §5). In this period the log scanner raised **2** findings, both
+non-sensitive false positives, and **0** confirmed content leaks.
+
+### 3.5 Aggregate reporting and benchmarks
+
+Cross-customer statistics are released only as aggregates with a **minimum cell size of 5 customers**, with
+suppression of complements so a suppressed cell cannot be recovered by subtraction, and with bounded noise where
+a value could still single out a customer. No benchmark identifies a customer, and no customer can infer another
+customer's posture from one. Every benchmark definition is reviewed by the DPO before first release.
+
+### 3.6 Payment card data: keeping the out-of-scope position true
+
+The entity's position is that **no cardholder data is stored, processed or transmitted**: payment pages are
+hosted by the processor, the entity receives only a processor token and the last four digits for display, and no
+entity system is in the cardholder data path. The position is maintained rather than assumed — input validation
+rejects card-number patterns in evidence uploads and in support fields, the log and data-store detection pass
+includes a card-number detector with Luhn validation, and the position is re-tested annually with the processor's
+current attestation on file. If cardholder data were ever found, PCI DSS masking rules (display of no more than
+the first six and last four digits, and only to personnel with a business need) would apply to it, and the finding
+would be an incident. In this period the detectors raised **0** hits.
+
+---
+
+## 4. Verifying that de-identification is adequate
+
+A masking rule that has been implemented is not the same as a masking rule that works. Adequacy is **tested**, by
+someone other than the implementer, before an output is relied on and periodically thereafter.
+
+**The test asked.** For each de-identified output: could a reasonably resourced recipient, using what they hold
+and what is publicly or commercially available, single out an individual or a customer, link records about them,
+or infer a sensitive attribute about them? The three failure modes are named separately because they need
+different defences — **singling out**, **linkability**, and **inference**.
+
+**How indirect re-identification is prevented.** Removing direct identifiers is the beginning, not the end. The
+recorded controls are:
+
+- **Quasi-identifier analysis.** Every field remaining in the output is assessed for its contribution to
+  uniqueness in combination with the others — role, job title, organization size, industry, region, joining date,
+  assessment dates, control counts, unusual configuration facts. A combination is not evaluated field by field,
+  because uniqueness is a property of the combination.
+- **A k-anonymity floor of k ≥ 5** on released aggregate and analytic datasets, on the quasi-identifier set as a
+  whole, achieved by generalization and suppression, and **measured** rather than intended. Where a sensitive
+  attribute is present, l-diversity is checked so that a k-anonymous group does not have a single value of that
+  attribute — a group of five who all share one outcome discloses that outcome.
+- **Removal of free text and of high-cardinality fields.** Free-text fields, file names, resource names and
+  verbatim quotations are excluded from de-identified outputs; they are the most common re-identification route
+  and they resist generalization.
+- **Rare-value handling.** Outliers — the very large customer, the single-employee tenant, the one entity in a
+  region — are suppressed or generalized to a level where they are not unique. Rarity is a re-identification
+  route regardless of the field it appears in.
+- **Attention to auxiliary data.** The assessment explicitly asks what the recipient already has: another extract
+  from the same system, a customer list, a public filing, an employee directory, a data-breach corpus. Two
+  separately safe releases can be unsafe together, so releases are considered cumulatively, and the register
+  records what has previously gone to each recipient.
+- **No collation.** Datasets released under different pseudonymization keys use **different keys per purpose**, so
+  they cannot be joined by surrogate. Combining de-identified datasets, or joining one against another source, is
+  prohibited without a fresh assessment (§5).
+- **Key separation for pseudonymization.** Because pseudonymized data is still personal data, the recovery key is
+  held in KMS under a policy that denies the roles holding the data, key use is logged and alarmed, and the key
+  is rotated annually. The surrogate's irreversibility to its holder is a property of the key policy, not of the
+  algorithm, so the key policy is tested in the access review.
+
+**A motivated-intruder test** is performed **annually** and before any first release to a new recipient class: a
+named person other than the dataset's author, given the output and normal open-source resources and a fixed
+time-box, attempts re-identification and records the method and result. A successful or partially successful test
+blocks release until the output is strengthened, and the test is repeated. The most recent test (2026-06-18, run
+by the AI Security Lead against the benchmark dataset and the analytics extract, 8 hours) **did not re-identify
+any customer or individual**; it did note that a rare industry-plus-region combination reduced a cell to 3
+customers, which was suppressed before release and recorded as **D-2026-026**, closed.
+
+**When "anonymous" may be claimed.** Only where the quasi-identifier analysis, the k ≥ 5 floor, the exclusion of
+free text, and the motivated-intruder test are all documented and passed, **and** the General Counsel and DPO
+concur in writing. Absent all of that, the output is treated as **pseudonymized — that is, as personal data** —
+and keeps the classification, access controls, retention limit and breach obligations of its source. The default
+is the conservative one, so an untested output is never treated as out of scope by inaction.
+
+**Ongoing re-verification.** Adequacy decays as auxiliary data grows and as the underlying population changes, so
+every de-identified output in continuing use is re-verified **annually**, and immediately on a material change to
+the data model, the customer population, the recipient set, or the state of public re-identification research.
+Outputs no longer needed are deleted rather than left in place, since an unused dataset accumulates risk without
+producing value.
+
+---
+
+## 5. Usage agreements, restrictions, and tracking
+
+Masking survives release only if the recipient's obligations are stated and the release is tracked.
+
+**Written usage terms are a condition of receiving any masked, pseudonymized or de-identified dataset**, internal
+or external. Every recipient agrees, in a signed data use agreement for external recipients and in an
+acknowledged internal record for staff:
+
+1. **No re-identification**, and no attempt at it, by any means including combination with other data.
+2. **No collation.** The dataset will not be joined, matched or cross-referenced with any other dataset, extract,
+   or external source without a fresh approval under this section — because collation is the mechanism by which
+   two adequate releases become one inadequate one.
+3. **Purpose limitation** to the stated purpose only. A new purpose is a new request.
+4. **No onward disclosure**, no copying outside the named storage location, no export to personal tooling or
+   endpoints, no upload to any third-party service including AI services.
+5. **Stated security controls** at least equal to the classification of the source data — encryption, access
+   control, a named custodian.
+6. **A stated expiry and mandatory deletion**, with a deletion confirmation returned to the DPO.
+7. **A duty to report** any suspected re-identification, whether accidental or not, immediately — an accidental
+   re-identification is a personal data breach and is handled as one, and reporting it carries no penalty for
+   the reporter, which is stated because a concealed re-identification is far worse than a reported one.
+8. **Acceptance of audit** of compliance with these terms.
+
+**Prohibited uses**, stated absolutely: re-identification; any automated decision about an individual made from a
+de-identified dataset; marketing or sales use of customer assessment data; any use that would exceed the purpose
+the data was collected for under the privacy notice; and building or retaining a re-identification mapping.
+
+**Approved re-identification path.** Re-identification is permitted only where it is necessary for a purpose the
+data subject or customer would expect — investigating a defect affecting a specific customer, responding to a
+data subject request, or a security investigation. It requires a recorded request naming the purpose and the
+minimum records needed, **DPO approval** (plus **General Counsel** approval where the purpose is legal or
+disciplinary), execution by the tokenization or key service by someone other than the requester, a scope limited
+to the named records rather than the dataset, logging of the vault or key use, and notification to the data owner.
+In this period **2** re-identifications were approved, both for defect investigations affecting a named customer,
+both scoped to fewer than 10 records; **1** was refused as achievable from metadata alone.
+
+**Tracking of personally identifiable information — the masking register.** The DPO maintains a register recording,
+for every masked, pseudonymized, de-identified or aggregated output in existence:
+
+| Recorded | Why it is recorded |
+|---|---|
+| Dataset name, owner and custodian | Someone must be accountable for it |
+| Source data and its classification, and **which PII elements it derives from** | So that a change to the source, or a breach of it, can be traced to every downstream copy |
+| Purpose, and the lawful basis it inherits | Purpose limitation is enforceable only if the purpose is written down |
+| Technique applied per field, the strength chosen, and **the reasoning including what was rejected** | The adequacy decision must be reviewable |
+| Whether it is reversible, and by whom (key or vault, and its policy) | Reversibility determines whether it is still personal data |
+| The adequacy verification: quasi-identifier analysis, k value achieved, motivated-intruder test date and result | Adequacy claimed without evidence is not adequacy |
+| Recipients, dates, and **prior releases to the same recipient** | Cumulative-release risk is invisible without this |
+| Storage location and applied controls | To confirm the terms are being met |
+| Retention period, expiry date and deletion evidence | An indefinite extract is an indefinite risk |
+| Whether it is treated as personal data or as anonymous, and the GC/DPO concurrence for the latter | The classification decision must be attributable |
+| Re-verification due date and last outcome | Adequacy decays |
+
+The register is reconciled **quarterly against the data inventory and against actual storage** — a discovered
+extract that is not in the register is a deficiency, because the register's value is its completeness. Personal
+data appearing in any output is tracked through the register into the records of processing activity, so a data
+subject request or an erasure request reaches derived datasets and not only the primary store. In this period the
+register held **9** active outputs, **3** were deleted at expiry with deletion evidence, **1** unregistered
+extract was found in a team's analysis bucket in the quarterly reconciliation, registered and then deleted as
+unnecessary, and recorded as **D-2026-027**, closed.
+
+---
+
+## 6. Governance
+
+| Activity | Frequency | Owner | Evidence |
+|---|---|---|---|
+| Standard review and approval | Annually, and on legal, regulatory or classification change | DPO with CISO and GC | Approved version |
+| Masking register reconciliation against the data inventory and actual storage | Quarterly | DPO | Reconciliation with exceptions |
+| Field-level masking rule review against the entitlement role set | Semi-annually, and on any role change | Head of Platform Engineering with DPO | Reviewed rule set; divergences raised |
+| Adequacy re-verification of each de-identified output | Annually, and on material change | Dataset owner, reviewed by DPO | Quasi-identifier analysis, measured k, l-diversity check |
+| Motivated-intruder test | Annually, and before a first release to a new recipient class | A named person other than the dataset author | Test record with method and result |
+| Log and data-store secret/PII detection pass | Continuous; monthly report | Security Engineering | Findings and dispositions |
+| Payment-card position re-test and processor attestation review | Annually | CISO with Finance | Detector results; processor AOC |
+| Data use agreement compliance check with external recipients | Annually per recipient | DPO | Confirmations, audit outcomes |
+| Re-identification request review | Per request; summary quarterly to the Audit Committee | DPO, with GC for legal purposes | Approvals, refusals, scope, vault logs |
+| Synthetic generator fidelity review (does test data still resemble production) | Semi-annually | Engineering | Generator version, comparison record |
+| Deletion of expired outputs | On expiry; verified quarterly | Dataset custodian | Deletion evidence in the register |
+
+Deficiencies are recorded in the control deficiency register with an owner and due date, tracked to closure, and
+reported to the Audit Committee quarterly. Open items at this version: **D-2026-027** (unregistered extract found
+in the quarterly reconciliation) closed; **D-2026-026** (a 3-customer cell suppressed before release) closed.
+
+**What this standard does not do.** It does not make masked data safe to publish — publication is a separate
+decision with its own approval. It does not exempt pseudonymized data from privacy obligations; only §4's tested
+anonymity does that, and rarely. And it does not replace access control: every masking rule here sits behind an
+entitlement decision that was already made on need-to-know grounds.

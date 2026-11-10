@@ -1,0 +1,677 @@
+# Malicious Software and Software Installation Control Standard
+
+**Document ID:** SEC-MAL-024
+**Version:** 3.0 — **effective 2026-08-21**, superseding v2.9 of 2026-08-14
+**Owner:** Head of Security Engineering
+**Approved by:** CISO 2026-08-20
+
+**v3.0 changes.** Added §4.8, the execution record: configured schedule against runs actually completed,
+coverage with a stated denominator, the non-execution alarms, and what those alarms caught in the period.
+Everything before v3.0 described what was configured, which cannot distinguish a scan that ran and found
+nothing from one that silently stopped running — the two produce the same empty findings list.
+**Next scheduled review:** Annually (next by 2026-12-31), and after any malware incident or any change to the
+application-control or endpoint-protection platform
+
+**v2.9 changes.** Added §4.3 (per-layer definition-update frequency with maximum permitted ages, and the entity's
+own malware-intelligence sources with the qualification test applied to each), §4.4 (the risk assessment behind
+where each detection control is placed, including the three placement decisions taken against the obvious
+default), §4.5 (the authorization process for temporarily or permanently disabling malware protection, with the
+approval authority, compensating controls and mandatory review dates), §4.6 (protection during planned maintenance
+and emergency bypass), §4.7 (environment classification by consequence of compromise and the isolation strategy
+for catastrophic-consequence environments), and §5.1–§5.5 on software on operational systems (source libraries
+kept in step, the software-update audit log and its retention and access controls, what is archived when a version
+is retired, the criteria and authority for patch decisions, and vendor end-of-life monitoring with the risk
+assessment required to retain unsupported software). Instant-messaging attachment scanning added to §4.1.
+
+**Scope.** Prevention, detection, and response for unauthorized or malicious software across the production
+runtime, the build and supply chain, the source repositories, employee endpoints, and administrative tooling.
+Includes control over **utility software** capable of bypassing normal operating or security procedures. The
+reference implementation is AWS account **471885797689**, region **us-west-2**.
+
+Companion documents: the change management policy (the authorized route by which software enters production);
+the configuration standards and vulnerability management procedure (baselines and patching); the logical access
+standard (who may install); the incident response program (what happens when detection fires).
+
+---
+
+## 1. Control model
+
+The service's production runtime is **immutable**: software is not installed into a running system, it is baked
+into a versioned artifact by the pipeline and the artifact is replaced wholesale. That removes the largest class
+of unauthorized-software risk, and it means the controls concentrate at three places:
+
+1. **The pipeline** — the only path by which software legitimately enters production.
+2. **The endpoint fleet** — where humans can attempt to install software.
+3. **Detection** — because prevention is never assumed to be complete.
+
+---
+
+## 2. Restricting the ability to install and modify applications and software (CC6.8-R1)
+
+### 2.1 Production runtime
+
+| Rule | Enforcement |
+|---|---|
+| No interactive installation into production | There is no shell access path into the runtime: no SSH, no RDP, and both security groups in the reference VPC carry **zero inbound rules** with no attached network interfaces |
+| Software enters only as a pipeline-built artifact | The deployment identity is the pipeline role; no human identity holds deploy permission in the normal course |
+| Artifacts are immutable and content-addressed | Deployment references a digest, not a mutable tag; a changed artifact is a different deployment |
+| Base images come from an approved, scanned registry | Image provenance is verified at build; unapproved base images fail the build |
+| Dependencies come from the internal, curated repository | Direct fetches from public registries at build time are blocked; a new dependency requires a review (§2.3) |
+| Runtime filesystem is read-only where the platform permits, and ephemeral otherwise | Nothing written at runtime survives a replacement, so an implant does not persist |
+| Configuration is not code | Configuration changes cannot introduce executable content; there is no plugin, script, or expression evaluation path fed from configuration or from customer input |
+| Evidence content is data, never executable | Uploaded evidence is treated as inert bytes: content type is validated, size is bounded, and nothing in the pipeline executes, interprets, or deserializes it into code |
+
+### 2.2 Endpoints
+
+Installation on managed endpoints is restricted to authorized individuals by removing the capability rather than
+by asking:
+
+- **Local administrator rights are removed by default.** Elevation is brokered per action, time-bound, justified,
+  and logged.
+- **Application control** runs in enforce mode: only software from the managed catalogue, or explicitly
+  allow-listed by publisher signature or hash, may execute. Unsigned binaries from user-writable locations are
+  blocked.
+- **The managed catalogue** contains software that has passed the acquisition review (license, security posture,
+  data handling, and supplier viability). A request for software outside it goes through that review.
+- Attempts to execute blocked software are **recorded and alerted**, so a blocked attempt becomes intelligence
+  rather than a silent failure.
+- Developer tooling that requires local compilation is permitted within a defined developer profile, which is
+  itself an authorization recorded per person, and does not extend to disabling application control.
+
+### 2.3 Source, dependencies, and the supply chain
+
+- **Branch protection** on every repository: no direct pushes to the mainline, review by someone other than the
+  author, and status checks that must pass. Modification of application software therefore always has a second
+  authorized party.
+- **Dependency introduction** requires: the dependency to exist in the curated internal repository, a license
+  check, a vulnerability check, and review of the change that adds it. Transitive additions are surfaced by the
+  lockfile diff and reviewed.
+- **Lockfiles are authoritative and committed**; builds are reproducible from them, so the software that ships is
+  the software that was reviewed.
+- **Software composition analysis** runs on every build and daily against the released inventory; a bill of
+  materials is retained per release so that a newly disclosed vulnerability can be mapped to deployed artifacts
+  without guesswork.
+- **Secret scanning** runs on every commit and over history.
+- **Build integrity**: builds run in ephemeral, isolated environments from a clean checkout; the pipeline
+  identity is the only writer to the artifact repository; artifact digests are recorded and verified at deploy,
+  so an artifact altered after build cannot be deployed.
+
+---
+
+## 3. Utility software capable of bypassing normal operating or security procedures (CC6.8-R2, CC6.8-R3)
+
+### 3.1 What counts, and who may use it
+
+"Utility software" is any tool whose function is to operate outside, above, or around the normal control path.
+The entity maintains an explicit list rather than relying on judgment in the moment:
+
+| Class | Examples | Authorized to hold | Restriction mechanism |
+|---|---|---|---|
+| Privileged administration | Break-glass credentials; administrator-equivalent roles | Named break-glass holders; a defined set of platform and operator roles | IAM policy; two-person rule; use raises an alarm |
+| Direct data-store access | Console or CLI access to the record store and object store outside the application path | Platform engineers, for incident use only | Role-scoped, short-lived, tenant-scoped where possible, fully logged |
+| Debuggers, memory and process inspection | Runtime debuggers, memory dumpers | Not permitted in production; developer profile only in pre-production | Absent from production images; crash dumps disabled |
+| Network analysis | Packet capture, port scanners | Security Engineering only, on authorized activity | Endpoint application control; authorized-testing record required |
+| Credential and cryptographic tooling | Password recovery, hash cracking, key extraction tools | Security Engineering only, for authorized assessment | Application control; use requires a recorded authorization |
+| Bulk data tooling | Export, migration, and ETL utilities | Platform engineers under an approved change | Change approval; execution by the platform role |
+| Endpoint control bypass | Tools that disable EDR, application control, or disk encryption | **Nobody.** Attempted use is a security violation | Tamper protection; alert on attempt |
+| Configuration override | Direct console mutation of infrastructure outside IaC | Only during an incident, under the break-glass procedure | Drift detection reconciles and raises a finding |
+| Log and audit manipulation | Anything that could alter or delete audit records | **Nobody.** Retention and integrity protections apply to all identities | Log file validation; `AIGov-AuditConfigChanges` alarm |
+
+The list is reviewed annually and whenever a new tool class appears. Possession of any tool in this table is an
+entitlement recorded in the entitlement catalog and re-justified in the quarterly access review.
+
+### 3.2 Monitoring the use of utility software (CC6.8-R3)
+
+Restriction is paired with monitoring, on a **regular, defined cadence** and not only on suspicion:
+
+| Signal | Source | Cadence | Reviewer |
+|---|---|---|---|
+| Break-glass credential use | CloudTrail → `AIGov-RootAccountUsage` for root; access-key-use analysis for break-glass users | Alarm in real time; reviewed within 1 working day | CISO |
+| Privileged API calls and policy changes | `AIGov-IamPolicyChanges`, `AIGov-UnauthorizedApiCalls` | Alarm in real time; weekly trend review | Security Engineering |
+| Attempted writes from the read-only governed-environment role | `AIGov-AgentWriteAttempt` | Alarm in real time | Security Engineering |
+| Credential vending events | `AgentCredentialVending` metric filter | Weekly review of volume and callers | Security Engineering |
+| Audit configuration changes | `AIGov-AuditConfigChanges`, `CloudTrailConfigChanges` | Alarm in real time; any change reconciled to a change record | Security Engineering |
+| Direct data-store access outside the application path | Data-plane access logs on the object store and record store | Weekly | Platform lead |
+| Endpoint execution of allow-listed utility tools | Application control and EDR telemetry | Weekly report of utility-tool executions | Security Engineering |
+| Blocked execution attempts | Application control denials | Weekly | Security Engineering |
+| Elevation requests on endpoints | Privilege management logs | Monthly review against justifications | IT Operations |
+
+Every review produces a record: the population examined, the exceptions found, and their disposition. An
+unexplained use of utility software is escalated as a potential incident within 4 hours of the review finding it.
+Ten `AIGov-*` alarms are in place in the reference account, wired from eight CloudTrail metric filters, and
+their delivery is verified by the detection-testing regime in the monitoring procedure — so a monitoring control
+that stopped working would itself be detected.
+
+---
+
+## 4. Detecting changes indicative of unauthorized or malicious software (CC6.8-R4)
+
+Detection is layered so that no single evasion defeats it:
+
+| Layer | Mechanism | What it detects |
+|---|---|---|
+| Configuration integrity | **368 configuration rules** evaluated continuously in the reference account, findings aggregated into a single security-findings view | Configuration parameters drifting from the baseline |
+| Infrastructure drift | Reconciliation of live state against infrastructure-as-code; unexplained drift raises a finding | Resources or settings created outside the pipeline |
+| Threat detection | GuardDuty, analysing control-plane, DNS, and flow telemetry | Cryptomining, command-and-control, credential abuse, unusual API behaviour |
+| Behavioural detection on endpoints | EDR with behavioural and signature detection, tamper protection, current definitions | Malware execution, persistence attempts, control tampering |
+| Artifact integrity | Digest verification at deploy; drift between the running digest and the approved release | An artifact substituted or altered after build |
+| Image and dependency scanning | Registry scanning of images and layers; software composition analysis daily against the released inventory | Known-vulnerable or malicious packages, including newly disclosed ones |
+| Source integrity | Commit signature verification and branch protection; secret scanning | Unauthorized code changes; leaked credentials |
+| Audit trail integrity | Log file validation digests on the trail; alarm on configuration change | Tampering with the record itself |
+| Anomalous access and volume | CloudTrail metric filters and API access logs with volume alerting | Exfiltration or mass-read patterns |
+| Filesystem immutability | Read-only or ephemeral runtime filesystem | Any attempt at on-host persistence, which cannot survive replacement |
+
+**Definitions and detection content are kept current** by the platform vendors and by the managed detection
+services; currency is reported and a stale agent or a failed update is an alerted condition rather than a silent
+one. The frequency of that currency is stated, per layer, in §4.3 — "current" is not left to the reader.
+
+### 4.1 Scanning information assets transferred into or returned to the entity's custody (CC6.8-R7, CC6.8-R8)
+
+Anything entering the entity's custody from outside it is treated as untrusted until scanned, and — where it is a
+device — is **scanned and cleaned before it is connected to any entity network**. The controlling principle is
+ordering: **inspect, then admit**. Not the reverse.
+
+| Asset transferred or returned | Scanning procedure | Pre-connection / pre-use requirement |
+|---|---|---|
+| **Endpoint returned from an employee, contractor, or leaver** | The device is received into a staging state, not onto the corporate network. It is booted in an isolated network segment with no access to entity systems, the EDR agent is verified present and current, and a **full on-demand scan** is completed | The device is **not connected to the entity network until the scan completes clean**. A device that cannot be verified is re-imaged from a known-good build rather than cleaned, which is the default disposition |
+| **Endpoint returned from a repair vendor, or any device out of entity custody** | Treated as untrusted regardless of the vendor's assurances: full re-image from a known-good build, firmware version verified, disk re-encrypted with a new key | Re-image precedes connection. Where the device held classified data, the disposal standard's cryptographic-erasure path applies before the device left custody, so a returned device carries no residual data |
+| **New endpoint from a supplier** | Provisioned by re-imaging from the managed build; supplier-supplied image is not trusted; firmware and secure-boot state verified; EDR and application control installed and confirmed enforcing before first use | Enrolment into management is a precondition of network access; conditional access denies non-compliant devices |
+| **Customer-uploaded evidence documents and files** | Content type validated against the declared type; size bounded; the object is scanned for malicious content on ingest; the object is stored as **inert bytes** and is never executed, interpreted, or deserialized into code at any point in the pipeline | Content that fails validation or scanning is quarantined and never enters the processing path. Because nothing in the pipeline executes evidence content, a malicious file has no execution vector even before the scan |
+| **Data ingested from a customer's cloud environment by the read-only assessment role** | Read-only, structured configuration data only; parsed as data against an expected schema; no code path interprets it as executable; oversized or malformed responses are rejected | The role holds no write permission in either direction, and a write attempt raises `AIGov-AgentWriteAttempt` |
+| **Third-party software, images, and dependencies** | Registry scanning of images and layers on push and continuously thereafter; software composition analysis; license and provenance verification; acquisition review before introduction | An artifact that fails a gate cannot be deployed; the pipeline blocks rather than warns |
+| **Files received by email or collaboration tooling** | Gateway scanning, attachment sandboxing, and link rewriting before delivery; EDR scans on write at the endpoint | Delivery is blocked on detection; the recipient never handles the object |
+| **Attachments and files received over instant messaging and chat** (the entity's collaboration platform, and the two customer-facing channels it federates with) | The platform's own attachment malware scanning is enabled tenant-wide and is not user-disablable; every attachment is additionally scanned by the same gateway engine used for email before it can be downloaded, and links are rewritten through the same reputation service; the platform's file store is scanned on write and continuously re-scanned as definitions change, so a file that was clean on arrival and is later recognised is quarantined retroactively; EDR scans on write when a user saves a chat attachment to an endpoint. Consumer messaging applications are blocked by application control (§2.2) and by DNS policy, so chat attachments can only arrive through the managed platform | A detection blocks the download and the recipient sees a block notice rather than the file. Retroactive quarantine removes the file from the conversation and notifies the participants. Because unmanaged chat clients cannot run on a managed endpoint, there is no unscanned chat channel |
+| **Removable media** | **Prohibited and blocked at the endpoint** (§3). There is no sanctioned path by which media enters custody | Not applicable — the channel does not exist, which is a stronger control than scanning it |
+| **Backups and archives restored into the environment** | Integrity verification against recorded hashes, and scanning of restored content before it is returned to service | Restoration into an isolated environment, verified, then promoted — never restored directly into production |
+
+**Removal before connection (CC6.8-R8).** Where malware or unauthorized software is detected on a transferred or
+returned asset, the standing disposition is **removal by rebuilding, not by cleaning**: the endpoint is re-imaged
+from a known-good build and the data restored from a verified backup, and an evidence object is quarantined and
+deleted rather than sanitised. Cleaning in place is permitted only where forensic preservation requires the
+original state, and in that case the asset stays isolated for the duration and is re-imaged afterwards. In every
+case the asset is **not connected to the entity's network, and its content is not admitted to the processing
+path, until the detection is confirmed cleared** — and the confirmation is recorded against the asset's inventory
+entry. A detection on a transferred asset is also an incident under §4.2, because an infected inbound asset is
+evidence about a route the entity does not fully control.
+
+### 4.2 Acting on detection
+
+On a detection of unauthorized or malicious software the incident response procedure is invoked, with these
+specifics:
+
+1. **Contain** — isolate the endpoint from the network, or for the production runtime, replace the affected
+   task from a known-good digest; revoke the credentials the component held.
+2. **Preserve** — capture volatile and disk evidence before remediation where feasible, under the forensic
+   handling rules in the incident program.
+3. **Eradicate** — for the runtime, redeploy the approved artifact rather than cleaning in place; for an
+   endpoint, re-image rather than remove-and-hope.
+4. **Assess exposure** — determine what data the compromised component could reach, using the access point and
+   entitlement records, and invoke the breach-notification determination if customer or personal information was
+   in reach.
+5. **Recover and verify** — confirm the detection is clear, the artifact digest matches the approved release, and
+   the configuration rules evaluate compliant.
+6. **Learn** — a post-incident review identifies which preventive control failed and produces a corrective
+   action with an owner and a due date, tracked to closure.
+
+Severity, timelines, escalation, and communication follow the incident response program; malware affecting
+production or customer data is a Severity 1 by default.
+
+### 4.3 Keeping detection content current, and collecting malware intelligence
+
+Two obligations sit here and they are different: **updating the detection content the entity consumes**, and
+**collecting intelligence about malware from qualified sources** so the entity is not limited to what its vendors
+choose to tell it.
+
+**Update frequency, stated per layer.** "Current" is defined as a maximum permitted age, and each figure is
+monitored rather than assumed:
+
+| Detection layer | Content updated | Maximum permitted age | How a lapse is detected |
+|---|---|---|---|
+| EDR on endpoints | Definitions and behavioural content, vendor-pushed **continuously, with a check-in at least every 4 hours** | **24 hours** since last successful definition update | MDM and EDR console report per-device definition age; a device exceeding 24 hours raises a ticket, exceeding **72 hours** loses conditional-access compliance and so loses network access |
+| EDR cloud analytics and reputation | Vendor-side, real-time; no local content to age | Not applicable — evaluated at query time | Agent-to-cloud connectivity failure alarms |
+| Email and download gateway | Signatures continuously; sandbox detonation content vendor-managed | **4 hours** | Vendor status feed plus a **daily synthetic test message** carrying a benign detection sample (EICAR); a delivered test message is an incident |
+| Instant-messaging platform scanning | Vendor-managed, continuous, with retroactive re-scan | **24 hours** | Tenant security report; the same daily synthetic test through the chat channel |
+| Container image and registry scanning | Vulnerability database refreshed by the service **at least daily** | **24 hours** | Scan findings carry the database timestamp; a stale timestamp fails the deployment gate |
+| Software composition analysis | Advisory database on each run, and the released inventory re-evaluated **daily** | **24 hours** | A run older than 24 hours against the released inventory raises a finding |
+| Cloud threat detection (GuardDuty) | Vendor-managed feeds and models, continuous | Not applicable — service-side | Detector-disabled and finding-publication alarms |
+| Configuration rules | Rule set reviewed on change and **at least quarterly**; 368 rules evaluated continuously | Quarterly review | Rule-evaluation and rule-count drift alarms |
+| Managed detection provider content | Provider-managed, continuous; contractual obligation to deploy new content **within 24 hours** of release | 24 hours, contractual | Monthly provider content-currency attestation, reviewed against the contract |
+
+A stale-content condition is an **alerted** condition with a named owner, not a report someone might read: the
+alarm routes to IT Operations for endpoints and to Security Engineering for the platform layers, and an unresolved
+staleness beyond the permitted age becomes a deficiency register entry. In this period the maximum observed
+endpoint definition age was **19 hours** (a laptop returning from two weeks of leave), and the daily synthetic
+gateway and chat tests passed **61/61** and **61/61**.
+
+**Entity-owned malware intelligence collection.** The entity collects and evaluates malware information itself,
+because vendor content answers "is this sample known" and not "is this campaign aimed at us":
+
+| Source | Type | Qualification basis | How the entity uses it |
+|---|---|---|---|
+| FS-ISAC | Sector sharing community, paid membership | Member-attributed, sector-relevant, historically timely — one 2026 advisory arrived 4 days ahead of public disclosure; qualification reviewed annually against that record | Indicators loaded into detection; campaign context for triage |
+| CISA advisories and the Known Exploited Vulnerabilities catalogue | Government authority | Authoritative government source; KEV entries carry confirmed exploitation, which is a stronger signal than a CVSS score | KEV membership shortens the entity's patch clock; advisories triaged within one business day |
+| AWS security bulletins | Platform vendor | First-party for the platform the service runs on | Platform-specific exposure assessment |
+| Managed detection provider intelligence | Contracted specialist | Contractual quality obligations, and its findings are measurable against the entity's own detections | New detection content and hunting hypotheses |
+| Endpoint and gateway vendor threat research | Product vendors | Vendor of the deployed control; conflicted (they report on their own coverage) so treated as one input, not as assurance | Coverage confirmation, technique context |
+| Peer CISO forum (11 entities, mutual NDA) | Practitioner network | Named, known peers under NDA; unattributable claims are not actioned without corroboration | Early warning of campaigns targeting similar entities |
+| OWASP AI Security & Privacy project, and the LLM Top 10 | Open community | Open method, publicly reviewable, but community-authored — used for technique taxonomy, not for indicators | AI-specific threat model entries and adversarial test cases |
+| Open-source indicator feeds | Community feeds | **Deliberately not used for automated blocking**: provenance is unverifiable and a poisoned feed becomes a self-inflicted denial of service. Used only as corroboration during triage | Triage corroboration only |
+
+**Source qualification is a defined test, not a preference.** Before a source is relied on, the CISO records: who
+authors it and whether the authorship is attributable; whether the entity can assess its accuracy over time
+(false-positive experience is tracked per source); whether the source has an incentive that colours it; whether
+its content is usable — machine-readable indicators, or prose needing analysis; and what happens if the source is
+wrong. Sources are re-qualified annually and a source whose false-positive rate makes its output unusable is
+retired rather than ignored — an unretired but ignored feed is worse, because it implies coverage that is not
+there. In this period **214 advisories** were triaged (mean 6.2 hours to triage), **9 matched** the entity's
+technology, **2** drove a patch inside 24 hours, and **6** produced new detection rules; **1** source (an
+open-source indicator feed trialled in Q1) was retired for an unusable false-positive rate, recorded as
+**D-2026-024** with the retirement completed.
+
+Reporting and training obligations that accompany detection — what personnel must recognise, what they must
+report, to whom, and the instruction not to investigate a suspected sample themselves — are operated under the
+security awareness and competence programme, which is submitted with this standard.
+
+### 4.4 Why the detection controls are placed where they are
+
+Detection-control placement is a **risk-assessment output, not a product-deployment default**. The assessment
+below is reviewed annually and on any change to the entity's transfer channels; it exists so that a reader can
+see which route each control covers, and which control still covers a route when its neighbour fails.
+
+The method is deliberate defence in depth: for each route by which foreign code or content can reach the entity,
+identify the route, place a control **at the boundary the entity actually owns**, place a second control at a
+different layer with a **different failure mode**, and record what remains uncovered.
+
+| Route in | Primary control (and where it sits) | Independent second layer (different failure mode) | Residual risk accepted, and why |
+|---|---|---|---|
+| Foreign code reaching the production runtime | The pipeline gate — image scanning and software composition analysis at build, before an artifact exists | Digest verification at deploy plus a read-only, no-shell, immutable runtime: even an admitted artifact cannot be modified in place, and nothing can persist | A malicious dependency that is unknown to every scanner at build time. Mitigated by the daily re-scan of the released inventory, which catches it on disclosure rather than at build, and by the runtime having no egress path to a command-and-control endpoint except through an inspected boundary |
+| Customer-uploaded evidence content | Validation and scanning at ingest, at the service boundary | The pipeline never executes, interprets, or deserializes evidence content — the object is inert bytes end to end | A malicious file stored inert and later retrieved by a human. Mitigated by endpoint EDR at the point of retrieval, so the second layer is on a different platform, run by a different vendor, from the first |
+| Configuration data read from a customer's cloud account | Schema-validated parsing of read-only structured data | The assessment role holds no write permission in either direction, and a write attempt alarms | Malformed data causing a parser fault rather than execution. Accepted: the fault is an availability event in a sandboxed worker, not a compromise |
+| Email | Gateway scanning, sandbox detonation, and link rewriting **before delivery** — placed upstream of the mailbox so the user never holds the object | EDR scan-on-write at the endpoint, and application control blocking execution of anything unsigned | A zero-day in a document format detonating in the sandbox without being recognised. Mitigated by behavioural EDR detection at execution and by removing local admin, which limits what a successful detonation can then do |
+| Instant messaging and chat | Tenant-wide platform scanning plus the same gateway engine on download, with retroactive re-scan | EDR scan-on-write; consumer chat clients blocked by application control and DNS policy so no unscanned client exists | Same zero-day residual as email, with the same mitigations |
+| Endpoints returning to custody, or arriving new | Staging in an isolated segment with a full on-demand scan **before** any network connection | Default disposition is re-image from a known-good build rather than clean, which does not depend on the scanner having recognised anything | Firmware-level implants a re-image would not remove. Mitigated by secure-boot state verification and by the low likelihood for the entity's threat model; accepted and recorded in the risk register |
+| Removable media | The channel is **blocked at the endpoint**, so there is nothing to scan | Physical: no visitor-accessible ports in the secure area; DLP alerting on mass local copy | An authorized break-glass media use, which requires CISO approval and is scanned in the staging segment |
+| Software supply chain (dependencies, base images, tools) | Acquisition review and curated repository sourcing before introduction | Continuous registry and composition scanning after introduction, so a package that was clean when reviewed does not stay unexamined | Compromise of a curated upstream. Mitigated by lockfiles and digest pinning — an upstream change cannot silently enter a build — and by the daily inventory re-scan |
+| Backups and archives restored | Integrity verification against recorded hashes | Restoration into an isolated environment and scanning before promotion, never directly into production | A backup taken while already compromised. Mitigated by the retention window exceeding the mean detection interval, so an earlier clean restore point exists |
+| Privileged administrative sessions | Federated, MFA-protected, time-limited access with no standing production credentials | Session recording and real-time alarming, which detects misuse the access control permitted | An authorized administrator acting maliciously with a valid session. Mitigated by two-person concurrence for break-glass and by the audit trail being outside the administrator's control |
+
+Three placement decisions are recorded with their reasoning because they are the ones a reviewer would question:
+**scanning upstream of the mailbox rather than only on the endpoint**, because a control that acts before the
+object reaches a person removes the human decision entirely; **no host-based anti-virus agent in the production
+runtime**, because the containers are immutable, shell-less and replaced rather than repaired, and an in-container
+agent would add a privileged, network-connected component with its own vulnerabilities in exchange for a
+detection the immutability already prevents — the compensating controls are the build-time gates, digest
+verification, GuardDuty on the control plane and flow telemetry, and configuration drift detection; and **no
+inline decryption of customer TLS sessions**, because the confidentiality cost was judged to exceed the detection
+gain for this threat model, with DNS-layer and flow-telemetry detection accepted in its place. Each is an
+accepted risk with a named owner in the risk register, re-examined annually.
+
+### 4.5 Authorization to disable or suspend malware protection
+
+Malware protection is **on by default, tamper-protected, and not user-disablable**. There are nonetheless
+legitimate reasons to suspend it — a diagnostic that the agent interferes with, a vendor-directed step during an
+incident, a false positive quarantining a business-critical file — so a defined authorization process exists,
+because an undefined one becomes an undocumented local workaround.
+
+**No person may disable malware protection on their own authority, including the CISO acting alone.** Tamper
+protection means an endpoint user cannot disable the agent even with local admin, which they do not have; a
+suspension is executed centrally by IT Operations from the management console after the authorization below, and
+never by the person who requested it.
+
+| Requirement | Rule |
+|---|---|
+| Written request | Recorded in the deficiency and exception register before the change, stating the asset(s), the specific protection component, the business or technical justification, what was tried first, and the compensating controls that will be in place |
+| Approval authority | **CISO**, or in the CISO's absence the **Head of Engineering**, and for any production-scope suspension **both**. The requester may not be the approver |
+| Scope | The **narrowest** that works: one component on one named asset, never a fleet-wide or protection-wide disablement. A rule exclusion is preferred over suspending a component, and suspending a component is preferred over disabling the agent |
+| Duration | A stated end time, **maximum 8 hours** for a temporary suspension, with automatic re-enablement by the console at expiry rather than a reminder to someone. An extension needs a fresh approval, not a verbal one |
+| Compensating controls | Mandatory and stated: the asset is moved to an isolated network segment for the duration; a named engineer watches the session; and where the suspension is on an endpoint, the device may not access customer data during it |
+| Mandatory review date | Every suspension carries a review date. A **temporary** suspension is reviewed at closure — within 1 business day of re-enablement — confirming the protection is back on and reporting healthy, evidenced by a console screenshot in the register entry. A **permanent** exclusion is reviewed at a stated date **no more than 90 days** out and at every quarterly CISO review thereafter, and expires by default if not re-justified: an unreviewed permanent exclusion is closed and the exclusion removed rather than left standing |
+| Recording | The register entry, the console change record, the approval, the compensating controls, the re-enablement evidence and the review outcome are retained for 7 years |
+| Detection of unauthorized suspension | Agent-health telemetry, MDM compliance state and the tamper-protection alarm all report a disabled or unhealthy agent within 15 minutes; an unhealthy agent with no matching approved register entry is a **Severity 2 incident**, not a support ticket, and conditional access removes the device from the network in the meantime |
+
+**This period's record:** 3 suspensions authorized — two temporary endpoint-component suspensions (mean duration
+2.5 hours, both auto-re-enabled at expiry, both closure-reviewed inside 1 business day) and one permanent
+path-based exclusion for a build cache directory (approved 2026-04-02, review date 2026-06-30, reviewed and
+re-justified, next review 2026-09-30). **1 request refused**: a request to exclude a developer's entire home
+directory, refused as over-broad, with a narrower per-path exclusion agreed instead. **0** unauthorized
+disablements detected.
+
+### 4.6 Maintenance windows and emergency bypass
+
+Malware protection **remains active during planned maintenance and during emergency change**; neither is a
+recognised reason to turn it off, and there is no maintenance mode that suspends it implicitly.
+
+- **Planned maintenance.** Patching, agent upgrades and platform maintenance are performed with protection
+  enabled. The one unavoidable exception is the agent's own upgrade, during which coverage lapses for the
+  restart interval: the upgrade is staged in rings, the device is on a managed network for the duration, and the
+  console reports the post-upgrade healthy state as the completion criterion — an upgrade that does not come
+  back healthy fails the maintenance record and is remediated the same day.
+- **Emergency change.** Emergency changes compress approvals, not controls. Pipeline gates — image scanning and
+  composition analysis — are **not bypassable**, including by an emergency change; an emergency change that
+  cannot pass a gate is not deployed, and the remedy is a fix that passes, not a waiver. This is stated because
+  "emergency" is the usual route by which scanning gets skipped.
+- **Break-glass access.** Break-glass grants elevated access; it does not suspend detection. The session is
+  recorded, alarmed in real time, and reviewed by the CISO afterwards, and endpoint protection on the
+  administering device stays enforcing throughout — a device out of compliance cannot obtain the session at all,
+  because conditional access is evaluated at sign-in.
+- **Where a component genuinely must be suspended** during maintenance, it goes through §4.5 with compensating
+  controls, a maximum 8-hour window and automatic re-enablement. In this period **0** maintenance activities
+  required a suspension.
+- **Verification after the window.** Every maintenance and emergency change record includes a post-change
+  confirmation that protection is enabled and reporting: agent healthy and definitions within the §4.3 age,
+  application control enforcing, configuration rules evaluating compliant, and the artifact digest matching the
+  approved release. The weekly change-to-deployment reconciliation checks this field, and a record without it is
+  an exception raised to engineering management. In this period **41** planned changes and **3** emergency
+  changes all carried the confirmation.
+
+### 4.7 Environment classification and the isolation of high-consequence environments
+
+The entity classifies its environments by the **consequence of a malware compromise in them**, and isolates them
+in proportion, so that isolation strength is a recorded decision rather than an artefact of how the accounts grew.
+
+| Environment | Consequence of compromise | Class | Isolation applied |
+|---|---|---|---|
+| **Production assessment runtime and customer data stores** (account 471885797689, us-west-2) | **Catastrophic** — loss or corruption of customer evidence and assessment results, a reportable breach, and loss of the entity's reason to exist | **C-1, catastrophic** | Separate AWS account with no trust path from any lower environment; zero inbound security-group rules; no SSH, RDP or shell; read-only and ephemeral filesystems; immutable content-addressed artifacts verified by digest at deploy; no standing human credentials, only time-limited federated roles; egress restricted to inspected destinations; customer data encrypted with customer-scoped KMS keys whose policies deny lower-environment principals; CloudTrail delivered to an account no production principal can write to |
+| **Production audit trail, evidence store and backups** | **Catastrophic and irreversible** — the record of what happened is what makes recovery and investigation possible | **C-1, catastrophic** | Held in a separate account from the workload; object lock and log-file validation; write-once delivery; no production principal holds a delete permission; a separate break-glass path with two-person concurrence |
+| Pre-production / staging | Serious but recoverable — no customer data, and no path to it | C-2, significant | Distinct account and credentials; synthetic or de-identified data only; no network or identity path into production; same pipeline gates so a compromise here cannot be promoted |
+| Development and CI build | Significant — the supply-chain route into C-1 | C-2, significant | Isolated build environment per run, no long-lived credentials, signed commits, branch protection, artifact digests recorded; the build cannot deploy to production without a human approval it does not hold |
+| Corporate endpoints and collaboration | Significant — the likeliest initial-access route, and the route to a C-1 credential | C-2, significant | Managed build with EDR and application control enforcing; no local admin; conditional access requiring a compliant device; phishing-resistant MFA; endpoint access to customer data mediated by the service, never direct |
+| Isolated audit-copy accounts (see the audit testing procedure) | Contained by construction — de-identified extracts with no path to production | C-3, contained | Dedicated account, no production trust, deleted within 5 business days |
+| Landlord and third-party building systems | Not entity-controlled | C-4, external | Treated as untrusted; no entity network connectivity; addressed contractually and by compensating physical controls |
+
+**The isolation strategy for C-1 is stated as a rule:** an environment classified catastrophic is separated by
+**account boundary and identity boundary, not by network segmentation alone** — a segmentation error is a single
+misconfiguration away from being crossed, whereas a cross-account trust must be deliberately created and its
+creation is alarmed. C-1 additionally runs no interactive access path at all, on the basis that the fastest way
+to prevent malware persisting is to remove the surfaces on which it could persist: no shell, no writable
+filesystem, no long-lived host.
+
+Classification is assigned by the CISO with the Head of Engineering, reviewed **annually and on any new
+environment or any change in the data an environment holds**, and recorded in the asset inventory alongside the
+environment's owner. A new environment is C-1 by default until classified otherwise, so the failure mode of
+forgetting to classify is over-protection rather than under-protection. In this period **1** new environment was
+created (an isolated audit-copy account, classified C-3 at creation) and the annual review confirmed the existing
+classifications with no changes.
+
+### 4.8 Execution records — evidence that the scanning above actually ran
+
+Everything in §4 describes what is configured. This section records what **executed**, because the two
+are different claims and only the second is evidence. A scan that is scheduled and silently failing
+produces exactly the same output as a scan that ran and found nothing: an empty findings list. An audit
+of results alone cannot tell those apart, and neither can we, which is why execution is evidenced
+separately from results and why a **missing run is an alerted condition rather than an absence**.
+
+Three rules follow, and they are the reason this section exists rather than being inferable from §4:
+
+1. **Non-execution alarms.** Every scheduled scan has an alarm on *staleness of its last successful
+   completion*, not only on its findings. Threshold is 1.5× the schedule interval.
+2. **Coverage is measured, not assumed.** A scan that ran successfully against 90% of the fleet is a
+   90% control, and the 10% is named. "The scan ran" without a denominator is not an execution record.
+3. **The record is produced by the tool, not typed by a person.** Execution evidence is the platform's
+   own job history, agent check-in telemetry and coverage report, exported to the audit account on the
+   same path as every other log. A hand-maintained scan log is an assertion about a scan, not a record
+   of one.
+
+**Scheduled scanning — configured schedule against actual execution for the period 2026-05-21 to
+2026-08-20 (92 days):**
+
+| Scan | Configured schedule | Runs expected | Runs completed | Failed / missed | Coverage at last run | Execution evidence |
+|---|---|---|---|---|---|---|
+| **Endpoint EDR — scheduled full scan** | Weekly, per device, staggered | 624 (48 devices × 13 weeks) | **618** | 6 missed — 4 devices powered off through the window, 2 on extended leave; all 6 completed on next power-on, longest gap 11 days | **48/48 devices (100%)** enrolled and reporting; 46/48 scanned within 7 days at period end, 2 within 11 | EDR console job history, exported daily; per-device last-scan timestamp in the compliance report |
+| Endpoint EDR — real-time on-access protection | Continuous | n/a | Enabled and enforcing on 48/48 for 100% of device-uptime hours | 0 periods of protection disabled | 100% | Agent health telemetry, 15-minute check-in; tamper-protection state |
+| **Endpoint definition currency** | Auto-update, verified daily | 92 daily verifications | 92 | 0 | Max observed definition age 14 h, threshold 24 h | Daily currency report |
+| **Container image registry scan — on push** | Every push | 214 pushes | 214 | 0 | 100% of images pushed | Registry scan findings record per digest, with scan timestamp |
+| **Container image registry scan — continuous re-scan** | Continuous as new CVEs publish | n/a | 41 re-scan events producing new findings on previously clean images | 0 images unscanned > 24 h | 100% of images in the registry | Registry re-scan event log |
+| **Software composition analysis** | Daily against the released inventory | 92 | 92 | 0 | 14/14 repositories | Pipeline job history; SBOM diff per run |
+| **Inspector — compute, container and function assessment** | Continuous | n/a | Continuous; 0 gaps > 1 h in the assessment stream | 0 | 100% of in-scope resources; 0 unscanned resources at the weekly reconciliation | Inspector coverage report, weekly |
+| **AWS Config rule evaluation** | Continuous, 368 rules | n/a | 368/368 rules evaluating; 0 rules in an error state at period end | 2 transient rule errors (both a permission change, self-cleared, both alarmed) | 100% of in-scope resources | Config evaluation history; rule-error alarm records |
+| **GuardDuty analysis** | Continuous | n/a | Enabled in all accounts and regions in scope for 100% of the period | 0 | All accounts, all in-scope regions | Detector status; the disable-attempt alarm never fired |
+| **Infrastructure drift reconciliation** | Weekly | 13 | 13 | 0 | All accounts | Reconciliation report per run with drift count |
+| **Email and collaboration gateway scanning** | Per message / per attachment | n/a | 100% of delivered messages and 100% of attachments scanned; 0 bypass rules in place | 0 | 100% | Gateway processing logs, message-level |
+| **Chat attachment scanning and retroactive re-scan** | Per attachment, plus continuous re-scan | n/a | 100% of attachments scanned on upload; 3 retroactive quarantines from re-scan | 0 | 100% of the managed platform's file store | Platform scan log; quarantine notifications |
+| **Customer evidence ingest scan** | Per object on ingest | 1,184 objects | 1,184 | 0 objects entered the processing path unscanned | 100% | Ingest pipeline record per object, with the scan verdict stored against the object |
+| **Returned/transferred endpoint pre-connection scan** | Per event | 3 events | 3 | 0 connected before completion | 100% of events | Staging record per device with scan completion time before network admission |
+| **Backup restore content scan** | Per restore test | 4 quarterly restores in window: 1 | 1 | 0 | 100% of restores | Restore test record |
+| **External attack surface scan** | Monthly | 3 | 3 | 0 | All public endpoints and DNS names | Scan report; also carries the `security.txt` reachability check in `SEC-CFG-025` §5.6 |
+
+**Detections in the period:** 4 endpoint detections (3 potentially-unwanted-application classifications
+on browser extensions, blocked and removed; 1 phishing-delivered document blocked at the gateway and
+also blocked on write by EDR), 3 retroactive chat quarantines, 0 detections in the production runtime, 0
+detections in customer evidence, 0 detections on a transferred asset. Every detection was handled under
+§4.2 and closed; none required the incident path beyond containment.
+
+**Non-execution alarms and what they actually caught:** 11 alarm events in the period — 6 device
+scan-staleness (the powered-off devices above), 2 Config rule-error, 2 SCA job failures on a transient
+registry timeout (both re-ran and completed inside the window), 1 EDR agent that stopped checking in on
+a device whose disk had failed (device replaced, re-imaged, re-enrolled). **The disk-failure case is why
+this section exists**: the device's *findings* were empty and would have read as clean indefinitely; only
+the check-in staleness alarm distinguished a healthy quiet endpoint from an absent one.
+
+**Reconciliation.** Monthly, the enrolled-device list is reconciled against the HR active-personnel list
+and the asset inventory, and the scanned-resource list against the AWS resource inventory, so that a
+device or resource which no scan covers is found by the reconciliation rather than by an incident. This
+period: 0 unmanaged endpoints, 0 unscanned in-scope resources, 1 asset-inventory correction (a
+decommissioned device still listed as active).
+
+**Retention.** Execution records are retained for 13 months in the audit account under the log retention
+schedule in `PRV-RET-036`, so that "did the scan run in March?" is answerable at the annual audit and not
+only while the console's default history window still holds it.
+
+---
+
+## 5. Management-defined change control for software implementation (CC6.8-R5)
+
+Software reaches production **only** through the change control process defined in the change management and
+release control policy. In summary, and as it applies to software specifically:
+
+1. A change is recorded with its purpose, scope, risk classification, test evidence, and rollback plan.
+2. It is **reviewed and approved by someone other than the author**, enforced by branch protection.
+3. Automated gates must pass: type checking, unit and integration tests, lint, dependency and license checks,
+   software composition analysis, secret scanning, and image scanning. A failing gate blocks the change; gates
+   are not bypassable by the author.
+4. The pipeline — not a person — builds the artifact in an isolated environment and records its digest.
+5. Deployment is progressive, with health and error-rate checks between stages and automatic rollback on
+   regression.
+6. Emergency changes may compress the sequence but not omit it: they require a second person's concurrence at
+   the time and full documentation within one working day, and are reviewed in the weekly change review.
+7. Third-party and open-source software is subject to the same route, plus the acquisition review before it may
+   be introduced.
+
+No software — first-party, third-party, or a dependency upgrade — is implemented in production outside this
+process. A component found running in production without a corresponding change record is treated as
+unauthorized software and handled under §4.2, regardless of whether it appears benign.
+
+### 5.1 Program source libraries updated in step with the software they build
+
+A source library that drifts from the software running in production is a silent supply-chain risk: the artifact
+in production is then built from something nobody is looking at. The entity keeps the two in step by construction
+rather than by discipline.
+
+- **One source of truth.** Every deployable component is built only from its version-controlled source
+  repository. There is no separate "libraries" location that can be edited outside version control, and no
+  developer holds a credential that would let them place a file into a build without a commit.
+- **Dependencies are declared and pinned.** Each repository holds a manifest and a **committed lockfile** pinning
+  every direct and transitive dependency to an exact version and digest. A dependency change is therefore a
+  source change: it appears in the diff, is reviewed by someone other than the author, and passes the same gates.
+  An upstream publishing a new version does not change what the entity builds, which is the point of pinning.
+- **Base images and platform runtimes are pinned by digest** in the same repository as the code that runs on
+  them, so an operating-system-level library update is also a reviewed source change.
+- **Updates are simultaneous, and the pipeline enforces it.** The build resolves dependencies **only** from the
+  committed lockfile and fails if the manifest and lockfile disagree, if a lockfile entry's digest does not match
+  the fetched artifact, or if resolution would need a network fetch the lockfile did not name. A change to
+  application source that requires a library update cannot merge with the library update missing, because the
+  build that gates the merge is the build that would fail. Conversely a library update alone follows the same
+  route — reviewed, gated, deployed — rather than being applied to a running system.
+- **What is deployed is traceable back to what is committed.** The pipeline records, for every release: the
+  signed commit, the resolved dependency set from the lockfile, the base-image digest, the build environment
+  version, and the resulting artifact digest. Deploy verifies the artifact digest, so the running software is
+  provably the build of that commit with those libraries.
+- **Drift is checked, not assumed.** A **weekly reconciliation** compares the released artifact's recorded
+  dependency set against the current lockfile in the release branch, and the **daily** software composition
+  analysis runs against the released inventory rather than against the source branch — so what is actually
+  running is what is evaluated. A mismatch is a finding with an owner. In this period **0** mismatches were
+  found, across 41 releases.
+- **Access to the source libraries is restricted** as in §2.3: branch protection, no direct pushes to the release
+  branch, signed commits, and write access limited by role and reviewed weekly. Historical versions cannot be
+  rewritten — force-push to protected branches is denied and would alarm — so the library's history is itself
+  part of the audit trail.
+- **Third-party source the entity holds** (vendored code, forks) is held in the same version control with the
+  upstream revision recorded, and re-synchronised against upstream on the same route; a fork with no recorded
+  upstream revision is a finding, because it cannot be shown to be up to date with the upstream's security fixes.
+
+### 5.2 The audit log of software updates
+
+Every installation, update, and removal of software on operational systems is logged, and the log is a defined
+record rather than an emergent by-product of several tools.
+
+| Field recorded | Source |
+|---|---|
+| What changed — component, previous version and digest, new version and digest | Pipeline release record |
+| Why — the change record, its purpose, risk classification and linked issue | Change record |
+| Who authorized it — the reviewer and, for emergency changes, the concurring second person | Version control approval and change record |
+| Who or what executed it — the pipeline identity, or the named human for a break-glass action | CloudTrail |
+| When — request, approval, build, and each deployment stage, in UTC to millisecond precision (see the event logging standard §4.5) | Pipeline and CloudTrail |
+| Where — account, region, environment class and the specific service or host | CloudTrail |
+| Outcome — success, partial, rolled back, with the health-check result that decided it | Deployment record |
+| The dependency set and base image installed with it | Pipeline release record |
+
+**Retention and accessibility.** The consolidated software-update record is retained for **7 years**; the
+underlying CloudTrail events for **7 years** in an account no production principal can write to, with log-file
+validation and object lock; pipeline release records for **7 years**. The record is queryable by component, by
+date range, by change record and by actor, which is what makes it usable in an investigation rather than merely
+retained. **Access is controlled and segregated**: read access is granted by role to Engineering, Security
+Engineering, Compliance and — for a specific audit under the audit testing procedure — a windowed auditor role;
+**no engineering or production principal holds delete or modify permission on the record**, deletion requires a
+separate break-glass path with two-person concurrence, and an attempt to alter the trail's configuration alarms.
+An actor cannot edit the record of their own action, which is the property that makes it evidence.
+
+**Reconciliation, so the log is complete and not merely present.** The weekly reconciliation matches every
+production deployment observed in CloudTrail to an approved change record and to a pipeline release record in
+both directions; a deployment with no change record, or a change record with no deployment, is an exception
+raised to engineering management. In this period **41** releases reconciled with **0** unmatched, and **3**
+emergency changes all had their documentation completed inside one working day.
+
+### 5.3 Retiring versions, and what is archived with them
+
+A previous version is not simply overwritten. Because artifacts are immutable and content-addressed, retirement
+is a change of what is *current*, not a deletion — which is what makes rollback and later investigation possible.
+
+| Archived on retirement | Retention | Why it is kept |
+|---|---|---|
+| The retired artifact itself, by digest, in the registry | **24 months** for released versions; the last **5** released versions are always retained regardless of age | Rollback, and rebuilding an incident timeline against the code that was actually running |
+| Its source commit, tag and full history | Indefinite (version control) | Determining what the code did |
+| Its resolved dependency set and base-image digest (the bill of materials) | 7 years | Answering "was the version we ran in March exposed to this CVE" without guessing |
+| Its configuration and parameters — infrastructure-as-code revision, parameter-store values by version, feature-flag state at the time | 7 years, in version control and parameter version history | A version cannot be understood, or reproduced, without the configuration it ran under |
+| Its deployment and operating procedures — runbook revision current at the time | 7 years | The procedures that applied then are not the procedures that apply now |
+| Its change record, approvals, test evidence and health-check outcomes | 7 years | The authorization trail |
+| Its migration and rollback notes, including any irreversible data migration | 7 years | Whether rollback to it is actually possible, which is not always true and must be known before it is attempted |
+
+**Rules.** Retirement is recorded, with the date, the superseding version and the reason. **Rollback eligibility
+is stated at retirement** — a version behind an irreversible schema migration is marked not-rollback-eligible so
+that this is known before an incident, not discovered during one. Retired artifacts remain subject to
+vulnerability scanning while they are rollback-eligible, because a rollback target with a known exploited
+vulnerability is not a usable one. Expiry is enforced by registry lifecycle policy at 24 months, except where a
+legal hold or an open incident extends it, and expiry of the artifact does not expire the bill of materials,
+configuration or change record, which run to 7 years. In this period **41** releases were retired into archive,
+**2** rollbacks were exercised (both to the immediately preceding version, both successful, mean 11 minutes), and
+**1** version is under legal hold to 2027-01-31.
+
+### 5.4 Deciding whether and when to apply an update
+
+Patching is not automatic-by-default in production, because an unreviewed vendor update is itself a change to an
+operational system. Nor is it discretionary. The decision is made against **stated criteria, by a named
+authority, on a clock**.
+
+| Input to the decision | How it is weighed |
+|---|---|
+| Severity and exploitability | CVSS is a starting point; **confirmed exploitation (CISA KEV) or a public working exploit overrides it** and moves the item to the shortest clock |
+| Reachability in the entity's build | Whether the vulnerable code path is actually reachable from the entity's usage, determined from the composition-analysis reachability data and, where unclear, by inspection. An unreachable dependency vulnerability is still remediated, but on the routine clock |
+| Exposure | Internet-reachable and customer-data-handling components rank above internal ones; the C-1 environment class (§4.7) raises the priority |
+| Business impact of applying it | Compatibility risk, breaking changes, downtime needed, and whether it lands inside a customer-committed window or a freeze |
+| Business impact of not applying it | The exposure carried for the deferral period, stated explicitly rather than left implicit |
+| Availability of a compensating control | A mitigation may justify a longer clock, but only if it is deployed and verified, not merely available |
+| Vendor support status | Whether a fixed version exists at all (§5.5) |
+
+**Clocks.** Critical or KEV-listed: **remediate within 7 days**, and for an actively exploited
+internet-reachable path, treat as an incident and remediate immediately with an emergency change. High: 30 days.
+Medium: 90 days. Low: next routine cycle. Routine dependency and base-image currency is refreshed at least
+monthly regardless of any finding.
+
+**Authority.** The component owner proposes; **Engineering management approves routine patches**; the **CISO**
+approves any **deferral or acceptance** beyond the clock, and a deferral beyond 90 days additionally requires the
+Head of Engineering. Every deferral is recorded in the deficiency and exception register with the justification,
+the compensating control, a named owner and a review date, and is reported to the Audit Committee quarterly — a
+deferral is a decision the entity owns, not a backlog item. **A patch is never applied directly to a running
+production system**: it is applied to source or to the base image, built, gated, and deployed as a new immutable
+artifact, so patching and change control are the same process.
+
+**Testing before deployment.** Patches pass the same automated gates and, for high-risk changes, the
+pre-production exercise; progressive deployment with automatic rollback covers the case where a patch is itself
+the regression. In this period: **9** advisories matched the entity, **2** were patched inside 24 hours, all
+remaining items met their clock, and **1** deferral is open — a medium-severity finding in a non-reachable
+transitive dependency, deferred to the next major upgrade, CISO-approved, review date 2026-09-30, recorded as
+**D-2026-025**.
+
+### 5.5 Vendor support status, end of life, and unsupported software
+
+Software that is no longer supported stops receiving the fixes the whole patching process depends on, so support
+status is monitored as a first-class attribute rather than discovered when a patch fails to exist.
+
+- **Every third-party component in the inventory carries a support-status field**: current version, the vendor's
+  supported-version window, the published end-of-support date where one exists, and the date the entity last
+  verified it.
+- **Monitoring.** Support and end-of-life dates are re-verified **quarterly** against vendor advisories, release
+  notes and the platform vendor's deprecation notices, and continuously where the vendor publishes a machine-
+  readable feed. The managed language runtimes, container base images and managed AWS services the service
+  depends on are additionally tracked through AWS deprecation notices, which are triaged on arrival under §4.3.
+- **The warning horizon is 12 months.** A component whose end of support falls inside 12 months is raised as a
+  planned work item with an owner and a target date; inside **6 months** it becomes a deficiency register entry
+  reported to the Audit Committee; **reaching end of support without a migration is an incident**, because it is
+  a control that has stopped working.
+- **Risk assessment for unsupported software.** Where a component must be retained past end of support, a
+  documented assessment is required before retention, and retention without it is not permitted. The assessment
+  states: what the component does and what data it can reach; its environment class; why replacement is not yet
+  possible and what the migration plan and date are; the vulnerabilities known at the time and how they would be
+  detected if exploited; the compensating controls to be put in place (network isolation, removal of egress,
+  reduced entitlements, tightened monitoring, or a fork the entity patches itself); and the residual risk. It is
+  **approved by the CISO and, for anything in a C-1 environment, by the Head of Engineering as well**, entered in
+  the risk register with a named owner, and **re-reviewed at least quarterly** until removed. An unsupported
+  component in a C-1 environment with no compensating isolation is not accepted at any approval level — the
+  answer is migration or removal.
+- **This period's status:** **0** components in use past end of support. **2** inside the 12-month horizon (a
+  language runtime minor version with a September 2026 end of support, migration scheduled for August 2026, and a
+  container base image tag deprecating January 2027, replacement tracked); the quarterly verification of the
+  support status of all inventoried components completed 2026-07-15 with **0** items unverified.
+
+---
+
+## 6. Governance
+
+| Activity | Frequency | Owner | Evidence |
+|---|---|---|---|
+| Utility software list review | Annually and on new tool classes | Security Engineering | Reviewed list |
+| Utility software use review | Weekly (alarms real-time) | Security Engineering / CISO for break-glass | Review records with dispositions |
+| Endpoint protection currency and coverage report | Monthly | IT Operations | Fleet report, quarantines |
+| Application control denial review | Weekly | Security Engineering | Denial report |
+| Configuration and drift findings review | Continuous evaluation; weekly review | Security Engineering | Findings and remediations |
+| Software composition analysis against released inventory | Daily automated; monthly review | Engineering | Bill of materials, findings |
+| Malware detection response testing (tabletop or simulation) | Semi-annually | Security Engineering | Test record and corrective actions |
+| **Scan execution record — expected runs against completed runs, with coverage denominators** | Monthly; reported quarterly | Security Engineering | §4.8 execution table sourced from tool job history, exported to the audit account |
+| **Non-execution and agent check-in staleness alarms** | Continuous; alarm events reviewed weekly | Security Engineering | Alarm event records with disposition per event |
+| **Scan-coverage reconciliation — enrolled devices vs. HR active list and asset inventory; scanned resources vs. resource inventory** | Monthly | IT Operations / Platform Engineering | Reconciliation with any uncovered device or resource named |
+| Change-record-to-deployment reconciliation | Weekly | Engineering management | Reconciliation with exceptions |
+| Synthetic detection test through the email and chat channels | Daily automated | Security Engineering | Test results; a delivered test is an incident |
+| Definition and content currency against the §4.3 maximum ages | Continuous alerting; monthly report | IT Operations (endpoints) / Security Engineering (platform) | Currency report, stale-agent tickets |
+| Malware intelligence source qualification review | Annually, and on a source's false-positive experience | CISO | Qualification records, retirement decisions |
+| Detection-placement risk assessment review | Annually and on any new transfer channel | CISO with Security Engineering | Reviewed §4.4 assessment; risk register entries |
+| Malware-protection suspension review | Temporary: within 1 business day of re-enablement. Permanent exclusions: at the stated date, ≤90 days, and quarterly thereafter | CISO | Register entries with re-enablement evidence and review outcomes |
+| Released-inventory-to-lockfile reconciliation | Weekly | Engineering | Reconciliation with exceptions |
+| Software-update record completeness reconciliation (both directions) | Weekly | Engineering management | Reconciliation with unmatched items |
+| Retired-version archive and rollback-eligibility check | On each retirement; quarterly sample | Engineering | Archive record with rollback eligibility stated |
+| Patch clock attainment and open deferrals | Monthly; deferrals quarterly to the Audit Committee | Security Engineering / CISO for deferrals | Clock report, register entries |
+| Third-party support-status and end-of-life verification | Quarterly | Engineering with Third-Party Risk | Inventory support-status fields; horizon items |
+| Environment classification review | Annually and on any new environment | CISO with Head of Engineering | Classifications recorded in the asset inventory |
+| Standard review and approval | Annually | CISO | Approved version |
+
+Deficiencies are recorded in the control deficiency register with an owner and due date, tracked to closure, and
+reported to the Audit Committee quarterly.

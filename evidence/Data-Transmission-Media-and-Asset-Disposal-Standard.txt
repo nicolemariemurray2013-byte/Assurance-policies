@@ -1,0 +1,241 @@
+# Data Transmission, Media, Endpoint and Asset Disposal Standard
+
+**Document ID:** SEC-DLP-023
+**Version:** 3.0 — **effective 2026-02-23**, superseding v2.4 of 2025-06-30
+**Owner:** Head of Security Engineering, jointly with the Head of IT Operations for endpoint provisions
+**Approved by:** CISO 2026-02-19
+**Next scheduled review:** Annually (next by 2026-12-31), and on any change to the set of egress channels, to the
+endpoint fleet management platform, or to a disposal vendor
+
+**Scope.** The movement of information out of the service and out of the entity: authorized transmission,
+unauthorized exfiltration, removable media, endpoint devices, and the disposal of any physical or logical asset
+that has held service data. Covers assets owned by the entity, by its vendors, and by its employees where those
+assets have held entity information. The reference implementation is AWS account **471885797689**, region
+**us-west-2**.
+
+Companion documents: the cryptographic standard (the algorithms and key lifecycle this standard relies on, and
+cryptographic erasure as a disposal method); the logical access standard (who is authorized to move data); the
+asset inventory and classification standard (what class of data each rule applies to, and the access point
+register); the retention schedules in the confidentiality and privacy standards (when the end of retention is
+reached).
+
+---
+
+## 1. Principle
+
+Information leaves the service only through a **named channel**, only by an **authorized principal**, only for a
+**declared purpose**, and only **protected in transit**. Every other path is either structurally impossible or
+detected. When an asset that has held information leaves the entity's control, the information is rendered
+unrecoverable **before** the protections over that asset are relaxed — not after, and not concurrently.
+
+---
+
+## 2. Restricting the ability to authorize and execute transmission, movement, and removal (CC6.7-R1)
+
+### 2.1 The complete set of authorized egress channels
+
+There is no general-purpose export capability. Data leaves only as follows, and each channel has a named owner,
+an authorization model, and a monitoring control:
+
+| Egress channel | Authorized principals | What may leave | Protection | Detection |
+|---|---|---|---|---|
+| Assessment result read via the service API | The tenant's own authenticated identities | That tenant's results only | TLS 1.2+, tenant scope derived from the session | API access logs; anomalous-volume alerting |
+| Evidence retrieval via the service API | The tenant's own authenticated identities | That tenant's evidence only | TLS 1.2+, pre-signed short-lived URLs | Access logs on the object store |
+| Model inference request | The service's workload role only | Prompt content derived from in-scope evidence and configuration, to named model IDs in-region | TLS 1.2+, no training retention, no cross-region transit | Invocation metrics and error alarms (`AIGov-BedrockInvocation*`) |
+| Observability export | The platform role only | Metrics, traces, and redacted logs | SigV4-signed OTLP over TLS to the in-region endpoint | Export failure alarms |
+| Vendor integrations | The named integration role per vendor | The minimum field set recorded in the vendor register | TLS 1.2+ to a named endpoint | Egress destination review; vendor register reconciliation |
+| Administrative read by entity personnel | Federated, MFA-authenticated, short-lived roles | Only what the task requires, under the purpose limitation | TLS 1.2+ | Audit trail; quarterly access review |
+| Source and build artifacts | The pipeline identity | Code and artifacts, never customer data | TLS 1.2+, digest verification | Pipeline audit log |
+
+**Anything not in this table is not an authorized channel.** In particular there is no bulk export function, no
+database client exposed to a network, no file transfer endpoint, no email path carrying Confidential or
+Restricted data, and no removable-media path (see §3). The reference environment demonstrates the network half
+of this at the infrastructure layer: both security groups in the VPC carry **zero outbound rules** as well as
+zero inbound, so there is no ambient egress path from a workload subnet; all four subnets have public IP
+assignment disabled; and no network interface is attached to either group.
+
+### 2.2 Authorization to execute a transmission
+
+- **Authorize and execute are separable.** A principal that may request an export is not automatically the
+  principal that performs it; bulk or out-of-band data movement requires an approved change with a named
+  approver, and is executed by the platform role rather than by the requester.
+- **Purpose declaration.** Every authorized movement of Confidential or Restricted data outside its normal
+  channel records the purpose, the data set, the recipient, the legal basis where personal information is
+  involved, and the approver. The record is retained and is the population the internal assessment samples.
+- **Tenant scope is not a parameter.** On the service API the tenant is derived from the authenticated session,
+  so a caller cannot request another tenant's data by changing an identifier.
+- **Recipient verification.** For a transfer to an external party, the recipient's identity and the destination
+  endpoint are verified against the vendor or customer register before the first transfer, and the transfer
+  agreement (confidentiality and, for personal information, the privacy commitments in the third-party
+  disclosure procedure) must be in place first.
+
+### 2.3 Data loss prevention processes and technologies
+
+Prevention is layered, with technical enforcement first and process where technology cannot reach:
+
+| Layer | Control | Effect |
+|---|---|---|
+| Architecture | No bulk export capability exists in the service | The most common exfiltration path is absent by design |
+| Identity | Read entitlements are tenant-scoped and purpose-limited; no human standing access to customer data | A compromised human credential yields little |
+| Resource policy | `Deny` on non-TLS access on **all 12** in-scope buckets; account-level public access block on all four dimensions; no bucket public or website-enabled | Data cannot be moved out in cleartext or made public |
+| Network | Security groups with no egress rules; egress to vendors only to named endpoints via managed service paths | No arbitrary outbound path |
+| Endpoint DLP | Managed endpoint agent with content inspection on removable media, cloud-upload, and print channels; block-and-alert on Restricted content | Endpoint egress blocked and recorded |
+| Email and collaboration DLP | Content inspection on outbound mail and file shares; Restricted content blocked, Confidential content requires justification | Human-channel egress controlled |
+| Source control | Secret scanning and large-file/dataset detection on push; customer data in a repository is a blocking violation | Data cannot be committed out |
+| Observability | Log redaction of credentials, tokens, and personal information before emission | Data does not leak through telemetry |
+| Detection | CloudTrail-derived metric filters and alarms — `AIGov-UnauthorizedApiCalls`, `AIGov-AgentWriteAttempt`, `AgentCredentialVending`, `AIGov-IamPolicyChanges` — plus GuardDuty findings for exfiltration-pattern detections | Attempts that are not blocked are detected and paged |
+| Review | Quarterly review of egress destinations and of the access point register against actual traffic | Drift surfaces within a quarter |
+
+DLP alerts are triaged by Security Engineering under the incident response procedure; a confirmed
+unauthorized transmission is an incident, and where personal information is involved the breach-notification
+determination in the privacy procedures is invoked.
+
+---
+
+## 3. Removable media and physical asset protection (CC6.7-R3)
+
+- **Removable media is prohibited** for service data. No production workflow uses it, and none is authorized.
+  The service runs on managed compute with ephemeral, encrypted storage and no attached removable device.
+- Where a business need for removable media arises anywhere in the entity, it requires CISO approval and, if
+  approved: **hardware-encrypted media only**, AES-256 with a key managed under the cryptographic standard;
+  registration of the device in the asset inventory with a named custodian; encryption verified before first
+  use; the minimum data set; and return-and-erase within the approved window.
+- **Endpoint enforcement**: the managed endpoint configuration blocks writes to mass-storage devices by default.
+  An exception is granted per device and per user, is time-bound, and is logged.
+- **Physical protection**: entity-owned media and devices are held in access-controlled facilities; devices are
+  not left unattended in transit; loss or theft is reported within 4 hours and handled as a potential incident,
+  with remote wipe issued immediately.
+- **Shipping**: where physical transport of media is unavoidable, it uses a tracked courier, the media is
+  encrypted, the key travels separately by a different channel, and receipt is confirmed against a manifest.
+- The service's own data centre facilities are operated by the infrastructure provider under its physical and
+  environmental controls; the entity's reliance on those controls, and the evidence it obtains for them, are
+  recorded in the vendor register and reviewed annually against the provider's attestation reports.
+
+---
+
+## 4. Endpoint device protection (CC6.7-R4)
+
+Every endpoint that can reach entity information is enrolled in central management before first access; an
+unenrolled device cannot obtain a session, because device posture is a condition of the federated
+authentication.
+
+| Control | Requirement | Enforcement |
+|---|---|---|
+| Enrolment and inventory | Every device recorded with owner, serial, OS, and compliance state | Device management platform; unenrolled devices are denied access |
+| Full-disk encryption | Mandatory, AES-256, key escrowed centrally | Enforced by policy; non-compliance blocks access |
+| Screen lock | ≤ 10 minutes inactivity, password/biometric to unlock | Enforced by policy |
+| Local administrator rights | Removed by default; elevation is brokered, time-bound, and logged | Endpoint privilege management |
+| Software installation | Restricted to the managed catalogue; see the malicious-software standard | Application control |
+| Endpoint protection | EDR agent running, signatures and behavioural detection current, tamper protection on | Continuously reported; a disabled agent raises an alert |
+| Patch currency | OS and browser patches within the vulnerability-management SLA | Reported; non-compliant devices lose access at the deadline |
+| Firewall | Host firewall enabled, inbound denied by default | Enforced by policy |
+| Remote wipe | Available on every device; issued on loss, theft, or termination | Device management platform |
+| Data residency on the device | Customer data is not downloaded to endpoints; work happens in the managed environment | DLP block-and-alert; purpose limitation in the access standard |
+| Bring-your-own devices | Permitted only for email and chat via a managed container with its own encryption and wipe; no access to production or customer data | Conditional access |
+| Return on separation | Device returned by the last working day, wiped and re-imaged before reissue, or securely disposed | Offboarding checklist with verification |
+
+Compliance is measured continuously, reported monthly, and non-compliant devices are quarantined from access
+rather than merely reported.
+
+---
+
+## 5. Rendering data and software inaccessible before disposal (CC6.5, C1.2)
+
+### 5.1 When the procedure is triggered (CC6.5-R3, C1.2-R1)
+
+Disposal is initiated by any of the following, each of which is detected by an owner or by automation rather
+than left to notice:
+
+1. **End of the retention period** for a data set, as determined by the retention schedule. Retention state is
+   evaluated by scheduled jobs against the schedule, and records reaching end-of-retention are **identified and
+   flagged for destruction** in a disposal queue with the data set, the classification, the retention rule
+   invoked, and the earliest permitted destruction date.
+2. **The data or software is no longer required on the asset** — a workload is decommissioned, a store is
+   migrated, a feature is removed, or a device is repurposed.
+3. **The asset will no longer be under the entity's control** — a device is returned, sold, recycled, or
+   returned to a lessor; a vendor engagement ends; a customer offboards.
+4. **A deletion request** from a customer or data subject (handled under the data subject rights and personal
+   information disposal procedures, which use the mechanisms in §5.3).
+5. **Asset loss or theft**, where remote destruction is attempted immediately.
+6. **Media or hardware failure**, where a failed device that held data must be destroyed rather than returned.
+
+A legal hold suspends destruction; held items remain in the queue marked as held, with the hold's authority and
+owner recorded, and are destroyed when the hold is released.
+
+### 5.2 Scope of the removal procedures (CC6.5-R2)
+
+The procedures apply to assets owned by **the entity, its vendors, and its employees**:
+
+| Asset custodian | Assets in scope | How removal is achieved and evidenced |
+|---|---|---|
+| The entity | Managed endpoints, any owned server hardware, removable media, printers and multifunction devices with storage, network equipment with configuration or logs | Cryptographic erasure plus a verified wipe, or physical destruction; a certificate per asset |
+| The infrastructure provider (vendor) | The physical media underlying managed storage, compute, and backups | Contractual media-destruction commitments verified against the provider's attestation reports; the entity additionally destroys the keys, which renders the residual bytes unrecoverable |
+| Other vendors and processors | Copies of entity or customer data held under contract | Contractual deletion obligation on termination; a **certificate of destruction** required within 30 days of the engagement ending, tracked in the vendor register; non-return is a contractual breach and a deficiency |
+| Employees (personally owned) | The managed container on a BYOD device; any incidental local copy | Container wipe on separation, verified in the device platform; the employee attests to deletion of any local copy in the offboarding record |
+| Contractors and vendor personnel | Devices used for the engagement | Contractual wipe-and-attest obligation at engagement end, verified before the final invoice is approved |
+
+### 5.3 Approved destruction methods (C1.2-R2, CC6.5-R1)
+
+| Asset or data type | Method | Verification |
+|---|---|---|
+| Data encrypted under a dedicated key (managed storage, backups, tenant data) | **Cryptographic erasure**: schedule the key for deletion under the cryptographic standard; the ciphertext becomes unrecoverable | Key destruction record plus a post-destruction decrypt attempt that fails |
+| Object storage data | Delete all versions and delete markers, then confirm no version remains; lifecycle rules perform the routine case automatically | Automated confirmation query; job output retained |
+| Record-store data | Delete the item, plus removal from any change stream or export copy | Automated confirmation query |
+| Backups and snapshots | Expire per the backup retention rule, or delete explicitly and destroy the copy's key | Backup inventory shows no remaining copy |
+| Logs and telemetry | Retention-based expiry configured on the log store; no manual copies exist | Configured retention verified by rule evaluation |
+| Solid-state media (endpoints, servers) | Cryptographic erase of the drive's key followed by a verified sanitize command; **physical destruction (shred to ≤ 2 mm particles) where sanitize cannot be verified** | Sanitize verification log, or a destruction certificate with serial numbers |
+| Magnetic media | Multi-pass overwrite plus degauss, or physical shredding | Certificate with serial numbers |
+| Paper containing Confidential or Restricted information | Cross-cut shredding in a locked console, collected by a bonded vendor | Vendor certificate |
+| Software and configuration on a retiring asset | Full re-image, then verification that no entity software or credential remains; credentials destroyed under the access standard | Re-image record and credential-destruction verification |
+| Anonymization as an alternative to destruction | Irreversible removal or generalization of identifiers, assessed against re-identification risk and approved by Privacy | Assessment record; the result is no longer personal information |
+
+Destruction of Restricted material and of any media leaving the entity is performed by two people or by a bonded
+vendor with a certificate, and the record is retained for **seven years** — deliberately longer than the data it
+describes, so the evidence of destruction survives the data.
+
+### 5.4 Discontinuing protections only after data is unrecoverable (CC6.5-R4)
+
+The ordering is a control in its own right, and is enforced by the checklist that governs asset release:
+
+1. The asset is **removed from service** and its network access and credentials are revoked.
+2. The data on it is **rendered unrecoverable** by an approved method in §5.3.
+3. The removal is **verified** — a sanitize verification, a failed decrypt attempt, a confirmation query, or a
+   destruction certificate. Verification is performed by someone other than the person who executed the removal
+   for Restricted assets.
+4. Only then are the **logical and physical protections relaxed**: the asset leaves the secure area, its
+   inventory record moves to *disposed*, its encryption keys are destroyed, and its monitoring is retired.
+5. The **inventory record is closed**, not deleted, retaining the asset identity, the method, the date, the
+   verifier, and the certificate reference.
+
+An asset awaiting disposal remains **fully in scope for every control** — inventoried, physically secured,
+encrypted, and access-controlled — until step 4 completes. "Pending disposal" is not a gap in the control
+environment, and an asset that has sat in the disposal queue beyond 30 days is escalated as a deficiency.
+
+---
+
+## 6. Roles and governance
+
+| Role | Responsibility |
+|---|---|
+| Head of Security Engineering | Owns the egress channel set, the DLP control design, and the disposal standard |
+| Head of IT Operations | Owns endpoint enrolment, compliance, and physical asset disposal execution |
+| Asset and data owners | Trigger disposal at end of retention; approve authorized transmissions of their data |
+| Security Engineering | Triages DLP alerts; performs the quarterly egress and access-point reviews |
+| Privacy Office | Approves anonymization as an alternative to destruction; owns deletion requests for personal information |
+| Internal assessment | Samples transmission authorizations, disposal records, and endpoint compliance |
+| CISO | Approves exceptions, removable-media use, and any deviation from the destruction methods |
+
+| Activity | Frequency | Evidence |
+|---|---|---|
+| Egress channel and destination review against actual traffic | Quarterly | Review record; register updates |
+| Access point register reconciliation | Quarterly | Reconciled register |
+| DLP alert triage and trend review | Continuous triage; monthly trend review | Alert records and outcomes |
+| Endpoint compliance report | Monthly | Fleet compliance report; quarantines applied |
+| Disposal queue review (items at end of retention, items pending disposal) | Monthly | Queue with ages and escalations |
+| Destruction certificate reconciliation against the disposal queue | Quarterly | Reconciliation record |
+| Vendor certificate-of-destruction tracking | Per engagement end; quarterly review of outstanding | Vendor register |
+| Sample test of disposal completeness (attempt recovery on a disposed data set) | Semi-annually | Test result showing recovery failed |
+| Standard review and approval | Annually | Approved version |
+
+Deficiencies are recorded in the control deficiency register with an owner and due date, tracked to closure, and
+reported to the Audit Committee quarterly.

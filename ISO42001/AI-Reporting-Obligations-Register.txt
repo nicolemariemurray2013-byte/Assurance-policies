@@ -1,0 +1,105 @@
+# AI Reporting Obligations Register
+
+**Document ID:** AIMS-REG-017
+**Version:** 2.4
+**Owner:** Legal & Privacy, with the AI System Accountable Owner
+**Approved by:** AI Governance Board
+**Approval date:** 2026-03-06
+**Next scheduled review:** 2026-12-31, and whenever a jurisdiction, a customer contract, or the system's
+intended purpose changes
+**Scope:** All obligations to report or share information about the compliance-evaluation AI system
+(AWS account 471885797689, us-west-2) with interested parties and authorities.
+
+---
+
+## 1. Documented reporting obligations
+
+The organization **documents its obligations for reporting information about the AI system, including
+what information is required, to which interested parties, and within what timeframe.** Every obligation
+in §2 records all three, plus its legal or contractual basis, the responsible role, the channel and the
+evidence retained. An obligation without a named owner and a stated deadline is not usable during an
+incident, so both are mandatory columns.
+
+**How obligations are identified.** Legal & Privacy maintain this register from: the jurisdictions in
+which the organization operates and in which assessed organizations are established; the data-protection
+regimes applicable to the personal data that may appear in evidence; sectoral regulation applying to
+assessed organizations where our output is used in their regulatory reporting; customer contracts, DPAs
+and usage agreements; certification and audit scheme rules; supplier terms; and internal governance
+requirements. The register is re-derived on any change to intended purpose, geography, customer base or
+regulatory landscape, and reviewed semi-annually regardless.
+
+## 2. Obligations register
+
+### 2.1 Regulatory and statutory
+
+| # | Obligation | Information required | To whom | Timeframe | Basis | Owner |
+|---|---|---|---|---|---|---|
+| O-1 | **Personal-data breach notification to the supervisory authority** | Nature of the breach; categories and approximate number of data subjects and records; likely consequences; measures taken or proposed; DPO contact | The named lead supervisory authority for the jurisdiction of processing | **Within 72 hours of becoming aware**; a preliminary notification with labelled unknowns rather than a late complete one | GDPR Art. 33 and equivalent regimes | Legal & Privacy |
+| O-2 | **Personal-data breach notification to data subjects** | Nature of the breach in clear language; likely consequences; measures taken; contact point | Affected data subjects, via the controller where we act as processor | Without undue delay where high risk is likely | GDPR Art. 34 and equivalents | Legal & Privacy |
+| O-3 | **Processor's notification to the controller** | All information the controller needs to meet its own O-1/O-2 duties | The assessed organization (controller) | **Without undue delay**, in practice within 24 hours of confirmation | GDPR Art. 28(3)(f); DPA | Legal & Privacy + AI Operations Lead |
+| O-4 | **Serious AI incident reporting** | Description of the incident, the AI system and its intended purpose, the harm or risk, affected parties, corrective action | The competent AI-regime authority for each jurisdiction where the system is made available | Per that regime's stated deadline; treated as **immediate escalation on confirmation** with formal filing inside the shortest applicable window | Applicable AI regulation for the jurisdictions of operation | Legal & Privacy |
+| O-5 | **Regulatory enquiry / information request** | As specified in the request, including technical documentation, logs and the evidence chain | The requesting authority | By the deadline in the request; extension requested in writing where evidence assembly requires it | Statutory powers | Legal & Privacy |
+| O-6 | **Sectoral reporting where our output feeds a regulated filing** | Notice that a result relied on in the customer's regulatory reporting was incorrect, withdrawn or re-issued | The assessed organization, which carries the primary duty to its own regulator; the regulator directly only where a duty falls on us | On confirmation, and always before the customer's next filing date | Sectoral regulation; contract | Legal & Privacy + Accountable Owner |
+| O-7 | **Data-subject rights requests** | Confirmation, access, correction, erasure or restriction as requested | The data subject, via the controller | Statutory timeline (1 month under GDPR, extendable) | GDPR Ch. III; DPA | Legal & Privacy |
+| O-8 | **Law-enforcement / lawful-access requests** | Only what is lawfully compelled, narrowly scoped | The requesting body | Per the instrument | Applicable law | Legal & Privacy |
+| O-9 | **Cross-border transfer disclosure** | Where data is processed, on what transfer mechanism, and which sub-processors | Customers; authorities on request | On request; on change, 30 days before it takes effect | GDPR Ch. V; DPA | Legal & Privacy |
+
+### 2.2 Contractual and customer-facing
+
+| # | Obligation | Information required | To whom | Timeframe | Basis | Owner |
+|---|---|---|---|---|---|---|
+| O-10 | **Incident notification to affected customers** | Per AIMS-PLAN-016 §B.5, including the explicit effect-on-reliance statement | Affected assessed organizations | Severity 1: **4 hours** from confirmation; Severity 2: **1 business day** | Customer contract; AIMS-PLAN-016 | AI Operations Lead |
+| O-11 | **Correction or withdrawal of a published result** | Which assessments and controls, the direction of the error, corrected status, whether the prior result may still be relied on | The assessed organization and its named analysts; marked on the result itself | On decision, and never later than the next reliance point known to us | Contract; honesty obligation in AIMS-POL-002 | Accountable Owner |
+| O-12 | **Notice of verdict-affecting change** | What changes, when it takes effect, expected effect on results | All customers | **≥ 10 business days** before the change | AIMS-PRO-007 §5.2 | AI Operations Lead |
+| O-13 | **Sub-processor change notice** | Identity, role, location, safeguards | Customers | ≥ 30 days before, with an objection window | DPA | Legal & Privacy |
+| O-14 | **Availability / SLA reporting** | Uptime, incident summary | Customers under an SLA | Monthly | Contract | AI Operations Lead |
+| O-15 | **Provision of the assessment record on request** | Result, rationales, cited evidence, journal, model identifier and runtime version | The assessed organization; its external auditors with the customer's authorization | 10 business days | Contract | Accountable Owner |
+| O-16 | **Disclosure of system limitations and valid domain of use** | The published limitations set (AIMS-DOC-012 §2), including the English-language domain and supported frameworks | All customers and users, and prospective customers before contracting | Continuously available; updated with each release | AIMS-STD-015; AIMS-PRO-025 | Accountable Owner |
+| O-17 | **Response to an adverse-impact report** | Outcome of investigation, including where we disagree and why | The reporter, where identifiable | Acknowledge per channel; substantive response **5 business days** | AIMS-PLAN-016 §A | Support + Responsible AI Lead |
+| O-18 | **Notice to suppliers** of an incident implicating their component | Incident reference, observed behaviour, affected model identifier or service | Model and cloud suppliers | 1 business day | Supplier terms; AIMS-PRO-010 | AI Security Lead |
+
+### 2.3 Assurance, audit and internal governance
+
+| # | Obligation | Information required | To whom | Timeframe | Basis | Owner |
+|---|---|---|---|---|---|---|
+| O-19 | **Certification-body reporting of significant change or nonconformity** | Nature of the change or nonconformity, its effect on the certified scope, corrective action | Certification body | Per scheme rules; significant change before it takes effect | Certification scheme | Accountable Owner |
+| O-20 | **Internal audit findings and nonconformities** | Finding, cause, corrective action, owner, date | AI Governance Board; top management | Report at completion; open items monthly | AIMS internal audit programme | Internal Audit |
+| O-21 | **Management review inputs** | Performance, incidents, adverse-impact reports (including declined ones), impact-assessment changes, supplier performance, risk changes | Top management | At each management review, at least annually | AIMS requirement | Chief AI Officer |
+| O-22 | **AI Governance Board reporting** | Monitoring measures, incidents, concern-register trends, residual risks and acceptances | AI Governance Board | Quarterly, and immediately for Severity 1 | AIMS-POL-002 | Accountable Owner |
+| O-23 | **Transparency reporting on system performance** | Accuracy and coverage on our own task, known limitations, override rates | Customers and, in summary form, publicly | Annually | Voluntary commitment in AIMS-POL-002 | Responsible AI Lead |
+
+## 3. Ensuring information is shared as required by jurisdiction
+
+The organization **ensures information is shared with the relevant interested parties as required by the
+jurisdictions in which it operates.** Mechanisms, not intentions:
+
+| Mechanism | How it works |
+|---|---|
+| **Pre-identified authorities and deadlines** | Each obligation names the authority and the deadline in advance (§2). Nothing is researched for the first time during an incident |
+| **Jurisdiction mapping** | Legal & Privacy maintain the mapping of processing locations, customer establishments, and the obligations each triggers. Where an assessed organization is in a jurisdiction with additional duties, those duties are attached to that customer's record |
+| **Trigger wiring** | Incident severity declaration (AIMS-PLAN-016 §B.2) automatically raises the obligation-review step with Legal & Privacy; a Severity 1 cannot be closed without a recorded obligations determination — including a recorded determination that none applied |
+| **Shortest-deadline rule** | Where several jurisdictions apply, the **shortest** deadline governs the whole response |
+| **Preliminary filing permitted, delay not** | A required notification is never delayed for completeness; unknowns are labelled and a follow-up filed |
+| **Exercise** | Deadlines and contacts are verified at each semi-annual incident tabletop (most recently 2026-02-19, which tested the 72-hour clock end to end) |
+| **Evidence retained** | Every discharged obligation is recorded with what was sent, to whom, by whom and when, retained 7 years per AIMS-STD-013 §4.2 — so compliance with an obligation is itself provable |
+| **Escalation on doubt** | If it is unclear whether an obligation applies, it is escalated to the Chief AI Officer and the default is to notify |
+| **Register maintenance** | Semi-annual review; immediate review on a new jurisdiction, a new customer sector, a change of intended purpose, or a regulatory change. Changes are approved by the AIGB |
+
+## 4. Determination record — current period
+
+At the 2026-03-06 review, Legal & Privacy confirmed: the register covers every jurisdiction in which the
+organization currently operates and in which assessed organizations are established; no obligation is
+unowned; no deadline is unstated; and there are **no outstanding undischarged obligations**. Two
+obligations were added this period (O-6 sectoral reliance reporting; O-23 voluntary transparency
+reporting) and one was tightened (O-3 to 24 hours from "without undue delay", so the processor duty has
+an operable number).
+
+## 5. Review history
+
+| Version | Date | Reviewer | Outcome |
+|---|---|---|---|
+| 2.0 | 2025-10-15 | Legal & Privacy | Established the register with the statutory and contractual obligations |
+| 2.1 | 2025-12-11 | Legal & Privacy | Added cross-border transfer and sub-processor obligations |
+| 2.2 | 2026-01-08 | Legal & Privacy + AI Operations Lead | Wired obligation review into incident severity declaration |
+| 2.3 | 2026-02-19 | Legal & Privacy | Verified all deadlines and contacts in the breach tabletop; added the shortest-deadline rule |
+| 2.4 | 2026-03-06 | Legal & Privacy, approved by AIGB | Added O-6 and O-23; tightened O-3; recorded the §4 determination |

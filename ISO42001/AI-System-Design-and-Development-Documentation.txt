@@ -1,0 +1,200 @@
+# AI System Design and Development Documentation
+
+**Document ID:** AIMS-DOC-009
+**Version:** 5.2
+**Owner:** AI Development Lead
+**Approved by:** AI System Accountable Owner (Platform Engineering) and Chief AI Officer
+**Approval date:** 2026-03-06
+**Next scheduled review:** 2026-12-31
+**Status:** Current — maintained through every design and development iteration
+**Scope:** The compliance-evaluation AI system: the Amazon Bedrock agent and Bedrock AgentCore
+runtime in AWS account 471885797689 (us-west-2).
+
+---
+
+## 1. Basis: objectives, requirements and specification criteria
+
+This design is documented **against** three controlling inputs, and every design choice below cites
+which one it serves:
+
+1. **Organizational objectives** — the AI Policy principles P1–P7 (AIMS-POL-001) and the
+   responsible-development objectives RD-1 to RD-8 (AIMS-POL-006 §1).
+2. **Documented requirements** — the AI System Requirements Specification (AIMS-SPEC-007).
+3. **Specification criteria** — the acceptance criteria and release criteria in AIMS-POL-006 §3.
+
+| Requirement (AIMS-SPEC-007) | Design response | Objective served |
+|---|---|---|
+| Produce a per-requirement verdict with cited evidence | Structured result carrying one entry per canonical requirement, each with status, rationale and source citation | RD-1, P7 |
+| Never assert non-compliance from evidence that was not read | A distinct read-failure state, excluded from scoring rather than scored as a fail | RD-2 |
+| Keep a human in final authority | Verdicts published for review with override and halt facilities | RD-5, P1 |
+| Resist adversarial customer-supplied content | Structural trust boundary: customer text is data, never instructions | RD-4, P6 |
+| Assess at continuous-assurance cadence | Asynchronous, single-purpose invocations with a serialized lock per assessment | AIMS-SPEC-007 §4 |
+| Score deterministically | Scoring computed in code from statuses, not by the model | RD-1, P2 |
+
+## 2. Architecture
+
+The system is a **directed multi-node evaluation graph**, not a single model call. Five nodes execute
+with an explicit dependency order:
+
+```
+gathering_context
+      │
+      ├──────────────┬─────────────────┐
+      ▼              ▼                 │   (the two evidence tracks run in parallel)
+scanning_          analysing_          │
+environments       evidence            │
+      └──────────────┴────────► auditor ────► finalising
+```
+
+| Node | Responsibility | Model tier |
+|---|---|---|
+| `gathering_context` | Resolve assessment scope, control definition and canonical requirement set; discover linked evidence | Sonnet-class |
+| `scanning_environments` | Execute the control's scan plan against the customer's authorized environment; persist raw scan evidence verbatim | Sonnet-class |
+| `analysing_evidence` | Evaluate supplied documents against the requirement set | Sonnet-class |
+| `auditor` | Synthesize both tracks into the authoritative per-requirement verdicts | **Opus-class** (highest capability, reserved for the judgement step) |
+| `finalising` | Validate coverage, publish the result and requirement-tied remediation tasks | Sonnet-class |
+
+**Rationale for the split.** Separating collection from judgement is what makes RD-1 and RD-2
+achievable: collection nodes are forbidden from authoring verdicts and persist only raw observation,
+so the audit judgement is always re-derivable from retained raw evidence. Running the two evidence
+tracks in parallel bounds latency; gating each on the presence of its evidence avoids fabricating a
+track that has no input.
+
+**Deterministic elements (deliberately not model-decided):** phase routing between nodes; the
+scoring formula; requirement-coverage validation; and the lock that serializes work on one assessment.
+Design choice: anything that must be reproducible and auditable is implemented in code, and the model
+is used only where judgement over natural-language evidence is genuinely required.
+
+## 3. Design choices
+
+### 3.1 Machine learning approach, learning algorithm and model type
+
+- **Approach:** in-context reasoning over retrieved, customer-specific evidence — **no supervised
+  training, no fine-tuning, no reinforcement learning**. The system is an orchestrated inference
+  application.
+- **Learning algorithm:** none is trained by the organization. The foundation models are pre-trained
+  transformer-based large language models supplied by Anthropic through Amazon Bedrock.
+- **Model type:** decoder-only autoregressive transformer LLMs (Claude family). Model identifiers and
+  the region are configuration values recorded per release, so the exact model behind any historical
+  assessment is reconstructable.
+- **Why this choice:** compliance verdicts must be justified against the specific text of a specific
+  requirement and a specific piece of evidence. A trained classifier would produce a label without a
+  defensible rationale, and would embed customer evidence in weights — unacceptable under RD-7 and
+  our contractual commitment not to train on customer data. Rejected alternatives: fine-tuning a
+  smaller model (rejected — customer-data exposure, weaker rationale quality); pure rule engine
+  (rejected — cannot read free-text policy documents).
+
+### 3.2 Intended training approach
+
+No training. Improvement is achieved by changing **prompts, rubrics and orchestration**, which are
+version-controlled, peer-reviewed artefacts validated against a held-out test split. This makes every
+capability change reviewable as a diff, which a weight update would not be. If a future capability
+requires training, AIMS-POL-006 §2.5 governs it and a material-change impact assessment is mandatory.
+
+### 3.3 Data quality considerations in design
+
+Design decisions taken specifically to protect data quality (full characteristics in AIMS-REG-006
+§3.4):
+
+- **Freshness by construction.** Scan evidence is always collected fresh for the assessment it
+  supports and is never reused as current evidence for a later assessment, so a verdict can never
+  rest on a stale environment reading.
+- **Verbatim retention.** The raw API response is retained per resource beside the verdict, so a
+  disputed finding is re-checkable against what was actually observed.
+- **Integrity checks.** Evidence failing an integrity or content-type check is rejected, never
+  repaired or silently substituted.
+- **Read failure ≠ non-compliance.** An unreadable source yields the read-failure state, excluded from
+  scoring (RD-2).
+- **Precedence rules.** Where a scan directly reads a setting, the scan governs the technical state
+  and a document cannot overwrite it; where the scan cannot read the requirement's subject, the
+  document governs. This prevents both document-based overstatement and API-blindness understatement.
+
+## 4. Evaluation and refinement of models
+
+The organization does not refine model weights; it evaluates and refines the **system** — prompts,
+rubrics, routing and tool contracts.
+
+| Step | Method | Acceptance |
+|---|---|---|
+| Candidate change | Prompt/rubric/orchestration diff under peer review | Two approvals |
+| Offline evaluation | Regression harness over the labelled corpus: validation split for tuning, test split held out | ≥ 0.90 per-requirement agreement (RD-3); no regression against the current release |
+| Consistency | Repeat runs on identical inputs | Verdicts stable |
+| Fairness strata | Verdicts compared across document-style and service-coverage strata | No material disparity (RD-6) |
+| Adversarial | Injection suite in customer-controlled fields | 100% blocked (RD-4) |
+| Model-version change | Full regression on the new model identifier before adoption | Treated as a **Standard or Material change** per AIMS-POL-006 §4 |
+| Live refinement | Staged promotion with monitoring; rollback on regression | Staged dwell healthy |
+
+Supplier model deprecation or silent behaviour change is a tracked risk (R-08); the documented
+fallback model configuration and the pinned-identifier practice are its mitigations.
+
+## 5. Hardware and software components
+
+| Layer | Component | Provider |
+|---|---|---|
+| Hardware | AWS-managed accelerated inference hardware and general-purpose container hosts; specification not exposed to the organization | AWS |
+| Model serving | Amazon Bedrock | AWS |
+| Runtime | Amazon Bedrock AgentCore managed container runtime, Node.js 20 | AWS |
+| Application | TypeScript evaluation graph, tool implementations, HTTP server | Organization |
+| Agent framework | Strands Agents SDK | Third party |
+| Persistence | Amazon S3 (evidence, staged scan evidence); Amazon DynamoDB (assessment, journal, lock, coordination) | AWS |
+| Messaging | Amazon SQS, Amazon SNS | AWS |
+| Observability | OpenTelemetry instrumentation exporting to CloudWatch metrics, logs and traces | Organization + AWS |
+| Security | AWS CloudTrail, Amazon GuardDuty, KMS-backed session token signing, IAM role assumption for scoped customer reads | AWS |
+
+There are no on-premises or edge components; see AIMS-REG-006 §5.
+
+## 6. Security threats across the AI system life cycle
+
+Threat modelling is performed at the design gate and refreshed on material change, covering
+conventional and **AI-specific** threats.
+
+| Threat | AI-specific | Life-cycle stage | Assessment | Mitigation |
+|---|---|---|---|---|
+| **Prompt injection** via customer-supplied evidence, control text or annotations | Yes | Operation | **Primary threat.** Customer content is untrusted and flows directly into model context | Structural trust boundary: customer-authored fields are declared data and never instructions; no framing grants instruction authority; injection suite must be 100% blocked before release |
+| **Data poisoning** of the evaluation corpus or of framework requirement text | Yes | Data preparation, development | Corpus is internal and curated, so exposure is limited but consequences are high (systematically wrong verdicts) | Corpus entries version-controlled and peer-reviewed; dual independent labelling; requirement text sourced only from the trusted managed catalogue and marked as trusted in the envelope; test split protected from tuning |
+| **Model stealing / extraction** | Yes | Operation | Low direct exposure — we do not own model weights; our exposure is extraction of prompts and rubrics, which are the actual intellectual property | No model or prompt echo to end users; rationale is published, raw prompts are not; access authenticated and rate-limited |
+| **Model inversion / training-data reconstruction** | Yes | Operation | **Structurally mitigated**: no customer data is in any weights, because we never train or fine-tune. Residual risk sits with the model supplier | Inference-only architecture; no customer data in training; supplier obligations in AIMS-PRO-010 |
+| **Evasion / adversarial evidence** — evidence crafted to obtain a compliant verdict | Yes | Operation | Real and commercially motivated | Scan evidence governs directly-read technical state, so a document cannot assert away an observed misconfiguration; compensating controls capped below full compliance; anomalous verdict patterns monitored |
+| **Sensitive-data leakage through prompts or logs** | Partly | Operation | Customer evidence enters context and could reach logs | Log minimization; evidence content excluded from telemetry; encryption in transit and at rest; scoped retention |
+| **Excessive agency** — the agent taking unintended action in a customer account | Yes | Operation | Agent holds credentials into customer environments | Read-only vended credentials, scoped per environment and short-lived; server-side role resolution so the agent cannot name its own role; no write APIs in the scan path |
+| **Denial of wallet / cost abuse** | Partly | Operation | Inference cost is attacker-influenceable | Per-assessment bounds; serialized invocation lock; cost per assessment monitored (RD-8) |
+| Conventional: credential compromise, dependency compromise, tampering with stored evidence | No | All | Standard exposure | IAM least privilege; reproducible builds and dependency review; encryption and integrity checks on stored evidence; CloudTrail and GuardDuty monitoring |
+
+## 7. Interfaces, output presentation, human interaction, interoperability and portability
+
+- **Interfaces.** A minimal HTTP surface: a health endpoint and an invocation endpoint. The system is
+  **machine-invoked** — by the scheduler or the front-end service, never by an end user directly —
+  which is itself a design choice: it keeps a human-facing surface out of the trust path.
+- **Output presentation.** Results are rendered as per-requirement status cards, each with a
+  plain-language rationale and its cited evidence, plus a control-level summary and score. Where the
+  system could not read something, that is shown as an evidence gap distinct from a failure — so a
+  reader is never misled into remediating something that was never assessed.
+- **How humans interact.** Compliance analysts and auditors read verdicts, inspect cited evidence,
+  annotate, override, and act on requirement-tied remediation tasks. The assessment journal exposes
+  every phase and tool call for inspection. Operators can scope, halt, suspend and roll back.
+- **Interoperability.** Assessment scope, controls and results are exchanged as structured records
+  over the documented control-plane API; scan evidence uses a documented schema grouped by account and
+  region; telemetry is emitted as OpenTelemetry, so observability is not tied to one backend.
+- **Portability.** The application is a container image on a managed runtime with configuration
+  (model identifier, region, resource names) externalized as environment variables — no hard-coded
+  stage or account coupling. Customers can export their assessment records and evidence through the
+  API. Model choice is configuration, so the system is not locked to a single model version;
+  substituting a model requires re-running regression (§4), not re-architecting.
+
+## 8. Maintenance of this documentation through iterations
+
+This document is updated **in the same change as the design change it describes** — a design change
+whose documentation is not updated fails peer review. Section 2 is the **final, current architecture
+documentation** and is authoritative; superseded architectures remain retrievable through the
+version-controlled history of this document. Each iteration is recorded below.
+
+## 9. Iteration and review history
+
+| Version | Date | Change | Driver |
+|---|---|---|---|
+| 4.0 | 2025-07-22 | Split collection from judgement; introduced the dedicated auditor node | RD-1 traceability could not be met when collection nodes authored verdicts |
+| 4.1 | 2025-09-30 | Parallelized the scan and document tracks; presence-based gating | Latency; avoid inventing a track with no input |
+| 4.2 | 2025-11-18 | Added the read-failure state, excluded from scoring | RD-2 — read failures were being published as customer non-compliance |
+| 5.0 | 2026-01-15 | Formalized the trust boundary for customer-supplied content; added the injection suite as a release gate | RD-4, following threat-model refresh |
+| 5.1 | 2026-02-20 | Opus-class model adopted for the auditor node only | Judgement quality on conflicting evidence; cost contained by scoping to one node |
+| 5.2 | 2026-03-06 | Documented scan-versus-document precedence (§3.3) and the evasion threat (§6) | Requirements no API can observe were scoring as gaps; needed an explicit, non-exploitable rule |

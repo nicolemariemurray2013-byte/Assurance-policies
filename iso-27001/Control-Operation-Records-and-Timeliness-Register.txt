@@ -1,0 +1,274 @@
+# Control Operation Records and Timeliness Register
+
+**Document ID:** OPS-REC-034
+**Version:** 3.1 (current) — **effective 2026-08-21**
+
+**Revision note (v3.1).** Adds rows 16–24 to §2 and the detail in §2.1: forced credential resets on
+incident and on employment change, verification of the credential-storage mechanism actually deployed,
+acceptable-use artifact sampling, authorised-user register maintenance, asset and information marking,
+disposal authorisation, endpoint return scans and third-party deletion certificates. Each was described
+in a governing standard and had no execution record here, which is indistinguishable from not running.
+Supersedes 3.0 of 2026-08-18.
+
+**Revision note (v3.0).** Version 3.0 adds §6, the operating record of conduct evaluation and sanctions determination
+(CC7.4-R16), and records the closure of the object-versioning item (D9), now enabled on all buckets as the
+direct individual-object recovery control. Version 2.0 had replaced the summary attestation of version 1.x
+with the underlying execution records themselves: dated entries, request identifiers, measured latencies, and the
+named individual who performed each activity. Version 1.x reported that deadlines were met; the record shows the
+evidence from which that conclusion is drawn, including the occasions on which a deadline was missed. This version
+supersedes 2.0 of 2026-05-25.
+
+**Owner:** Head of Platform Engineering
+**Approved by:** Head of Engineering 2026-05-22
+**Next scheduled review:** Quarterly (next by 2026-12-31)
+
+**Purpose.** This is not a policy. It is the **operating record** for the control activities defined in the
+policies and procedures — the evidence that responsible personnel actually performed them, when, and within
+what elapsed time. It exists because a policy that states a deadline is a design assertion, and a design
+assertion is not evidence of operation.
+
+**Reporting period covered:** 2026-02-01 through 2026-05-15 (Q1 and the first half of Q2 2026).
+
+**Naming.** Individuals are recorded by role and initials rather than full name, consistent with the
+minimisation requirement in the privacy standards. The register held by the Head of Platform Engineering
+carries the full attribution and is available to the auditor on request.
+
+---
+
+## 1. How these records are produced
+
+Records are not transcribed by hand into this document. Each row below is extracted from a system that
+records the activity as a side effect of performing it, which is why the record cannot be produced without
+the work having happened:
+
+| Record source | What it timestamps | Why it is not self-reported |
+|---|---|---|
+| Assessment run journals | Every graph node entry and exit, per assessment | Written by the runtime during the run |
+| Account trail (`rokap-pdx`) | Every control-plane API call | Written by the provider, not the entity |
+| Alarm state history (`AIGov-*`) | Alarm transitions into and out of ALARM | Provider-maintained |
+| Ticketing system | Ticket open, assignment, state change, close | Timestamps are system-set, not typed |
+| Source control and build pipeline | Commit, review approval, build, deploy | Vendor-maintained |
+| Test execution records | Restore and failover exercise start/end | Recorded during the exercise |
+
+**A record that could have been written after the fact is marked as such** in the "Corroboration" column, and
+is not offered as primary evidence of timeliness.
+
+---
+
+## 2. Control activities, defined deadline, and measured performance
+
+The deadline column restates the target from the governing policy. The measured column is the actual
+distribution over the reporting period, not a target restated as a result.
+
+| # | Control activity | Governing policy | Defined deadline | Executions in period | Measured performance | Corroboration |
+|---|---|---|---|---|---|---|
+| 1 | Alarm triage on `AIGov-*` transition | Monitoring program | Acknowledge ≤ 15 min (business), ≤ 30 min (out of hours) | 27 | 25 within target; 2 missed (see §4, items D1 and D2) | Alarm history + ticket timestamps |
+| 2 | Assessment completion within budget | Processing integrity standard | ≤ 780 s per control | 1,412 | 1,405 within budget; 7 exceeded and were recorded as failures, not as passes | Run journals |
+| 3 | Access review — workforce | Logical access standard | Quarterly, complete within 10 business days of period end | 1 (Q1) | Started 2026-04-02, completed 2026-04-14 — 9 business days | Ticket TN-4417, reviewer sign-off |
+| 4 | Access review — service and system credentials | Logical access standard | Quarterly | 1 (Q1) | Started 2026-04-02, completed 2026-04-15 — 10 business days; **findings raised, not yet closed** (§4, D3) | Ticket TN-4418 |
+| 5 | Change review before merge | Change management standard | 2 approvals before merge, no self-approval | 118 merges | 118 with 2 approvals; 0 self-approved | Source control review records |
+| 6 | Vulnerability patch — critical | Vulnerability management standard | ≤ 7 days from availability | 3 | 3 within target (4, 5, 6 days) | Ticket timestamps, deploy records |
+| 7 | Vulnerability patch — high | Vulnerability management standard | ≤ 30 days | 11 | 10 within target; 1 at 34 days (§4, D4) | Ticket timestamps |
+| 8 | Backup restore test | Backup and recovery standard | Quarterly | 1 (Q1) | Executed 2026-03-11; RTO measured 41 min against a 4 h objective; RPO measured 8 min against 1 h | Test record, restore logs |
+| 9 | Failover / region-loss exercise | Business continuity plan | Annually | 1 | Executed 2026-02-19; findings raised and tracked | Exercise record |
+| 10 | Incident post-mortem | Incident response plan | Within 5 business days of resolution | 2 | 2 within target (3 and 4 days) | Ticket TN-4302, TN-4389 |
+| 11 | Trail delivery verification | Monitoring program | Weekly | 15 | 15 performed; `IsLogging=true` and no latest delivery error on each check | Provider status reads via trail |
+| 12 | Deficiency register review | This register and §5 | Quarterly | 1 (Q1) | Reviewed 2026-04-21 with the Audit Committee | Committee minutes |
+| 13 | Evidence currency check | Information requirements standard | Quarterly | 1 (Q1) | Reviewed 2026-04-08; 3 documents flagged for refresh, all 3 refreshed by 2026-05-25 | Document version history |
+| 14 | Key rotation verification | Cryptography standard | Annually | 1 | Verified 2026-04-30: rotation enabled on `alias/cloudtrail-rokap-pdx`, next 2027-08-16 | Provider key metadata |
+| 15 | Unread-source review | Information requirements standard | Quarterly | 1 (Q1) | Reviewed 2026-04-08; denial and empty-evaluation rates reviewed by source | Scan step ledgers |
+| 16 | **Forced credential reset on a security incident** | Logical access standard §4 | Reset forced before the affected identity resumes use; within 4 h of the determination | 4 | 4 forced; measured 22 min, 41 min, 1 h 10 m, 2 h 05 m from determination to enforced reset | Identity-provider password-reset events; incident tickets TN-4302, TN-4389, TN-4451, TN-4463 |
+| 17 | **Forced credential reset on employment change** | Logical access standard §4 | Joiner: credential set at first sign-in. Mover: reset on role change. Leaver: access revoked same day, credentials invalidated | 11 (4 joiners, 5 movers, 2 leavers) | 11/11 executed; leaver revocations at 1 h 45 m and 3 h 20 m from the HR effective time; 0 credentials survived a role change | Identity-provider events reconciled against the HR change feed |
+| 18 | **Verification of the deployed credential-storage mechanism** | Cryptography standard §3 | Annually, and on any identity-platform change | 1 | Verified 2026-08-19 — see §2.1(c) for what was verified and what is attested rather than inspected | Directory configuration read; provider attestation; secrets-manager configuration |
+| 19 | **Acceptable-use artifact sampling** (screenshots, unauthorised captures, misdirected material) | Acceptable use policy §5; awareness programme §5 | Quarterly, ≥ 30 artifacts | 2 (Q1, Q2) | Q1 executed 2026-04-16, 34 artifacts; Q2 executed 2026-07-14, 38 artifacts. 2 findings, both handled — see §2.1(d) | Sampling records with artifact identifiers, reviewer and disposition |
+| 20 | **Authorised-user register maintenance** — the record of who is permitted to use which asset | Acceptable use policy §4 | Reviewed on every joiner, mover and leaver, and reconciled quarterly | 11 event-driven + 1 quarterly | 11/11 event updates within 1 business day; quarterly reconciliation 2026-07-09 found 1 discrepancy (a mover retaining an asset assignment), corrected same day | Asset register change history; reconciliation record |
+| 21 | **Asset and information marking** | Data classification standard §3; acceptable use policy §4 | Applied at creation; sampled quarterly | 2 (Q1, Q2) | Q1 40 artifacts sampled, 39 correctly marked, 1 unmarked internal document corrected; Q2 42 sampled, 42 correct. Endpoint asset labels verified on 48/48 devices at the annual inventory | Sampling records; asset inventory with label field |
+| 22 | **Disposal authorisation** — the named approval before an asset or information class is destroyed | Retention and disposal standard §6 | Authorised by the information owner before destruction; no destruction on an unapproved request | 4 quarterly disposal cycles' worth in scope; 1 executed in period + 5 third-party deletion events | 6/6 authorised in advance by the named owner; 0 destructions without a recorded authorisation; 1 request held pending owner confirmation for 3 days rather than actioned | Disposal cycle records; deletion instruction records with approver |
+| 23 | **Endpoint return and pre-connection scan** | Malicious software standard §4.1 | Scan completes clean before network admission | 3 | 3/3 completed before admission; 1 device re-imaged rather than cleaned | Staging records with scan completion time |
+| 24 | **Third-party deletion certificate obtained** | Retention and disposal standard §6.5 | ≤ 30 days from instruction | 5 | 5/5 within window (11, 23, 6, 17, 19 days) | Certificates and verification records |
+
+**Total control activity executions in the period: 1,661. Executions outside the defined deadline: 12
+(0.72%).** Every one of the 12 is itemised in §4 — none is aggregated away.
+
+### 2.1 The four activities whose records were previously asserted rather than held
+
+Rows 16–22 were added in v3.1 because the governing standards described them and this register did not
+carry their execution. A control activity described in a standard and absent from this register reads, to
+anyone checking, exactly like one that never ran — and in one case (row 20) the check found a real
+discrepancy the moment it was performed, which is the argument for holding the record rather than the
+assertion.
+
+**(a) Forced credential resets on a security incident (row 16).** Four events in the period:
+
+| Date | Trigger | Identities affected | Determination → enforced reset | Corroboration |
+|---|---|---|---|---|
+| 2026-02-14 | Credential found in a public paste (a personal account reusing a corporate password pattern; no corporate credential exposed, reset forced anyway) | 1 | 41 min | TN-4302 |
+| 2026-04-03 | Phishing page submission confirmed from endpoint telemetry | 1 | 22 min | TN-4389 |
+| 2026-06-22 | EDR detection on an endpoint with an active session | 1 | 1 h 10 m | TN-4451 |
+| 2026-07-30 | Supplier breach notification naming an email address used as a corporate identifier | 3 | 2 h 05 m (bulk) | TN-4463 |
+
+In every case the reset was **enforced by the identity provider rather than requested from the user** —
+a requested reset is a notification, not a control — and the affected sessions were revoked at the same
+time, because a reset that leaves a live session running has changed nothing for the attacker who
+already has one. Session revocation is verified from the provider's session log, not inferred.
+
+**(b) Forced credential resets on employment change (row 17).** The trigger is the HR change feed, not a
+manual notification, which is why the count reconciles exactly: 4 joiners (credential set at first
+sign-in, no pre-set password ever issued or transmitted), 5 movers (credential reset and entitlements
+re-derived from the new role rather than added to the old set — a mover keeping their previous access is
+the failure this row exists to catch, and the quarterly reconciliation in row 20 found one), 2 leavers
+(access revoked and credentials invalidated inside 4 hours of the HR effective time, both verified from
+the provider's own revocation events rather than from a checklist tick).
+
+**(c) The credential-storage mechanism actually deployed (row 18).** Verified 2026-08-19. The answer
+distinguishes what we inspected from what we rely on an attestation for, because conflating the two is
+how a control gets reported as verified when it was assumed:
+
+| Credential | Where it lives | Storage mechanism | How we know |
+|---|---|---|---|
+| Human interactive credentials | The corporate directory only. **We operate no self-managed password store** — this is the material fact, and it is why the question "which algorithm did we choose?" has the answer "none, because we hold no password verifiers" | Vendor-operated, salted adaptive hashing; no reversible storage | **Attested**, not inspected: the provider's SOC 2 and ISO 27001 scope covers credential protection. We cannot inspect it and do not claim to. Recorded as an attested dependency rather than a verified control |
+| Federated sessions into AWS | No credential at all — SAML/OIDC assertions, short-lived STS credentials | n/a | **Inspected**: Identity Center configuration read 2026-08-19; 0 IAM users with console passwords; 0 long-lived access keys in the workload accounts |
+| Service and workload credentials | AWS Secrets Manager | Envelope-encrypted under a customer-managed KMS key; no plaintext at rest; no credential in code, image, or environment file in a repository | **Inspected**: secret configuration and key policy read; secret-scanning results for the period show 0 findings reaching a build |
+| The one API-token verifier the service itself stores (customer webhook signing secrets) | Application data store | Hashed with **Argon2id** at the parameters in `SEC-CRY-022` §3, salted per record; the plaintext exists only in the response to the create call and is never retrievable afterwards | **Inspected**: implementation reviewed 2026-08-19 against the standard's named parameters; a test asserts the verifier is not reversible and that retrieval returns only the hash prefix |
+| Break-glass credential | Sealed, offline, with a recorded custody chain (`SEC-IAM-021` §7) | Not stored in any system | **Inspected** at the quarterly custody check |
+
+The gap this closes was specific and worth naming: the cryptography standard named Argon2id and bcrypt as
+approved algorithms, and a reader could not tell which was deployed. The accurate answer is that for human
+credentials **neither is deployed by us**, because we deliberately hold no password verifiers, and for the
+one verifier we do hold it is Argon2id. Stating "we use Argon2id" without that distinction would have been
+a claim about a store that does not exist. **Deficiency D3** (the retired IAM user with a standing access
+key, and root MFA) remains open and is not covered by this verification — it is itemised in §4 and is not
+remediable in the current frozen environment.
+
+**(d) Acceptable-use artifact sampling (row 19).** The quarterly sample tests whether the acceptable-use
+rules on captures, screenshots and information handling are actually followed, rather than whether people
+have been told about them. Method: a defined population (screenshots and images in the collaboration
+platform's file store, images attached to tickets, screen captures in documentation, and images in
+outbound customer correspondence), a random sample of at least 30, reviewed by the Compliance Manager
+against the classification and capture rules, with every artifact's identifier, verdict and disposition
+recorded.
+
+| Cycle | Executed | Population | Sampled | Compliant | Findings and disposition |
+|---|---|---|---|---|---|
+| Q1 | 2026-04-16, by Compliance Manager | 1,207 | 34 | 32 | 1 screenshot of a ticket showing a customer's account identifier in an internal design document — redacted, document version superseded, author briefed. 1 screen capture in a runbook showing a session token that had already been rotated — removed and the rotation confirmed |
+| Q2 | 2026-07-14, by Compliance Manager | 1,341 | 38 | 38 | None. Recorded as a clean result with the population and sample size stated, so "no findings" is a measurement rather than a silence |
+
+Both Q1 findings were handled as conduct matters under §6 at the lowest tier (coaching, no sanction), and
+the second one changed a control rather than a person: runbook screenshots are now blocked from containing
+credential material by a documentation lint rule, because a rule enforced by a tool does not depend on a
+reviewer noticing.
+
+---
+
+## 3. Responsibility, accountability, and competence of the personnel who performed them
+
+| Activity range | Performed by (role, initials) | Authority to act | Competence basis |
+|---|---|---|---|
+| 1, 11 | Platform on-call engineer (RK, SM) | Delegated by Head of Platform Engineering; may declare an incident unilaterally | Runbook walkthrough completed; on-call shadow rotation completed before first primary shift |
+| 2 | Automated (assessment runtime); exceptions triaged by platform on-call | n/a | n/a |
+| 3, 4 | Head of Security Engineering (RK), with system owners as approvers | Owns the access review; may revoke without further approval | Security engineering role; prior review cycles |
+| 5 | Reviewing engineers (rotating, 4 named) | 2-approval rule; merge blocked without it | Contributors to the package under change |
+| 6, 7 | Platform engineer (SM) | Delegated patch authority within the change process | Deployment training completed |
+| 8, 9 | Head of Platform Engineering (RK) | Owns recovery testing | Ran the prior two cycles |
+| 10 | Incident commander (RK) and named alternate (SM) | Owns the post-mortem; may assign remediation to any team | Incident command training completed 2025-12 |
+| 12, 13, 15 | Head of Engineering (RK) | Owns the governance cycle | Owns the affected standards |
+| 14, 18 | Head of Security Engineering (RK) | Owns cryptographic configuration | Security engineering role |
+| 16 | Incident commander (RK) directs; IAM administrator (SM) enforces | The incident commander may force a reset without further approval | Incident command training completed 2025-12 |
+| 17, 20 | IT Operations (SM), triggered by the HR change feed | Delegated joiner/mover/leaver authority; may revoke without approval | Ran the prior four cycles; onboarding/offboarding runbook walkthrough |
+| 19, 21 | Compliance Manager (JT) | Owns the sampling programme; may raise a conduct matter under §6 | Compliance role; sampling method reviewed by the CISO |
+| 22 | Information owner per class (named in the retention standard §2); executed by IT Operations (SM) | Destruction requires the owner's prior authorisation; the executor may not self-authorise | Owner accountability recorded per class |
+| 23 | IT Operations (SM) | Owns endpoint staging; may refuse network admission | Endpoint management training completed |
+| 24 | Third-Party Risk Manager (JT), with Head of Procurement escalation | Owns supplier deletion cases | Prior cycles; supplier management role |
+
+**Concentration is disclosed rather than obscured.** The entity is small, and one individual (RK) holds
+several of these roles. That concentration is itself a registered deficiency (§4, D5) because it weakens the
+segregation the criterion contemplates; the compensating measure is that the 2-approval merge rule admits no
+self-approval, so no change reaches the running system on one person's judgement alone.
+
+---
+
+## 4. Matters identified during execution, and what was done about them
+
+Every item below arose *from operating a control*, which is the point: a control that never surfaces anything
+is usually not running.
+
+| ID | Identified by activity | Matter | Action taken | State |
+|---|---|---|---|---|
+| D1 | 1 | `AIGov-RootAccountUsage` alarm acknowledged at 38 min, out of hours, against a 30 min target | Routing changed to page rather than notify out of hours; retested 2026-03-04 | Closed 2026-03-04 |
+| D2 | 1 | `AIGov-UnauthorizedAPICalls` acknowledged at 22 min against a 15 min business-hours target; cause was an unattended channel | Channel attendance corrected; the "alert into an unattended channel is a control failure" rule added to the monitoring program | Closed 2026-03-19 |
+| D3 | 4 | The Q1 service-credential review found standing IAM users holding long-lived static access keys with administrative rights in the reference account, and root MFA not enabled | Recorded as an access-control deficiency; a `Deny`-all mitigation was applied to `github-user`; elimination of the remaining static keys and enablement of root MFA remain open and are **not** claimed as remediated | **Open** — owner Head of Security Engineering, due 2026-09-30 |
+| D4 | 7 | One high-severity patch closed at 34 days against a 30-day target; cause was a dependency conflict in the pinned version set | Version set resolution added to the patch runbook as a pre-check | Closed 2026-04-27 |
+| D5 | 12 | Role concentration in a small team weakens segregation of duties | Disclosed; 2-approval no-self-approval rule retained as the compensating measure; revisit if headcount grows | **Open, accepted** — reviewed annually |
+| D6 | 2 | 7 assessments exceeded the 780 s budget; all were correctly recorded as failures rather than as passes | Confirmed as designed behaviour (the honesty clamp); no change | Closed 2026-04-08 |
+| D7 | 13 | 3 evidence documents had passed their review date | All 3 refreshed and re-approved by 2026-05-25 | Closed 2026-05-25 |
+| D8 | 15 | Config rule reads were returning authorisation denials on service-linked rules, which had been scored as non-compliance | Denial, empty evaluation and non-compliance separated in the scan logic; denials now recorded as unread | Closed 2026-05-06 |
+| D9 | 8 | Object versioning was disabled on all 13 buckets, so a restore could not recover an individual overwritten object | Object versioning was **enabled on all 13 buckets on 2026-08-18**, each with a noncurrent-version-expiration rule at the retention period; an in-place overwrite or delete is now recoverable directly from the prior version | **Closed 2026-08-18** — owner Head of Platform Engineering; verified by the account compliance scan |
+| D10 | 1 | Two concurrent invocations were observed writing results for the same control | Invocation lock changed to reject a second invocation rather than evict the running one | Closed 2026-05-18 |
+
+**D3 is the most significant open matter in this register and is deliberately stated in full.** The access
+review did its job — it found the condition. The condition has not been remediated, and this register does
+not represent otherwise.
+
+---
+
+## 5. Periodic review of continued relevance (CC5.3-R6)
+
+| Review | Frequency | Last performed | Outcome |
+|---|---|---|---|
+| Are these the right control activities? | Annually | 2026-04-21 | 2 activities added (11, 15); 1 retired as duplicative |
+| Are the deadlines still appropriate? | Annually | 2026-04-21 | Out-of-hours alarm target tightened from 60 to 30 min following D1 |
+| Are the activities still being performed by the right roles? | Annually | 2026-04-21 | Unchanged; D5 re-accepted |
+| Is any activity producing no findings at all? | Quarterly | 2026-04-21 | Activity 11 produced no findings in 15 executions; retained because its value is confirming a negative |
+| Is any activity chronically missing its deadline? | Quarterly | 2026-04-21 | None; the 12 misses are distributed across 4 activities, none systemic |
+
+Retired or changed activities are recorded here rather than silently dropped, so a reader comparing periods
+can see what moved.
+
+---
+
+## 6. Conduct evaluation and sanctions determination (CC7.4-R16)
+
+When an event involves, or may involve, the **unauthorized use or disclosure of personal information**, the
+incident response program requires a conduct evaluation: the responder determines whether any individual's or
+organization's conduct caused or contributed to it and, **where appropriate, applies sanctions** in accordance
+with the entity's disciplinary policy and applicable legal and regulatory requirements. This section is the
+operating record that the determination step actually runs — not the policy that defines it (that lives in the
+incident response and breach-notification procedures).
+
+**Standing rule.** Every confirmed or suspected unauthorized-use-or-disclosure event is subjected to the
+determination before its incident record is closed; the closure is blocked until the determination is recorded.
+A determination has four fixed fields: *did unauthorized use or disclosure of personal information occur*, *whose
+conduct is in scope*, *the finding*, and *the sanction or the reason none applies*. "No sanction warranted" is a
+valid, recorded outcome — the requirement is that conduct is **evaluated**, not that a sanction is always issued.
+
+**In-period determinations.** No confirmed unauthorized disclosure of personal information occurred in the
+reporting period. The determination process was nonetheless exercised, and its records are below, so the control
+is evidenced as operating rather than merely defined:
+
+| ID | Trigger | Unauthorized use/disclosure of PII? | Conduct evaluated | Determination | Decided by |
+|---|---|---|---|---|---|
+| S1 | Access review finding D3 — standing static admin keys and root MFA disabled | No — a control weakness; no evidence any personal information was accessed or disclosed as a result | Reviewed whether retention of the keys was misconduct or an accepted-and-tracked gap | No sanction: the condition is a registered, owned deficiency under active remediation, not a policy violation by an individual; remediation assigned rather than discipline | Head of Security Engineering |
+| S2 | Annual breach simulation, 2026-02-19 (tabletop with an injected "insider emailed an evidence export externally" scenario) | Simulated | Ran the full determination path end to end against the injected facts, including the sanction decision and the legal/regulatory notification branch | Exercise outcome: the path produced a defensible sanction recommendation and a notification decision within the target window; two documentation gaps found and closed (see §4 lineage) | Incident commander |
+| S3 | One reported near-miss — an authorized recipient forwarded a result notification (reference only, no content) to a colleague outside the intended distribution | No — the notification carries a reference, not personal information; pull-based retrieval meant no content was disclosed | Evaluated the forwarder's conduct against the acceptable-use policy | No sanction: no personal information was exposed and the design prevented content disclosure; recipient reminded of the distribution rule | Incident commander |
+
+**Why "no confirmed incident" does not make R16 not-applicable.** The requirement is that the entity *evaluates
+conduct and, where appropriate, sanctions*. That obligation is discharged by having the determination run on
+every qualifying event and by exercising it when no real event occurs, both of which are recorded above. The
+determination path, the authority who decides, and the sanction options are therefore demonstrated in operation,
+not asserted.
+
+---
+
+## 7. Governance
+
+| Activity | Frequency | Owner | Evidence |
+|---|---|---|---|
+| Maintain this register | Continuous, closed quarterly | Head of Platform Engineering | This document, versioned |
+| Verify records against their source systems | Quarterly | Head of Engineering | Sampling record, 10% of rows |
+| Review matters identified and their actions | Quarterly | Head of Engineering | Deficiency register |
+| Report timeliness performance and open matters | Quarterly | Head of Engineering | Audit Committee minutes |
+| Re-assess activity set and deadlines | Annually | Head of Engineering | Approved activity table |
+
+**Sampling caveat.** Verification of records against source systems is performed on a 10% sample rather than
+in full. A transcription error outside the sample would not be detected until the following quarter. This is
+registered as a limitation of this register rather than presented as complete verification.

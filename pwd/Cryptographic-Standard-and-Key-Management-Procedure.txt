@@ -1,0 +1,410 @@
+# Cryptographic Standard and Key Management Procedure
+
+**Document ID:** SEC-CRY-022
+**Version:** 3.2 — **effective 2026-08-19**, superseding v3.1 of 2026-02-16 and v2.6 of 2025-08-04
+
+**Revision note.** Version 3.2 adds §4A (what pervasive encryption costs the controls that inspect
+content, control by control, with the compensating control named and the residual risk registered —
+including the deliberate non-deployment of inline TLS interception and its reasoning), §4B (the legal
+and regulatory frameworks that constrain cryptography here, export-control determinations including
+the release-blocking gate that would apply if distribution were ever introduced, and the restrictions
+on use — most importantly that encrypting personal data does not remove it from transfer rules and
+that a key under legal hold cannot be scheduled for deletion), and §4C (the service terms of the one
+cryptographic module production depends on: availability commitment, the limits of its remedy,
+support response, liability, and the audit-rights deviation, each tied to why it matters to this
+standard). The three additions exist because a standard that names an algorithm table but not the
+detections encryption blinds, the law that constrains it, or the contract underneath it is only a
+third of a standard.
+
+**Owner:** Principal Security Engineer, Cryptography
+**Approved by:** CISO 2026-02-12; v3.2 approved by the CISO 2026-08-19, with §4B reviewed by the General Counsel and §4C by the Head of Procurement
+**Next scheduled review:** Annually (next by 2026-12-31), and immediately upon any cryptanalytic development, any
+change in the approved-algorithm guidance the entity follows, or any key compromise
+
+**Scope.** All use of cryptography by the service: data at rest, data in transit, data in use, credential and
+token protection, signing and verification, and the full lifecycle of every key and secret. Applies to the
+service's own AWS accounts, its source and build systems, its vendor integrations, and to employee endpoints.
+The reference implementation is AWS account **471885797689**, region **us-west-2**.
+
+Companion documents: the logical access standard (who may use a key), the asset inventory and classification
+standard (which data classes require which protection), the media and disposal standard (cryptographic erasure
+as a disposal method), and the backup standard (protection of encrypted copies).
+
+---
+
+## 1. Purpose and the risk basis for using cryptography
+
+Cryptography is applied where the risk assessment concludes that access control alone is insufficient — that
+is, wherever data could be read by a party who obtains the storage medium, intercepts the channel, or acquires
+a credential without the corresponding key. The risk assessment records, for each asset class in the inventory,
+whether encryption is required at rest, in transit, and in use, and that determination is what this standard
+implements. Cryptography is not applied decoratively: each use below traces to a threat the risk assessment
+identified.
+
+| Threat identified by the risk assessment | Cryptographic control selected | Requirement |
+|---|---|---|
+| Disclosure of stored customer evidence or assessment results if storage is obtained | Encryption at rest with KMS-held keys | Mandatory for Restricted and Confidential |
+| Interception of credentials or data on a network path | TLS 1.2+, enforced by resource policy | Mandatory on every channel |
+| Replay or forgery of an agent invocation | Asymmetric signature over a KMS-held private key | Mandatory |
+| Reuse of an intercepted request signature | Per-request SigV4 signing with short-lived credentials | Mandatory |
+| Recovery of data from a disposed medium | Cryptographic erasure via key destruction | Mandatory (see the disposal standard) |
+| Tampering with a build artifact between build and deploy | Artifact digest verification and signed provenance | Mandatory |
+| Tampering with an audit record | Log file validation digests on the audit trail | Mandatory |
+
+---
+
+## 2. Approved cryptographic modules, algorithms, key lengths, and architectures (CC6.1-R15)
+
+### 2.1 Approved algorithms
+
+| Purpose | Approved | Minimum key length / parameters | Prohibited |
+|---|---|---|---|
+| Symmetric encryption at rest | AES-GCM (preferred), AES-CBC with a separate MAC | **AES-256** | DES, 3DES, RC4, Blowfish, AES-128 for new use |
+| Asymmetric encryption | RSA-OAEP, ECIES over P-256 or higher | **RSA-3072** for new keys; RSA-2048 permitted only for existing keys with a migration date | RSA < 2048, any use of PKCS#1 v1.5 encryption |
+| Digital signature | ECDSA over P-256/P-384, RSASSA-PSS, Ed25519 | **P-256** / **RSA-2048 with PSS** minimum; RS256 accepted where the verifying platform requires it | DSA, RSA with MD5 or SHA-1 |
+| Hashing | SHA-256, SHA-384, SHA-512 | 256-bit minimum | MD5, SHA-1 (except where required for a non-security checksum, which must be labelled as such) |
+| Message authentication | HMAC-SHA-256 or stronger, AES-GCM tags | 256-bit key | HMAC-MD5, HMAC-SHA1 |
+| Key derivation | HKDF-SHA-256, PBKDF2-HMAC-SHA-256 with ≥ 600,000 iterations, scrypt, Argon2id | Per algorithm | Single-round hashing of a secret |
+| Password storage (where unavoidable) | Argon2id, or bcrypt cost ≥ 12 | Per algorithm | Any reversible encoding; any unsalted hash |
+| Transport | TLS 1.2 and TLS 1.3, AEAD suites with forward secrecy | ECDHE key exchange; P-256 or X25519 | TLS 1.0/1.1, SSL, static-RSA key exchange, renegotiation |
+| Randomness | Platform CSPRNG (`getrandom`, `crypto.randomBytes`), hardware RNG in the key store | 128 bits of entropy minimum for a token, 256 for a key | Any non-cryptographic PRNG, any time-seeded source |
+
+Deprecation is scheduled, not reactive: each row carries a review date, and an algorithm moved to the prohibited
+column gets a migration plan with an owner before the move takes effect. Certificate lifetimes are capped at 13
+months and are automated so that no renewal depends on a person remembering.
+
+### 2.2 Approved cryptographic modules
+
+Cryptography is performed by **validated, hardware-backed modules**, not by application code:
+
+| Module | Validation basis | Used for |
+|---|---|---|
+| AWS KMS | FIPS 140 validated HSMs; keys never leave the module in plaintext | All key storage, symmetric data-key wrapping, signing operations |
+| Managed service envelope encryption (S3, DynamoDB, EBS, logs) | Performed inside the provider's validated modules using KMS-held keys | Encryption at rest |
+| Managed TLS termination | Provider's validated TLS stack; FIPS endpoints available and used where required | Transport |
+| Platform runtime crypto library (OpenSSL-backed, via the Node runtime) | Provider-maintained, patched through the base image pipeline | Client-side TLS, digest computation |
+
+**Application code does not implement cryptographic primitives.** It calls the module. Writing a bespoke
+cipher, mode, padding scheme, or key-derivation routine is prohibited without CISO approval, on the reasoning
+that novel cryptographic code is the single most reliable source of cryptographic failure.
+
+### 2.3 Approved architectures
+
+- **Envelope encryption** everywhere at rest: a per-object or per-table data key encrypted under a KMS key. This
+  makes key rotation cheap and key destruction decisive.
+- **Separation of the key from the data**: the key store is a distinct service with its own authorization plane,
+  so obtaining storage access does not obtain decryption capability.
+- **Asymmetric where the verifier and signer are different trust domains**: the agent session token is signed
+  with a private key that never leaves KMS and verified with the public key, so the verifier holds nothing that
+  would let it forge a token.
+- **Per-request signing rather than bearer secrets** for programmatic API access.
+- **Encryption context / additional authenticated data** bound to the tenant and purpose on every encrypt
+  operation, so a ciphertext cannot be replayed into a different tenant's context.
+
+The architecture choices are recorded with the risk each addresses, and reassessed annually against current
+guidance.
+
+---
+
+## 3. Encryption at rest, in transit, and in use (CC6.1-R13, CC6.7-R2)
+
+### 3.1 At rest
+
+Every store holding Restricted or Confidential data is encrypted at rest, with the state verified continuously
+rather than assumed:
+
+| Store | Mechanism | Verified state in the reference account |
+|---|---|---|
+| Object storage (evidence, results, logs, artifacts) | Server-side encryption with KMS-held keys, envelope-encrypted per object | Encryption enabled on all in-scope buckets; the S3 default key has **automatic annual rotation enabled** (365-day period) |
+| Document / record store | Server-side encryption with a KMS key | The `Demo` table is encrypted with **SSE type KMS** |
+| Block storage | Provider-managed encryption using KMS keys | **EBS encryption-by-default is enabled** in the in-scope region (`GetEbsEncryptionByDefault` → `true`), so a volume cannot be created unencrypted; the account currently runs no instances and holds no volumes or snapshots, and **EBS snapshot public access is set to `block-all-sharing`** |
+| Log and audit data | Encrypted at rest; the audit trail additionally carries log file validation digests | Enabled — the in-scope trail is encrypted with the **customer-managed key `alias/cloudtrail-rokap-pdx`**, which has **automatic rotation enabled on a 365-day period**, and carries log file validation |
+| S3 server access logs and VPC flow logs | Dedicated log bucket with default encryption (AES-256 with bucket keys), versioning, a `Deny` on non-TLS transport, public access blocked on all four dimensions, and lifecycle expiry | Enabled |
+| Backups and snapshots | Inherit the source's encryption; copies are re-encrypted under the destination-region key | Enabled |
+| Secrets and configuration | Held in the managed secret store, encrypted under a KMS key, never in source or in an image | Enabled |
+| Customer-managed key material | Never exported; `Origin: AWS_KMS`, generated inside the module | Verified |
+
+The reference account's key inventory is small and fully enumerated in the key register (§4.6):
+
+| Key | Manager | Rotation | Purpose |
+|---|---|---|---|
+| `alias/aws/s3` | Provider-managed | **Enabled, 365-day period, next rotation scheduled** | Default object-storage encryption |
+| `alias/aws/dynamodb` | Provider-managed | Provider's own annual schedule | Default record-store encryption |
+| `alias/cloudtrail-rokap-pdx` | **Customer-managed** | **Enabled, 365-day period** | Audit trail encryption; key policy grants `GenerateDataKey*` to CloudTrail only under an encryption-context condition naming the trail ARN, and `Decrypt` only to account principals under the same condition |
+| `alias/rokap-test-eds` | Customer-managed | Not enabled — recorded as an open deficiency with a named owner and due date, because the key's own policy denies key administration to every current identity, so rotation cannot be configured without a policy change that is itself change-managed | Legacy test data set |
+
+The last row is deliberately left in the register rather than removed: its key policy is scoped so tightly that
+even an account administrator identity is **denied `kms:DescribeKey`** on it. That is simultaneously a
+demonstration of the principle in §4.3 — authority over a key comes from the key policy, not from account
+administrator status — and the reason its rotation setting is an open item. The register carries both facts, which
+is the behaviour this procedure requires of it.
+
+**A note on evidence latency, so that a reader can reconcile apparently conflicting evidence.** The at-rest state
+above is the state of the resource configuration, read from the service APIs. The continuous rule set that
+monitors it evaluates account-level settings **periodically, up to 24 hours apart**, so for a period after a
+configuration is corrected the aggregated findings view still reports the prior state. Where a finding and a
+direct API read disagree, the API read is the current state and the finding is the state at its last evaluation
+timestamp; the reconciliation is recorded in the remediation ticket, and the finding is expected to clear at the
+next evaluation without further action. This latency is a property of the monitoring, not of the control, and it
+is why remediation is verified by a direct read rather than by waiting for a finding to disappear.
+
+### 3.2 In transit (CC6.7-R2)
+
+Protection of data beyond a connectivity access point is by encryption of the channel, enforced at the resource
+rather than requested of the client:
+
+- **TLS 1.2 minimum, TLS 1.3 preferred**, AEAD suites with forward secrecy, on every internal and external
+  channel. Plaintext protocols are not offered anywhere.
+- **Enforced by resource policy**: every one of the **12 in-scope buckets** carries an explicit `Deny` on
+  requests where `aws:SecureTransport` is `false`. A client that attempts a cleartext request is refused by the
+  service, not merely discouraged by configuration; because the denial is in the resource policy, no
+  identity-based grant can override it.
+- **Server authentication** on every connection: certificates validated against the trust store; certificate
+  pinning where a channel's counterparty is fixed.
+- **Mutual authentication or request signing** on programmatic paths, so the channel authenticates both ends.
+- **Cross-account and cross-region traffic** uses the provider's TLS-protected service endpoints; no
+  self-managed tunnels carry service data.
+- **Egress to vendors** is over TLS to named endpoints recorded in the vendor register; a new egress
+  destination requires a change and a register entry.
+- **Email and file exchange** are not used to move Restricted or Confidential data. Where an external party
+  requires a file, it is delivered through an authenticated, TLS-protected, expiring link, never as an
+  attachment.
+
+### 3.3 In use
+
+- Plaintext exists only in process memory for the duration of a request, and is not written to disk, swap, or a
+  temporary file. Runtime storage is ephemeral and encrypted.
+- **Log redaction** removes credentials, tokens, and personal information before a record is emitted, so
+  plaintext does not leak into the observability path.
+- Data is decrypted only in the account and role that has a purpose for it; the read path decrypts within the
+  tenant scope derived from the authenticated session.
+- Crash dumps and core files are disabled in production images so that memory contents cannot be captured to
+  persistent storage.
+
+---
+
+## 4. Key management: protection through generation, storage, use, and destruction (CC6.1-R14)
+
+### 4.1 Generation
+
+- Keys are **generated inside the key-management module** using its hardware RNG. Key material is never
+  generated on a laptop, in application code, or in a script.
+- Import of external key material is prohibited unless the CISO approves it for a specific interoperability
+  need, in which case the import uses the module's wrapped-import mechanism and the source material is destroyed
+  immediately after import, with the destruction witnessed and recorded.
+- Each key is created **by the change that deploys the workload needing it**, with its purpose, owner, data
+  classes, algorithm, and rotation period recorded in the key register at creation time.
+- Distinct keys for distinct purposes and distinct environments. Production keys are never used in
+  pre-production, and one key never serves two unrelated data sets, so that compromise or destruction is
+  contained.
+
+### 4.2 Storage
+
+- **Key material never exists in plaintext outside the module.** It is not exportable, and the module's API
+  offers no operation that returns it.
+- Data keys are stored only in their **wrapped** form alongside the data they protect; the wrapping key stays in
+  the module.
+- **No key, secret, or credential is stored in source control, in a container image, in an environment variable
+  baked at build time, in a configuration file, in a ticket, or in a chat message.** Secret scanning runs on
+  every commit and on the full history; a detected secret is treated as compromised and rotated, not merely
+  deleted from the diff.
+- Secrets consumed at runtime are fetched from the managed secret store by the workload's role at start-up or
+  on demand, and cached in memory only.
+- Key policies, not just identity policies, control access; the key policy is the authoritative statement of who
+  may use a key, and it names principals and actions explicitly.
+
+### 4.3 Use
+
+- Use of a key requires an authorization on **both** the key policy and the caller's identity policy. Authority
+  over a key is not conferred by account administrator status: the customer-managed key in the reference
+  account denies key operations to an administrator identity that has no purpose for it.
+- **Every key use is logged** with the caller identity, the operation, and the encryption context, in the audit
+  trail. Key usage is therefore attributable per request.
+- **Encryption context binding**: encrypt and decrypt operations supply an encryption context naming the tenant
+  and purpose; a decrypt with a mismatched context fails, which prevents a ciphertext from one tenant being read
+  in another's context.
+- **Separation of duties over keys**: the role that can use a key to decrypt cannot change the key policy; the
+  role that administers keys cannot use them to read data. Both actions are logged, and changes to key policy
+  raise a change record.
+- Signing keys are used only through the module's sign operation; the private key is never handed to
+  application code.
+
+### 4.4 Rotation
+
+| Key or secret type | Rotation | Mechanism |
+|---|---|---|
+| KMS symmetric data-protection keys | **Annually**, automatic | Provider-managed backing-key rotation; enabled with a 365-day period on the object-storage key, next rotation scheduled |
+| Data keys (per object/record) | Per object or per write | Envelope encryption; no explicit action needed |
+| Asymmetric signing keys | Annually, or immediately on suspicion | New key version issued, verifiers accept both during an overlap window, old version disabled then scheduled for deletion |
+| TLS certificates | ≤ 13 months, automated | Managed certificate issuance and renewal |
+| Service credentials and API keys | ≤ 90 days | Managed secret store rotation, or scripted rotation with a verification step |
+| Break-glass access keys | Quarterly and after every use | Manual, two-person, recorded |
+| Any key or secret suspected compromised | Immediately | Incident procedure: rotate, revoke old, assess exposure, record |
+
+Rotation state is **monitored, not trusted**: key age and rotation configuration are evaluated by the
+continuous configuration-rule set (368 rules active in the reference account, findings aggregated into a single
+security-findings view), and a key past its rotation window raises a finding with an owner and a due date.
+Rotation is designed to be non-disruptive — readers accept the previous version for a defined overlap, so
+rotation is never deferred for fear of an outage.
+
+### 4.5 Destruction
+
+- Key destruction is a **deliberate, authorized, delayed, and logged** operation. It requires the key owner's
+  request, the security owner's approval, and a confirmation that no live data still depends on the key.
+- Destruction uses the module's `ScheduleKeyDeletion` with a **waiting period of at least 30 days** (7 days is
+  permitted only for a key proven unused, with CISO approval). During the waiting period the key is disabled, so
+  the effect is immediate while the action remains reversible.
+- **Cryptographic erasure** is an approved disposal method: where the only copies of data are encrypted under a
+  single key, destroying the key renders the data unrecoverable and is recorded as the disposal event for that
+  data, with the key identifier, the data set, and the timestamp. This is the mechanism relied on for disposal
+  of encrypted backups and for tenant offboarding.
+- Deletion of a key is preceded by a check that no ciphertext requiring future access remains, and followed by
+  a verification that decrypt operations against it fail.
+- Secrets are destroyed in the secret store (not merely overwritten with a placeholder), and the destruction is
+  recorded in the key register, which retains a closed entry rather than deleting the history.
+
+### 4.6 The key register
+
+Every key and long-lived secret has a register entry containing: identifier and alias; purpose; owner;
+algorithm, key length, and module; data classes protected; the key policy's authorized principals; creation
+date; rotation period and last rotation; environments it serves; and, when closed, the destruction date and
+authorization. The register is reconciled against the actual key inventory **quarterly**, and any key present in
+the environment but absent from the register is an exception investigated within two working days — an
+unregistered key is treated as a potential unauthorized data path.
+
+---
+
+## 4A. What pervasive encryption costs the controls that need to read content
+
+Encrypting everything is not free. Every control that works by *inspecting content* — malware
+scanning, data-loss prevention, content filtering, intrusion detection on payloads, and log
+analysis — loses its input at exactly the point the traffic or the object becomes opaque. This
+section states where that happens, what was decided about it, and why, because the alternative is
+that a detection control is silently blind and nobody has written down that it is.
+
+| Inspection control | What encryption does to it | Position taken, and why |
+|---|---|---|
+| Malware scanning of files in transit | TLS terminates at the AWS load balancer for inbound service traffic, so inbound payloads *are* inspectable at that boundary. Outbound and third-party TLS is not decrypted | Accepted loss. We do **not** deploy inline TLS interception. An interception proxy holds the plaintext of every session including personnel authentication and third-party credentials, becomes the single highest-value target in the estate, and breaks certificate pinning in tooling we depend on. The compensating controls are endpoint-side (EDR sees the file after decryption, where the file actually executes) and egress-side (allowlisted destinations, per `SEC-NET-023`). This is the same determination recorded in `SEC-REG-047` §3.3 and it is a deliberate non-deployment, not an omission |
+| DLP on outbound content | Encrypted channels and encrypted attachments defeat pattern-based egress inspection | Partially accepted. DLP operates where plaintext exists: at the endpoint agent before encryption, at the email gateway before transport encryption, and in the approved SaaS tenants via API rather than in-line. **Personnel encryption of content specifically to evade inspection is prohibited** (`SEC-REG-047` §5.2), which converts an undetectable technical bypass into a disciplinary matter with a named rule behind it |
+| Content filtering / URL categorisation | Category decisions are made on SNI and DNS, not on page content | Accepted. Filtering is by destination, not by content, and that limitation is stated rather than implied |
+| Network intrusion detection on payloads | Payload signatures cannot run on encrypted flows | Accepted. Detection shifts to flow metadata (VPC flow logs), to the application layer where the request is already decrypted, and to CloudTrail. `SEC-MON-026` records which detections depend on payload visibility — currently none — so that a future detection is not written against an input we do not have |
+| Log and evidence analysis | Encrypted-at-rest logs are readable by the analysis role because it holds a grant on the key, so this is a key-policy question rather than a visibility one | No loss, but a dependency: if the analysis role loses its KMS grant, the analysis silently returns nothing rather than failing loudly. This is monitored as a key-policy assertion in the quarterly reconciliation |
+| Backup integrity verification | Verification of an encrypted backup requires the key at verification time, which puts the restore test on the key's availability | No loss; the restore test explicitly exercises the key path, which is the point — a backup whose key is unavailable is not a backup |
+| Assessment evidence held for a customer | Customer evidence encrypted under a customer-scoped key cannot be read by any internal analysis path not granted on that key | Intended. This is a confidentiality control operating as designed, and the resulting inability to inspect is a feature, recorded here so it is not later mistaken for a broken control |
+
+**The rule this section exists to state:** where a control's input is removed by encryption, the loss
+is written down, a compensating control is named, and the residual risk is accepted by the CISO in
+the risk register. A blind control that is documented as sighted is worse than no control, because
+the coverage map lies.
+
+Two current entries in the risk register carry this: `R-2026-031` (no packet capture, and therefore
+no payload-level forensics — also recorded in `SEC-FOR-045` §2.1) and `R-2026-034` (no outbound TLS
+inspection, with the endpoint- and egress-side compensations above). Both are reviewed annually
+against whether the trade-off still holds.
+
+---
+
+## 4B. Legal, regulatory and contractual constraints on cryptography
+
+The authoritative register of legal and contractual requirements is `SEC-REG-047`; §5 of that
+document holds the full analysis. This section states the determinations that bind *this* standard,
+so that an engineer reading the crypto standard does not have to know the register exists to comply
+with it. Where the two disagree, the register governs and this section is corrected at the next
+review — the reconciliation is a standing item in the register's semi-annual review.
+
+### 4B.1 Applicable legal and regulatory frameworks
+
+| Framework | How it constrains cryptography here |
+|---|---|
+| **UK GDPR / EU GDPR (Art. 32)** | Encryption named as an appropriate technical measure; encryption at rest and in transit is therefore a compliance obligation and not an engineering preference. Art. 34 breach-notification exposure is reduced where data was encrypted and the key was not compromised, which is why key-compromise assessment is part of the incident procedure |
+| **UK Data Protection Act 2018 / EU Data Act** | As above, plus the requirement that a key whose data is under statutory retention cannot be scheduled for deletion (see §4B.3) |
+| **US state privacy statutes (CCPA/CPRA and successors)** | Encryption-based safe harbour for breach notification, conditional on the key not having been exposed |
+| **PCI DSS** | **Not applicable** — no cardholder data is processed, stored or transmitted. Stated positively rather than omitted, so that the absence is a determination and not a gap (the completeness test in `SEC-REG-047` §2) |
+| **HIPAA** | **Not applicable** — no protected health information in scope. Same reasoning |
+| **FIPS 140-3** | AWS KMS operates validated HSMs; we rely on the provider's validation and do not assert our own. Where a customer contract requires a FIPS endpoint, the FIPS service endpoints are used and the requirement is recorded against that customer |
+| **Computer Misuse Act 1990 / equivalent** | Constrains what we may do with keys and encrypted material belonging to others, including during a customer-environment scan |
+| **Investigatory Powers Act 2016 (UK), and equivalents** | Lawful-access demands for keys or plaintext; handling is counsel-routed and we hold **no capability to defeat our own encryption on demand**, which is a design decision recorded in `SEC-REG-047` §5.3 |
+
+### 4B.2 Export control and cross-border restrictions
+
+| Determination | Statement |
+|---|---|
+| Do we develop cryptography? | No. We implement no cryptographic primitives and ship no cryptographic library. Encryption is consumed as a hosted AWS service, which places the controlled technology with the provider |
+| Do we distribute software containing cryptography? | Not currently. The service is hosted, not distributed. **If distribution is ever introduced, a pre-release export classification gate applies** — this is a named release-blocking check, not an aspiration |
+| Applicable regimes considered | Wassenaar Arrangement Category 5 Part 2 (dual-use cryptography); UK Strategic Export Control Lists; US EAR §742.15 and the mass-market/publicly-available exceptions; EU Regulation 2021/821 |
+| Technology transfer by personnel location | Cryptographic technical knowledge moving with personnel between jurisdictions is assessed against deemed-export rules; the current personnel distribution across five geographies has been assessed with no restriction identified |
+| Sanctions and restricted destinations | Service access from sanctioned jurisdictions is blocked at the edge; sanctions screening applies to customers and suppliers per `SEC-REG-047` §3.3 |
+| New region or new jurisdiction | Deploying to a new AWS region, or serving a customer in a new jurisdiction, triggers a documented export and cryptography-restriction assessment **before** launch |
+
+### 4B.3 Restrictions on the use of encryption, and trans-border flows of encrypted information
+
+| Restriction | Requirement |
+|---|---|
+| Where law mandates encryption | Encryption is mandatory and cannot be waived by exception. The §5 exception process explicitly **cannot** grant relief from a legally mandated encryption control |
+| Where law restricts encryption | No jurisdiction we currently operate in restricts our use of the approved algorithms. This is re-tested on every new-jurisdiction assessment rather than assumed to be permanent |
+| Trans-border flow of encrypted data | **Encrypting personal data does not remove it from data-transfer rules.** Encrypted personal data remains personal data where we hold the key, so a transfer of ciphertext across a border is still a transfer requiring a lawful mechanism. Current position: all production personal data resides in `us-west-2`; EU-origin personal data transfers rely on the mechanisms recorded in `SEC-REG-047` §3.1, and encryption is a supplementary measure supporting those mechanisms, **not** a substitute for them |
+| Key location relative to data location | Keys are held in the same region as the data they protect. A key held in a second jurisdiction creates an access path from that jurisdiction to the plaintext, which is a transfer consideration in its own right |
+| Legal hold and statutory retention | **A key whose data is under statutory retention or legal hold cannot be scheduled for deletion.** Deleting the key destroys the data, which would be spoliation. The key register carries a legal-hold flag, and the destruction workflow refuses a flagged key |
+| Personal or unmanaged encryption | Personnel may not apply their own encryption to entity information outside the approved modules — it renders data unrecoverable by the entity and defeats the inspection controls in §4A |
+| Full-disk encryption and escrow | FDE is mandatory on endpoints **and** key escrow is mandatory with it. FDE without escrow is a data-destruction risk and blocks lawful evidence acquisition (`SEC-FOR-045` §5) |
+
+---
+
+## 4C. Service terms for the cryptographic module we depend on
+
+AWS KMS is the sole approved cryptographic module for production key material, which makes its
+contractual terms a security dependency rather than a procurement detail. The terms are summarised
+here because a standard that names a module without naming what is owed on it leaves the
+availability of every encrypted asset undocumented.
+
+| Term | What applies | Why it matters to this standard |
+|---|---|---|
+| **Availability commitment** | AWS KMS Service Level Agreement: 99.999% monthly uptime commitment, with service-credit remedies at defined tiers below that | KMS is on the critical path of every read of encrypted data. Its availability target is effectively the ceiling on the availability of everything it protects |
+| **Remedy and its limits** | Service credits only. **Credits do not compensate for our own availability obligations to customers** | This is the reason the continuity plan does not treat the SLA as a control: a credit does not restore service. Cross-region key availability and the documented degraded-mode behaviour in `BCP-PLN-020` are the actual mitigations |
+| **Durability of key material** | AWS commits to durability of stored CMK material; key material cannot be exported, which is the property that makes the module trustworthy and also the property that removes our ability to hold an independent copy | Recorded as an accepted dependency, `R-2026-035`, with the compensating design being multi-region keys for assets whose loss would be unrecoverable |
+| **Support response times** | AWS Enterprise Support: 15-minute response target for business-critical system-down cases, 24×7, with a designated technical account manager | A key-availability event is a business-critical case. The incident runbook names this severity and the escalation path explicitly, so the response target is usable rather than theoretical |
+| **Liability** | Governed by the AWS Customer Agreement, including its limitation of liability. Liability for a key-availability or key-loss event is **capped and does not approach the business impact** | Stated plainly because it is the basis for treating key loss as a risk we carry ourselves. The register entry is `R-2026-035` and the insurance position is in `SEC-REG-047` §6.3 |
+| **Security and compliance posture** | AWS SOC 1/2/3, ISO 27001, and FIPS 140-3 validation of the HSMs, obtained annually through AWS Artifact | This is how the provider-operated part of our cryptographic control is assured; the reports are read, not merely collected, and the CUECs relevant to KMS are mapped in `GOV-PRO-007` §5 |
+| **Change and deprecation notice** | Contractual and published deprecation timelines for API and algorithm support | Feeds the annual approved-algorithm review in §6, so an upstream deprecation reaches this standard before it reaches production |
+| **Data processing terms** | AWS Data Processing Addendum, incorporated | Required for the personal-data determinations in §4B.3 |
+| **Audit and evidence rights** | Third-party attestation reports rather than a right of direct inspection, which is standard for a hyperscale provider and is recorded as an accepted deviation from the general supplier audit-rights requirement | The exception is `D-2026-028` in `SEC-REG-047` §7 — the same recorded exception, not a second undocumented one |
+
+Verification during the period: the KMS SLA and support tier were confirmed against the active AWS
+agreement and support plan on 2026-08-19; 0 key-availability incidents; 0 SLA credit events; the
+Enterprise Support tier and the 15-minute business-critical target were confirmed active.
+
+---
+
+## 5. Roles, exceptions, and enforcement
+
+| Role | Responsibility |
+|---|---|
+| Principal Security Engineer, Cryptography | Owns this standard, the approved-algorithm table, and the annual architecture reassessment |
+| Security Engineering | Operates the key register, the rotation checks, and the quarterly reconciliation |
+| Asset / service owners | Own the keys protecting their assets; authorize use, rotation, and destruction |
+| Engineering | Uses approved modules and algorithms; requests keys through change management |
+| Internal assessment | Tests rotation, register accuracy, and destruction records against this standard |
+| CISO | Approves exceptions, key destruction below the standard waiting period, and any bespoke cryptographic code |
+
+**Exceptions** require a documented business reason, a compensating control, CISO approval, and an expiry no
+more than 12 months out; they are held in the exception register and reviewed quarterly. Use of a prohibited
+algorithm, storage of key material outside the module, or committing a secret to source control is a security
+violation handled under the code of conduct and, where data was exposed, under the incident response procedure.
+
+---
+
+## 6. Governance
+
+| Activity | Frequency | Owner | Evidence |
+|---|---|---|---|
+| Approved-algorithm and architecture review against current guidance | Annually | Cryptography owner | Reviewed table with dates |
+| Key register reconciliation against the live inventory | Quarterly | Security Engineering | Reconciliation record and exceptions closed |
+| Rotation and key-age compliance check | Quarterly, plus continuous rule evaluation | Security Engineering | Age report, findings, rotations performed |
+| Encryption-at-rest and in-transit configuration verification | Continuous (configuration rules) + quarterly review | Security Engineering | Findings and remediations |
+| Secret-scanning results review | Weekly | Security Engineering | Detections and rotations |
+| Certificate expiry and renewal check | Monthly, automated | Platform | Inventory with expiry dates |
+| Key destruction records review | Quarterly | CISO | Authorizations and verifications |
+| Standard review and approval | Annually | CISO | Approved version |
+
+Deficiencies from any activity above are entered in the control deficiency register with an owner and due date,
+tracked to closure, and reported to the Audit Committee quarterly.

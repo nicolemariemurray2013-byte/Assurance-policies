@@ -1,0 +1,299 @@
+# Information Security Policy and Topic-Specific Policy Framework
+
+**Document ID:** GOV-POL-040
+**Version:** 4.0 — **effective 2026-03-02**, superseding v3.1 of 2025-04-14
+**Owner:** CISO
+**Approved by:** Chief Executive Officer on behalf of top management, 2026-02-26; noted by the Audit Committee 2026-03-05
+**Next scheduled review:** Annually (next by 2026-12-31), and on any significant change (see §6.2)
+
+**Scope.** The information security policy of the entity, the register of topic-specific policies subordinate to
+it, and the process by which both are approved, published, acknowledged and reviewed. Applies to all 48
+personnel, to all contractors and vendor personnel with access to entity information, and to all information and
+information processing facilities including the production environment in AWS account **471885797689**, region
+**us-west-2**.
+
+This document is the apex of the documentation set. Every other standard, policy and procedure referenced in §3
+derives its authority from §2 of this document and is bound by the approval, communication, acknowledgement and
+review rules in §4 to §6.
+
+---
+
+## 1. Why a two-tier structure
+
+A single monolithic policy cannot be both short enough for every employee to read and specific enough to direct
+an engineer. The entity therefore maintains:
+
+- **One information security policy** (§2) — short, approved by top management, addressed to everyone, stating
+  what information security means here, what the entity intends to achieve, who is accountable, and what is
+  required of every person.
+- **A register of topic-specific policies** (§3) — each addressed to the population that performs the work, each
+  with a named owner competent in the topic, each approved at the level of authority appropriate to its subject
+  matter rather than escalated to the CEO for form's sake.
+
+The relationship is strictly hierarchical: a topic-specific policy may be more restrictive than this policy,
+never less, and a conflict is resolved in favour of this policy until the conflict is corrected.
+
+---
+
+## 2. The information security policy (5.1-R1)
+
+### 2.1 Definition of information security
+
+**Information security** is the preservation of the **confidentiality**, **integrity** and **availability** of
+information, together with the related properties of **authenticity**, **accountability**, **non-repudiation**
+and **reliability**. It covers information in every form and at every stage — created, transmitted, processed,
+stored, printed, spoken and destroyed — and it covers the systems, facilities, people and suppliers that handle
+it. It is not a synonym for IT security: a control failure in hiring, in a supplier contract, or at a desk is an
+information security failure.
+
+### 2.2 The entity's approach to managing its information security
+
+1. **Risk-based.** Controls exist because a risk assessment (RSK-STD-008) identified a risk to a defined
+   objective. Controls are selected, not accumulated, and are retired when the risk that justified them is gone.
+2. **Objectives.** The entity's information security objectives are: protect the confidentiality of customer
+   assessment data and evidence; preserve the integrity and demonstrability of compliance conclusions; keep the
+   service available to the availability commitment; meet legal, regulatory and contractual obligations
+   including privacy law in the jurisdictions where personnel and customers are located; and support the safe
+   and responsible operation of the AI system under AIMS-POL-001.
+3. **Secure by design and by default.** Security requirements are identified before a system is built or bought
+   (ENG-SDL-048), and the default state of a control is the restrictive state.
+4. **Least privilege and no standing access.** No human holds standing access to customer data; access is
+   federated, MFA-authenticated, time-bound and purpose-limited (SEC-IAM-021).
+5. **Defence in depth.** No single control is relied on alone; where a preventive control cannot be applied, a
+   detective control and a documented compensating measure are.
+6. **Evidence.** A control that produces no record is treated as a control that does not operate. Every control
+   in the register names its evidence.
+7. **Continual improvement.** Deficiencies, incidents, audit findings and exceptions feed the improvement
+   backlog and the management review (MON-PRO-011).
+8. **Cloud-native and vendor-dependent by design.** The entity operates no data centre. Physical and
+   environmental protection of production infrastructure is the responsibility of the infrastructure provider,
+   and the entity's reliance on it is a managed supplier relationship (TPR-PRO-016), not an assumption.
+
+### 2.3 Requirements binding on every person
+
+Every person with access to entity information must: use only the access granted to them and only for entity
+purposes; protect their credentials and never share them; use only managed, enrolled devices for entity work
+(SEC-END-043); classify and handle information per SEC-AST-020; report a suspected incident, weakness or policy
+breach immediately (SEC-IRP-027); complete assigned security and privacy training; and comply with the
+topic-specific policies applicable to their role.
+
+### 2.4 Accountability
+
+Top management is accountable for the information security of the entity and demonstrates this by approving this
+policy, funding the programme, receiving quarterly reporting, and holding owners to account for deficiencies.
+The **CISO** owns the programme and this policy. **Every named policy owner in §3** is accountable for the
+currency and effectiveness of their policy. **Every manager** is accountable for their team's compliance.
+**Every individual** is accountable for their own compliance. Deliberate or negligent breach is handled under
+the disciplinary provisions of the code of conduct (GOV-POL-005).
+
+### 2.5 Consequences and exceptions
+
+Non-compliance is a deficiency, recorded and tracked under MON-PRO-011. An exception to any policy in §3 requires
+a written risk acceptance with a named accepting owner at or above the policy's approval level, a compensating
+control, an expiry date of no more than 12 months, and entry in the exception register; exceptions are reviewed
+monthly and expire automatically.
+
+---
+
+## 3. The topic-specific policy register (5.1-R1, 5.1-R2)
+
+Each policy below is a controlled document with a document ID, an owner, an approver, and a review cycle. The
+**approver** column is the level of authority that approves it, chosen for authority over the subject matter and
+technical competency in it (5.1-R2). "Personnel" means all 48 staff; a narrower audience means the policy is
+communicated to that audience and available to the rest.
+
+| Topic-specific policy | ID | Owner (competency) | Approver | Audience | Cycle |
+|---|---|---|---|---|---|
+| Acceptable use, code of conduct and ethics | GOV-POL-005 | Head of People | CEO | Personnel | Annual |
+| Organizational structure, roles and authority | GOV-STR-003 | CEO | CEO | Personnel | Annual |
+| Risk assessment methodology | RSK-STD-008 | CISO | CISO | Risk owners | Annual |
+| Information classification and asset inventory | SEC-AST-020 | Head of Security Engineering | CISO | Personnel | Annual |
+| Logical access control and authentication | SEC-IAM-021 | Head of Security Engineering | CISO | Engineering, IT | Annual |
+| Cryptography and key management | SEC-CRY-022 | Head of Security Engineering | CISO | Engineering | Annual |
+| Data transmission, media and asset disposal | SEC-DLP-023 | Head of Security Engineering | CISO | Personnel | Annual |
+| Malicious software and software installation | SEC-MAL-024 | Director IT Operations | CISO | Personnel | Annual |
+| Configuration standards and vulnerability management | SEC-CFG-025 | Head of Platform Engineering | CISO | Engineering | Annual |
+| Security monitoring, detection and anomaly analysis | SEC-MON-026 | Head of Security Engineering | CISO | Security Engineering | Annual |
+| Incident response and recovery | SEC-IRP-027 | CISO | CEO | Personnel (reporting duty) | Annual |
+| Physical access and facility security | SEC-PRO-013 | Director IT Operations | CISO | Personnel | Annual |
+| Physical threat protection and secure-area working | SEC-PHY-044 | Director IT Operations | CISO | Personnel | Annual |
+| Remote working and endpoint devices | SEC-END-043 | Director IT Operations | CISO | Personnel | Annual |
+| Storage media and equipment disposal | SEC-MED-046 | Director IT Operations | CISO | IT, Engineering | Annual |
+| Equipment siting, utilities, cabling and maintenance | OPS-EQP-045 | Director IT Operations | CISO | IT | Annual |
+| Network security, network services and segregation | SEC-NET-047 | Head of Platform Engineering | CISO | Engineering, IT | Annual |
+| Secure development, architecture, coding and testing | ENG-SDL-048 | Head of Platform Engineering | CISO | Engineering | Annual |
+| Change management and release control | ENG-CHG-028 | Head of Platform Engineering | CISO | Engineering | Annual |
+| Capacity management | OPS-CAP-029 | Head of Platform Engineering | CISO | Engineering | Annual |
+| Backup, recovery and environmental protection | OPS-BCK-030 | Head of Platform Engineering | CISO | Engineering | Annual |
+| Business continuity and recovery testing | OPS-BCP-031 | Director IT Operations | CEO | Personnel | Annual |
+| Third-party and vendor risk management | TPR-PRO-016 | Third-Party Risk Manager | General Counsel | Procurement, owners | Annual |
+| Asset return and intellectual property rights | SEC-AST-041 | General Counsel | CISO | Personnel | Annual |
+| Termination, change of employment and confidentiality agreements | HR-PRO-042 | Head of People | General Counsel | Personnel, managers | Annual |
+| Personnel competence, screening and development | HR-POL-004 | Head of People | CEO | Personnel | Annual |
+| Information retention and secure disposal | PRV-RET-036 | General Counsel | General Counsel | Personnel | Annual |
+| Privacy notice and notice governance | PRV-NOT-019 | General Counsel | General Counsel | Personnel | Annual |
+| Choice, consent and collection limitation | PRV-CON-035 | General Counsel | General Counsel | Product, Engineering | Annual |
+| Data subject access, correction and accounting | PRV-DSR-037 | General Counsel | General Counsel | Support, Privacy | Annual |
+| Third-party disclosure and breach notification | PRV-TPD-038 | General Counsel | General Counsel | Personnel | Annual |
+| AI policy and responsible use | AIMS-POL-001 / AIMS-POL-003 | AI Security Lead | CEO | Personnel | Annual |
+| AI system development lifecycle | AIMS-POL-006 | AI Security Lead | CISO | Engineering | Annual |
+| Control activity selection and deployment | CTL-POL-012 | CISO | CEO | Control owners | Annual |
+| Internal control accountability and incentives | GOV-INF-033 | Head of People | CEO | Personnel | Annual |
+
+Coverage of the register against the Annex A control set is maintained in the statement of applicability and is
+reconciled at each annual review; a control with no owning policy is a finding.
+
+---
+
+## 4. Approval (5.1-R2)
+
+- **This policy** is approved by **top management** — the CEO, as the accountable executive, with the Audit
+  Committee noting the approval. Approval is recorded in the document header, in the CEO's approval record, and
+  in the committee minutes. **Any change** to this policy, however small, re-enters the approval path; there is
+  no "editorial change" bypass, because the classification of a change as editorial is itself a judgement the
+  approver must make.
+- **Topic-specific policies** are developed by their owner, **reviewed** by the CISO for consistency with this
+  policy and by the General Counsel where legal or privacy obligations are engaged, and **approved** by the
+  approver named in §3 — selected because that role holds authority over the subject matter and the technical
+  competency to judge it. A policy whose subject matter spans two owners names both, and both must review.
+- **Approval evidence.** Approval is recorded in the document management system with approver identity, role,
+  date and version; the record is immutable and versioned. An unapproved draft is watermarked and cannot be
+  published to the policy portal — publication requires the approval record.
+- **Delegation.** An approver may not delegate approval of a policy they own. During absence, approval waits or
+  is escalated to the next level, and the escalation is recorded.
+
+---
+
+## 5. Publication, communication and acknowledgement
+
+### 5.1 Publication and communication (5.1-R3)
+
+- Every approved policy is published to the **policy portal**, which is the single authoritative source. It is
+  reachable from any managed device, on the corporate network or remotely — which matters because **42 of 48
+  personnel work primarily remotely**, so a policy pinned to a wall at HQ would not reach them.
+- Policies are written in plain English, in the same structure (purpose, scope, requirements, roles, evidence),
+  with defined terms in a shared glossary. Length is a design constraint: this policy is deliberately short.
+- **Relevant, accessible and understandable to the intended reader** is tested, not assumed: each new or
+  materially revised policy is read by two members of its intended audience before approval, and their comments
+  on clarity are resolved or recorded.
+- **Accessibility.** The portal meets the entity's accessibility standard; alternative formats are provided on
+  request; the EU office population receives a locally reviewed translation of this policy and of GOV-POL-005.
+- **Communication events.** Publication triggers: an all-hands announcement for this policy and for any policy
+  affecting all personnel; a targeted notification to the audience in §3 for narrower policies; inclusion in the
+  onboarding curriculum within 5 working days; and coverage in the quarterly security briefing.
+- **Relevant interested parties.** Customers receive the security overview derived from this policy through the
+  trust portal and, under NDA, the full policy on request. Vendors and contractors receive the policy set
+  applicable to their engagement as a contractual annex — the **11 named vendor individuals** with access to
+  entity information are each issued the applicable set at engagement start, and re-issued on material change.
+  The managed SIEM provider, which holds copies of entity logs, additionally receives SEC-MON-026 and
+  SEC-IRP-027. Regulators and the external auditor receive policies on request.
+
+### 5.2 Acknowledgement (5.1-R4)
+
+- **Acknowledgement is required, tracked and enforced.** Every person with access to entity information
+  acknowledges, in the policy portal, that they have read, understand and agree to comply with this policy and
+  with each topic-specific policy applicable to their role. The acknowledgement records identity, policy
+  version, timestamp and the applicable-policy list, and is retained for the duration of employment plus seven
+  years.
+- **Triggers.** On hire, before first access to production or customer data; on any material revision, within
+  **10 working days** of publication; on a change of role, for the newly applicable policies; and annually for
+  this policy and GOV-POL-005 regardless of change.
+- **Enforcement.** Outstanding acknowledgements are reported weekly to the individual and their manager at day
+  5, escalated to the department head at day 10, and at **day 15 access is suspended** until the acknowledgement
+  is recorded. Completion is reported to the Audit Committee quarterly; the target and current state is 100% for
+  in-force policies.
+- **Contractors and vendor personnel** acknowledge through the same portal where they hold entity identities, or
+  by countersigned contractual annex where they do not; the Third-Party Risk Manager tracks the latter in the
+  vendor register.
+- **Understanding, not just receipt.** For the policies with the highest consequence — this policy,
+  SEC-IAM-021, SEC-END-043, AIMS-POL-003 and SEC-IRP-027 — acknowledgement is paired with a short assessment,
+  and a failed assessment routes to remedial training rather than to a second click.
+
+---
+
+## 6. Review (5.1-R5)
+
+### 6.1 Planned intervals
+
+| Review | Interval | Performed by | Output |
+|---|---|---|---|
+| This information security policy | Annually, by end of February | CISO, approved by CEO | Approved version or recorded no-change decision |
+| Each topic-specific policy | Annually, on the owner's schedule in §3 | Policy owner, reviewed by CISO | Approved version or recorded no-change decision |
+| Register completeness against the statement of applicability | Annually | CISO | Coverage reconciliation; findings |
+| Acknowledgement completeness | Quarterly | Head of People | Completion report; escalations |
+| Exception register | Monthly | CISO | Expired and renewed exceptions |
+| Management review of the whole system | Annually, with quarterly interim reporting | Top management | Minuted decisions and actions |
+
+A review that concludes "no change required" is recorded with that conclusion, the reviewer, the date and the
+inputs considered. Silence is not a review, and an unreviewed policy past its due date is a deficiency reported
+to the Audit Committee.
+
+### 6.2 Significant-change triggers
+
+A review is performed out of cycle, within **30 days** of the trigger, when any of the following occurs:
+
+1. **A change to the entity's business strategy** — a new product line, a new customer segment, a new market, a
+   material change to the service's purpose, or a change to the AI system's intended use.
+2. A change to the **technical or operating environment** — a new region, a new class of infrastructure, a new
+   model provider, a significant architecture change, or the adoption of a new material vendor.
+3. A change to **legal, statutory, regulatory or contractual requirements**, including privacy law in a
+   jurisdiction where personnel or customers are located, and including new AI-specific obligations.
+4. A **material change to the risk landscape** — a new threat relevant to the entity, a change in risk appetite,
+   or a risk assessment result that a current control no longer addresses.
+5. A **significant incident, near miss, or repeated deficiency**, including case **D-2026-004**, whose
+   post-incident review produced the no-local-copy requirement now in SEC-END-043 and a corresponding change to
+   §2.3 of this policy.
+6. An **audit or certification finding**, internal or external, touching policy adequacy.
+7. A **significant organizational change** — restructure, acquisition, a change in the accountable executive, or
+   a change in the location or size of a facility.
+8. A **change to the entity's own control set** that alters what personnel are required to do.
+
+### 6.3 What the review assesses
+
+Each review explicitly assesses and records: **opportunities for improvement** in the management of information
+security; whether the policy still responds to changes in the **entity's business strategy**, technical
+environment, legal and contractual obligations, risk landscape, threat environment, and organizational
+structure; the **effectiveness** evidence — incident volume and cause, deficiency ageing, exception volume and
+age, acknowledgement completion, training completion, audit findings; whether any topic-specific policy has
+drifted out of alignment with §2; and whether the register in §3 still covers the applicable control set. The
+assessment feeds the improvement backlog with named owners and dates.
+
+---
+
+## 7. Roles and evidence
+
+| Role | Responsibility |
+|---|---|
+| CEO (top management) | Approves this policy and its changes; accountable for information security; chairs management review |
+| Audit Committee | Notes approval; receives quarterly reporting on acknowledgement, deficiencies and exceptions |
+| CISO | Owns this policy and the register; reviews every topic-specific policy for consistency; owns the exception register |
+| Policy owners (§3) | Develop, review and maintain their policy; ensure technical competency of the content |
+| General Counsel | Reviews legal, privacy and jurisdictional content; approves the legal and privacy policies |
+| Head of People | Owns acknowledgement tracking, onboarding and disciplinary linkage |
+| Director IT Operations | Publishes to the portal; enforces the day-15 access suspension |
+| Third-Party Risk Manager | Issues the applicable policy set to vendors and contractors; tracks countersignatures |
+| Internal assessment | Tests approval records, publication, acknowledgement completeness and review timeliness |
+
+| Evidence | Where it is held |
+|---|---|
+| Approved policy versions with approver, role and date | Document management system, immutable version history |
+| Publication record and communication events | Policy portal audit log; all-hands and briefing records |
+| Acknowledgement records with version and timestamp | Policy portal; retained employment + 7 years |
+| Comprehension assessment results | Learning platform |
+| Review records including no-change decisions | Document management system |
+| Out-of-cycle review records against §6.2 triggers | Document management system |
+| Exception register with owner, compensating control and expiry | Risk system |
+| Vendor policy-issue and countersignature records | Vendor register |
+| Quarterly reporting pack to the Audit Committee | Committee minutes |
+
+---
+
+## 8. Review history
+
+| Version | Date | Change | Approved by |
+|---|---|---|---|
+| 1.0 | 2024-05-10 | Initial policy | CEO |
+| 2.0 | 2025-01-20 | Two-tier structure and register introduced; acknowledgement made enforceable | CEO |
+| 3.0 | 2025-04-14 | AI policies brought under the register; interested-party communication added | CEO |
+| 3.1 | 2025-09-08 | Out-of-cycle: EU office opened; jurisdictional review and translation requirement added | CEO |
+| 4.0 | 2026-03-02 | Annual review. §2.3 no-local-copy requirement added following case D-2026-004; nine new topic-specific policies added to the register; comprehension assessment introduced; day-15 access suspension made automatic | CEO |

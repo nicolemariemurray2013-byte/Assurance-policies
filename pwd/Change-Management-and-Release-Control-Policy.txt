@@ -1,0 +1,447 @@
+# Change Management and Release Control Policy
+
+**Document ID:** ENG-CHG-028
+**Version:** 6.4 — **effective 2026-08-14**, superseding v6.3 of 2026-03-30
+**Owner:** Head of Engineering (process); Head of Platform Engineering (pipeline and infrastructure changes)
+**Approved by:** CISO 2026-08-14; Head of Engineering 2026-08-14
+**Next scheduled review:** Annually (next by 2026-12-31), and on any change to the pipeline, the deployment model, or
+the approval structure
+
+**v6.4 changes.** Added §7.4 (development tools, compilers, editors and debuggers absent from production, and how
+that is enforced by identity and immutability rather than by hygiene), §7.5 (environment identification presented
+at every point a person can act, with the account boundary and two-person rule limiting what a wrong-environment
+error can do), and §7.6 (patching, secure-configuration baselines, monitoring, and backup and recovery for the
+development and test environments, with the proportionality decisions stated rather than left as gaps).
+
+**Scope.** Every change to infrastructure, data, software, and manual and automated procedures that supports the
+service, across the whole system lifecycle — from authorization before design through to post-implementation
+verification. Applies to first-party code, acquired and open-source software, configuration, schema, and the
+documented procedures people follow. The reference implementation is AWS account **471885797689**, region
+**us-west-2**.
+
+Companion documents: the configuration standards and vulnerability management procedure (baselines and patch
+deadlines); the malicious software standard (what may enter production, and application control); the incident
+response program (emergency and incident-derived change); the business continuity plan (resilience objectives
+tested during development); the privacy and confidentiality standards (data protection during development and
+test).
+
+---
+
+## 1. The lifecycle process (CC8.1-R1, CC5.2-R5)
+
+### 1.1 Scope of "change"
+
+The process covers all four component classes named in the criteria, because a process that covers only
+application code leaves the majority of the real risk unmanaged:
+
+| Component class | Examples | Route |
+|---|---|---|
+| **Software** | Application code, agent prompts and graph structure, dependencies, container base images, build tooling | Pull request → automated gates → peer review → pipeline → progressive deploy |
+| **Infrastructure** | Compute, network, storage, identity policies, keys, monitoring, and alarm definitions | Infrastructure-as-code pull request → the same gates and review → pipeline apply |
+| **Data** | Schema changes, migrations, reference and configuration data, retention settings | Change record with a migration and rollback plan; reversibility assessed explicitly, because data changes are the least reversible class |
+| **Procedures** | Runbooks, this policy and every companion standard, on-call procedures, manual control steps | Document change with a named approver; version, effective date, and superseded version recorded on the document itself |
+
+### 1.2 The lifecycle stages, and the gate at each one
+
+Every change passes the same ordered stages. The gate at each stage is the control; the stage without its gate is
+just an activity.
+
+| Stage | Gate | Cannot be performed by |
+|---|---|---|
+| **Authorize** (§2) | Recorded authorization before design, development, acquisition, or configuration begins | — |
+| **Design** (§3) | Security and privacy requirements identified; architecture assessment for significant change; resilience objectives stated | — |
+| **Develop / acquire** (§3) | Secure development practices; acquisition review for third-party software | — |
+| **Document** (§4) | Change record complete; user-facing and operator-facing documentation updated | — |
+| **Track** (§5) | Change recorded and traceable from requirement to commit to artifact to deployment | — |
+| **Configure** (§6) | Configuration parameters selected against the baseline and expressed in code | — |
+| **Test** (§7) | Automated gates pass; risk-appropriate testing complete; resilience tested where applicable | — |
+| **Approve** (§8) | Peer review by someone **other than the author**; risk-tiered approvals obtained | The author |
+| **Implement** (§9) | Deployment by the pipeline identity, progressively, with automated rollback | The author, manually |
+| **Verify** | Post-implementation health, configuration compliance, and objective-achievement checks | — |
+
+**No stage may be skipped.** The emergency path in §10 compresses the sequence and permits some stages to complete
+after implementation, but it does not permit any stage to be omitted.
+
+---
+
+## 2. Authorization before design, development, or acquisition (CC8.1-R2)
+
+Authorization precedes work, not deployment. This matters because a change that is authorized only at the point of
+release has already consumed the effort and acquired the momentum that make honest rejection unlikely.
+
+| Change class | Authorization required | Who authorizes | When |
+|---|---|---|---|
+| New capability or a change to the service's external behaviour | Product authorization with a stated objective, plus a security design review | Product owner and Head of Engineering; CISO where security-relevant | Before design |
+| Architecture change (new component, data store, trust boundary, external integration, region, or account) | **Pre-implementation architecture assessment** — the six required review contents in the logical access standard §3.6 | Head of Platform Engineering and CISO | Before design |
+| Change to a control, an entitlement model, or an audit or encryption setting | Explicit control-change authorization | CISO | Before design |
+| Acquisition of third-party or open-source software or a service | **Acquisition review**: license, security posture, data handling, sub-processor status, supplier viability, and exit path | Head of Engineering; CISO for security relevance; Privacy lead where personal information is processed; Procurement for contract | Before acquisition or first use |
+| Schema or data-model change | Data change authorization with migration and rollback plan | Service owner and Head of Platform Engineering | Before development |
+| Routine maintenance within an established pattern — dependency upgrade, patch, refactor, bug fix, alarm threshold | Standing authorization under this policy; the peer review at §8 is the authorization | Peer reviewer | At review |
+| Emergency change | Concurrence of a second authorized person at the time (§10) | Incident commander or on-call lead plus one other | At the time |
+
+**Standing authorization is bounded, not open-ended.** A change qualifies as routine only if it stays within an
+established pattern and touches no control, trust boundary, or data model. A change that starts routine and turns
+out to touch one of those stops and obtains the authorization above — the reviewer is explicitly responsible for
+making that call, and "it was already in flight" is not a reason to proceed.
+
+---
+
+## 3. Secure design and development (CC8.1-R3, CC8.1-R10, CC8.1-R15 to CC8.1-R18)
+
+### 3.1 Designing securely
+
+- **Threat modelling** for new components and for any change to a trust boundary, data flow, or authentication
+  path. The model names the assets, the boundaries, the adversaries, and the mitigations, and its unresolved items
+  become work.
+- **Security requirements are stated as acceptance criteria**, not as advice, so that "done" includes them.
+- **Least privilege by construction**: a new component's identity is scoped to the calls it makes, and the scope is
+  reviewed as part of the change rather than granted broadly and narrowed later.
+- **Secure defaults**: encryption on, logging on, public access blocked, TLS required — the baselines in the
+  configuration standards procedure are the starting point of a new resource definition, not a subsequent
+  hardening pass.
+- **Secure coding practices**: input validated at the boundary against an explicit schema; output encoded; no
+  string-built queries; no dynamic evaluation of external input; dependencies from the curated repository. The
+  service's design deliberately has **no code path that interprets customer-supplied content as code**.
+- **Peer review is a design control**, not only a defect-detection control: the reviewer is asked whether the
+  design is right, not only whether the diff is correct.
+
+### 3.2 Identifying affected objectives and evaluating the modified system (CC8.1-R10)
+
+Every change record names **which entity objectives and commitments it touches** — security, availability,
+processing integrity, confidentiality, privacy, or a stated customer commitment — and how the modified system will
+still meet them. This is evaluated at each stage, not once: at authorization (does the objective allow this?), at
+design (does the design preserve it?), at test (does the evidence show it?), and at post-implementation
+verification (does the running system demonstrate it?). A change that would degrade a commitment requires the
+commitment to be renegotiated first, or the change to be redesigned. It is not permitted to proceed on the
+assumption that the degradation will go unnoticed.
+
+### 3.3 Resilience in design and testing (CC8.1-R15)
+
+Resilience is a design input with stated objectives, and it is tested during development rather than assumed:
+
+| Design property | How it is built | How it is tested before release |
+|---|---|---|
+| No single point of failure in the request path | Managed, multi-zone services; stateless runtime | Component-failure injection in pre-production |
+| Tolerance of dependency failure | Timeouts, bounded retries with backoff and jitter, circuit breaking, and defined degraded behaviour | Dependency fault injection; latency and error injection |
+| Tolerance of partial failure in a long-running assessment | Per-phase idempotency, a process-global lock with heartbeat so a dead worker's lock expires rather than blocking forever, and resumable phase state | Deliberate worker termination mid-assessment; lock expiry verification |
+| Recoverability of data | Point-in-time recovery and versioned object storage | Restore rehearsal against the recovery point and time objectives |
+| Capacity headroom and backpressure | Quotas, throttling, queue-depth-driven backpressure | Load and soak testing to the stated capacity objective |
+| Graceful degradation over hard failure | Defined reduced-function modes | Exercised in pre-production and in the continuity tests |
+
+Resilience test results are part of the change evidence for any change that alters the request path, a dependency,
+or the state model. Where a test shows an objective is not met, the release does not proceed on the strength of an
+intention to fix it later.
+
+### 3.4 Protecting confidential and personal information during development, testing, and change (CC8.1-R16, CC8.1-R17, CC8.1-R18)
+
+| Control | Requirement |
+|---|---|
+| **Production data is not used in development or test** | Test data is synthetic or de-identified. Copying production personal or confidential data into a lower environment requires the Privacy lead's and the data owner's approval, is time-bounded, is recorded, and has never been the default path |
+| Lower environments are separated | Distinct accounts and credentials; no network or identity path from a lower environment into production data |
+| Access during development follows the same model | Least privilege, short-lived credentials, no shared accounts — a developer does not gain standing production data access by virtue of working on the code |
+| Secrets never enter source | Secret scanning on every commit and over history; secrets injected at runtime from managed storage |
+| Confidentiality in the pipeline | Build logs and artifacts treated as internal; log redaction of credentials and sensitive fields; artifact repository access restricted to the pipeline identity |
+| **Privacy by design (CC8.1-R18)** | A privacy review is required for any change that introduces or alters the processing of personal information. It must establish the **identified purpose**, and confirm that the collection and processing are **limited to what is necessary for that purpose** — data minimisation is an acceptance criterion, so a field that no purpose requires is not added. Retention, lawful basis, data-subject-rights impact, and cross-border transfer are assessed in the same review |
+| Data protection impact assessment | Required where processing is high-risk; owned by the Privacy lead; completed before development, not before launch |
+| Confidentiality in test evidence | Test artifacts containing any real content are held under the same classification and retention as production evidence and disposed of under the disposal standard |
+
+---
+
+## 4. Documenting changes (CC8.1-R4)
+
+Every change carries a record containing: a unique identifier; description and business purpose; the component
+classes affected; the objectives and commitments touched (§3.2); risk classification; the security, privacy, and
+resilience assessments where applicable; test evidence; the configuration parameters changed; the approvals with
+approver identity and timestamp; the deployment plan; the **rollback plan**; the post-implementation verification
+result; and links to the commits and the artifact digest.
+
+The record supports **ongoing maintenance and the responsibilities of internal and external users**, which means
+documentation is not only the internal record:
+
+| Documentation | Updated when | Audience |
+|---|---|---|
+| Change record | Per change | Auditors, engineers, incident responders reconstructing history |
+| Architecture and data-flow documentation | On any architecture or data-flow change | Engineers, security, and the information-requirements standard's flow inventory |
+| Runbooks and on-call procedures | On any change to operational behaviour, alarms, or failure modes | On-call engineers — a change that alters failure behaviour without updating the runbook is incomplete and is rejected at review |
+| Customer-facing documentation and release notes | On any change to external behaviour, API, or commitments | Customers, so that external users can perform their responsibilities under the shared-responsibility model |
+| Control documentation (this policy and its companions) | On any change to a control | Auditors, the workforce |
+| Configuration baseline | On any baseline change | Platform Engineering, and the continuous evaluation rule set |
+
+**Documentation currency is enforced at review**, not audited afterwards: the reviewer is required to confirm that
+the affected documentation in the table above has been updated in the same change. This is the control that
+prevents documentation debt, and it is why the review checklist contains it explicitly.
+
+---
+
+## 5. Tracking changes prior to implementation (CC8.1-R5)
+
+Every change is traceable end to end **before** it reaches production: requirement or incident → change record →
+commit (signed, on a protected branch) → build with a recorded artifact digest → approval → deployment event. The
+chain is machine-recorded, not assembled by hand at audit time.
+
+Tracking mechanisms: a single change register as the system of record; branch protection so no commit reaches the
+mainline without a tracked, reviewed pull request; commit signature verification; the pipeline recording the
+digest it built and the change it built it from; and the deployment event recording the digest deployed. **The
+reconciliation control** runs weekly: every production deployment is matched to an approved change record, and
+every approved change is matched to a deployment or an explicit withdrawal. An unmatched deployment is treated as
+unauthorized change and handled as an incident; an unmatched approval is a process defect. This reconciliation is
+what makes the tracking control detective as well as preventive.
+
+---
+
+## 6. Configuration parameters of developed and acquired software (CC8.1-R6, CC8.1-R12, CC5.2-R2)
+
+### 6.1 Selecting, implementing, maintaining, and monitoring parameters
+
+| Activity | How |
+|---|---|
+| **Select** | Parameters are chosen against the hardening baselines in the configuration standards procedure and against vendor guidance; a security-relevant parameter's value requires a stated rationale, not a default accepted by inertia |
+| **Implement** | Every parameter is expressed in infrastructure-as-code or in versioned application configuration. **No security-relevant parameter is set by console action** in the normal course; a console change during an incident is reconciled back into code afterwards |
+| **Maintain** | Parameter changes go through this policy like any other change; vendor guidance updates are picked up at the annual baseline review and on advisory |
+| **Monitor** | **368 configuration rules** evaluate the resulting state continuously, and drift reconciliation compares live state against the code. A parameter that has drifted produces a finding with an owner |
+
+### 6.2 Baseline configuration of IT and control systems (CC8.1-R12)
+
+The baseline is maintained as the three agreeing artifacts described in the configuration standards procedure —
+the infrastructure-as-code definition, the machine-checkable evaluation rule, and the documented rationale. It is
+**versioned**, so the configuration of the system at any past date is reconstructable; it covers the control
+systems as well as the service (the trail, the alarms, the evaluation rule set, and the detection estate are
+themselves baselined, which is why a change to them raises `AIGov-AuditConfigChanges`); and it is **re-baselined
+by change record**, never by observation of what the environment happens to contain. Deviation from the baseline
+is a finding, not a new baseline.
+
+---
+
+## 7. Testing prior to implementation (CC8.1-R7)
+
+### 7.1 Automated gates on every change
+
+These run on every change and **block** rather than warn. They are not bypassable by the author:
+
+type checking; unit tests with a coverage floor; integration tests; lint and formatting; dependency vulnerability
+scanning; license compliance; software composition analysis; secret scanning; static application security testing;
+container image scanning; infrastructure-as-code policy scanning; and a build that must succeed reproducibly from
+the committed lockfile.
+
+### 7.2 Risk-tiered testing beyond the gates
+
+| Risk tier | Additional testing |
+|---|---|
+| Low (isolated, reversible, no control or data-model impact) | Gates only |
+| Medium (behavioural change, new dependency, alarm or entitlement change) | Pre-production functional verification; targeted regression; rollback rehearsed |
+| High (architecture, data model, control, authentication, or external-behaviour change) | Full pre-production exercise with production-like data volumes; resilience and fault injection per §3.3; security testing of the changed surface; migration and rollback rehearsal; performance verification against the capacity objective |
+| Data migration, any tier | Rehearsal on a restored copy; row-count and integrity reconciliation; a tested rollback or a forward-fix plan where rollback is impossible, with the irreversibility stated explicitly in the record |
+
+**Acquired software is tested too (CC8.1-R7).** A third-party component, a vendor update, and a dependency upgrade
+pass the same gates and the same risk-tiered testing as first-party code. Vendor assurance is not a substitute for
+the entity's own verification: the entity's obligation is to its own objectives.
+
+### 7.3 Testing is performed outside production
+
+Tests run in pre-production environments that are separate accounts with their own credentials and no path to
+production data. Production verification is limited to post-deployment health and integrity checks and to
+progressive-exposure monitoring — not to functional discovery.
+
+### 7.4 Development tools, compilers, and editors are absent from production
+
+Separation is not only about data and credentials: the **tools of development are not present on operational
+systems**, because a compiler or an interactive editor on a production host converts a foothold into the ability
+to build and run new code there.
+
+| Class of tool | Rule in the production runtime | How the rule is enforced, rather than asserted |
+|---|---|---|
+| Compilers, build toolchains, package managers, language SDKs | **Absent.** Compilation happens only in the isolated build environment; the artifact deployed is already built | The runtime image is built from a minimal base and installs no toolchain; the image build fails its policy check if a toolchain package is present. Composition analysis lists the installed package set of every released image, and the weekly reconciliation compares it against the approved manifest |
+| Interactive editors (`vi`, `nano`, IDEs) and shells | **Absent, and unusable if present.** There is **no interactive access path into production at all** — no SSH, no RDP, no exec-into-container permission held by any human or role | Enforced by identity, not by hygiene: no principal, including break-glass, holds an exec or session-start permission on the runtime. The image ships no shell. An attempt to obtain one raises an alarm |
+| Source code and repositories | The deployed artifact contains only what the build emits; no working copy, no version-control client, no repository credentials | The artifact is content-addressed and its contents are the build output; the runtime holds no version-control credential, so a repository could not be reached from it |
+| Debuggers, profilers, remote-debug agents, diagnostic consoles | **Not enabled in production.** Diagnosis is by telemetry — logs, metrics, traces — collected outward, not by attaching to a running process | Debug ports are not opened (zero inbound security-group rules), and debug flags are asserted off by the configuration rules; a debug-enabled deployment fails its gate |
+| Administrative and utility software capable of bypassing controls | Governed by the malicious software standard §3: an enumerated list, role-restricted, time-bound, and logged | Application control in enforce mode; alarms on use |
+| Test data generators, load tools, migration scripts | Run from outside production against approved endpoints under change control; not installed on production hosts | Deployed as separate short-lived jobs in their own account where possible; a production-resident tool would appear in the image package set and fail reconciliation |
+
+Two properties make the rule durable rather than aspirational: the runtime filesystem is **read-only or
+ephemeral**, so a tool cannot be installed and persist even by an actor who reached the host, and every task is
+**replaced from an approved digest** rather than repaired, so any local addition is destroyed on the next
+deployment or scale event. **Development tooling on engineer endpoints** is a separate, permitted case: endpoints
+are C-2 environments, hold no production credentials at rest, and reach production only through the pipeline and
+through time-limited federated roles that carry no interactive access.
+
+Conversely, **production tooling is not present in development**: production credentials, customer KMS keys and
+customer data access are unavailable in lower environments by key policy and by the absence of any cross-account
+trust, so a developer cannot reach production from a development environment either. Separation is enforced in
+both directions.
+
+In this period the weekly image-package reconciliation ran **41** times with **0** unapproved packages found, and
+**0** interactive production sessions occurred (the count is derived from CloudTrail, not from self-report).
+
+### 7.5 Environment identification, so an operator can see where they are
+
+Acting in the wrong environment is an ordinary human error with a large consequence, so environment identity is
+made visible at every point where a person could act, rather than left to be inferred from an account number.
+
+| Where a person acts | Identification presented |
+|---|---|
+| AWS console | Each account carries a distinct **account alias** (`truenorth-prod`, `truenorth-staging`, `truenorth-dev`, `truenorth-audit`) and a configured console display name; the production account additionally uses a **red console banner** carrying the text `PRODUCTION — CUSTOMER DATA` on every page, set as an account-level setting so no user can turn it off for themselves |
+| Command line | Named profiles matching the aliases, and a shell prompt integration on the managed build that displays the active profile and colours the prompt **red for production**; a profile that cannot be identified displays as `UNKNOWN` in red rather than as nothing |
+| Internal service and admin interfaces | A persistent environment ribbon in the header — colour, environment name and region — rendered from the runtime's own configuration, so a page cannot claim to be staging while running in production |
+| Deployment tooling and pipeline | The stage name in the approval prompt, and a production deployment requires an **explicit typed confirmation of the environment name**, not a default-yes prompt |
+| Dashboards, alarms and logs | Environment name in the dashboard title, the alarm name prefix and every log record's structured fields, so a screenshot taken from a dashboard is self-identifying |
+| Databases and data stores | Resource names carry the environment; the production data stores are in a different account, so a connection string cannot be edited from staging to production without a credential that does not exist |
+| Change and incident records | The affected environment is a required field, and a record without it fails validation |
+
+The colour convention is fixed and taught in onboarding (**red = production, amber = staging, green =
+development**), and it is applied consistently so that the colour carries information. Two supporting properties
+matter more than the labelling itself: the **account boundary** means a mistaken action in the wrong window most
+often fails on permissions rather than succeeding on the wrong data, and **destructive production operations
+require a second person**, so a single misdirected action is not sufficient. Labelling reduces the error rate; the
+boundary limits what an error can do. In this period **0** wrong-environment actions were recorded; the
+convention's application was verified in the annual environment review.
+
+### 7.6 Development and test environments are themselves maintained
+
+Lower environments are not exempt from operational discipline. They are a route into the supply chain and they
+hold the entity's intellectual property, so they are patched, baselined and recoverable — proportionately, not
+identically.
+
+| Obligation | Development and CI | Pre-production / staging | Difference from production, and why |
+|---|---|---|---|
+| **Patching of the environment and its tooling** | Build images, CI runners and development tooling are rebuilt from the current base image at least **monthly** and on any critical or KEV-listed advisory affecting them; runners are ephemeral, so a rebuild fully replaces them. Engineer endpoint tooling patches on the endpoint standard's clock | Rebuilt from the **same** base images and the same infrastructure-as-code as production, so it patches when production does | Same clocks for critical and KEV items; medium and low findings may run to the routine monthly refresh, because no customer data is reachable. The deferral is a stated decision, not an omission |
+| **Secure configuration baseline** | The same infrastructure-as-code modules and the same **368 configuration rules** are evaluated in the development and staging accounts, with the customer-data-specific rules not applicable | As development, plus production-equivalent network and identity rules so that staging is a valid test of the production configuration | Rules are shared, so a baseline change reaches all environments at once and staging genuinely predicts production. Findings in lower environments run on the 30-day clock rather than 7 |
+| **Access control** | Role-based, MFA-required, no standing admin, reviewed in the same weekly access review | As development | Same mechanism; the population is broader because developers have more latitude in an environment holding no customer data |
+| **Monitoring and logging** | CloudTrail enabled and delivered to the same central, write-once audit account; GuardDuty enabled; drift detection on | As development, plus the production alarm set so alarm behaviour is exercised before release | Lower environments do not carry 24×7 paging; findings are triaged next business day |
+| **Backup and recovery** | Source code, infrastructure-as-code and pipeline definitions are the assets that matter and are backed up as version-control repositories with **daily off-account backups, 90-day retention**, plus the registry's artifact retention (§5.3 of the malware standard). CI runners and scratch data are deliberately **not** backed up — they are reproducible from code, and reproducibility is the stronger property | Rebuildable from infrastructure-as-code within the stated 4-hour target; synthetic datasets regenerated from their generators, which are themselves in version control | Production carries point-in-time recovery and cross-account immutable backups because customer data is not reproducible. Lower environments are recovered by **rebuild**, and this is a decision recorded with its rationale, not an absence of a control |
+| **Recovery testing** | The rebuild path is exercised whenever a runner image or module changes, which is continuous in practice; a **quarterly** documented exercise restores a repository from off-account backup and rebuilds a runner from scratch | Rebuilt from scratch **at least quarterly** as part of the resilience exercise, which doubles as the test that staging matches production | Production recovery testing is semi-annual and formal per the continuity plan; lower-environment testing is more frequent and less formal because it is cheap |
+| **Data in the environment** | Synthetic or de-identified only; copying customer data into a lower environment requires Privacy lead and data owner approval, is time-bounded and recorded (§3.4) | As development | Unchanged: this is the one obligation with no proportionality reduction |
+
+Ownership sits with Platform Engineering, with the same deficiency register and the same quarterly Audit
+Committee reporting as production. In this period: **12** runner-image rebuilds, **0** critical findings open past
+their clock in any lower environment, **1** quarterly repository-restore exercise completed 2026-07-08 (restore
+verified, rebuild successful, no corrective action), and staging rebuilt from scratch **2** times.
+
+---
+
+## 8. Approval and segregation of responsibilities (CC8.1-R8, CC8.1-R9, CC5.2-R1, CC5.2-R3)
+
+### 8.1 Approval
+
+| Change | Required approvals |
+|---|---|
+| Any change to the mainline | **Peer review and approval by someone other than the author**, enforced by branch protection — this is a platform-enforced control, not a convention |
+| Infrastructure change | Peer review plus Platform Engineering approval |
+| Control, entitlement, audit, or encryption change | Peer review plus **CISO approval** |
+| Data model or migration | Peer review plus service owner approval |
+| Privacy-relevant change | Peer review plus **Privacy lead approval** |
+| Third-party software introduction | Peer review plus acquisition review sign-off |
+| Emergency change | Second person's concurrence at the time, ratified in the weekly review (§10) |
+| Procedure or policy document | Named approver per the document's governance table |
+
+Approval is recorded with identity and timestamp, and **approval is on the reviewed content**: a change amended
+after approval requires re-approval, which the platform enforces by dismissing stale approvals on new commits.
+
+### 8.2 Segregation of responsibilities to prevent or detect unauthorized change (CC8.1-R9)
+
+| Separation | Enforcement | Why |
+|---|---|---|
+| **Author ≠ approver** | Branch protection rejects self-approval | The most basic guard against unilateral change |
+| **Author ≠ deployer** | The pipeline identity deploys; no human identity holds standing deploy permission | A person who could both write and deploy could bypass review entirely |
+| **Developer ≠ production data operator** | Production data access is a separate, brokered, logged entitlement, not a property of write access to the code | Prevents a code change being used as a route to data |
+| **Requester ≠ entitlement granter** | Access changes are authorized by the asset owner, not the requester | Logical access standard §5.1 |
+| **Change implementer ≠ control monitor** | Security Engineering reviews findings and reconciliations, including those arising from its own changes' effects, but does not approve its own control changes — the CISO does | Prevents self-certification |
+| **Pipeline gate configuration ≠ author** | Gate definitions are themselves protected code requiring review; an author cannot weaken the gate their change must pass | Otherwise every other gate is advisory |
+
+**Where segregation is not achievable by headcount**, detective compensation is applied and stated: in a small
+team the same individual may be the only qualified reviewer for a specialised change. In that case the change
+requires the CISO's or Head of Engineering's concurrence as second party, and the weekly reconciliation
+specifically examines changes where the reviewer pool was one. The compensating control is named rather than the
+separation being quietly assumed.
+
+### 8.3 Dependency between business processes, automated controls, and technology general controls (CC5.2-R1)
+
+Management maintains an explicit map, reviewed annually, linking each business process (assessment execution, evidence
+handling, result delivery, customer onboarding, access administration) to the automated control activities it
+relies on (tenant scoping, credential vending and expiry, the assessment lock, schema validation, integrity
+checks, retention enforcement) and to the technology general controls those automated controls depend on (change
+management, logical access, configuration and baseline management, monitoring and incident response, backup and
+recovery).
+
+The map's purpose is decision-making, not documentation: it is what determines that a weakness in a general
+control is a weakness in every automated control that rests on it, and it is consulted when scoping a change, an
+incident's impact, or a control test. Its practical consequence is stated plainly — **an automated control cannot
+be relied upon more strongly than the change and access controls over the system that implements it**, which is
+why this policy exists and why its gates are platform-enforced rather than procedural.
+
+---
+
+## 9. Implementation (CC8.1-R1, CC6.8-R5)
+
+Deployment is performed by the pipeline identity from a recorded artifact digest, progressively, with health and
+error-rate checks between stages and **automatic rollback on regression**. Deployments are reversible by design:
+either the previous digest can be redeployed, or, where a data migration makes that impossible, the
+irreversibility is stated in the change record and a forward-fix plan is approved before implementation.
+
+Post-implementation verification confirms: health and error rates within thresholds; the running digest matches
+the approved release; the configuration rules evaluate compliant for the affected resources, allowing for the
+up-to-24-hour periodic evaluation latency documented in the configuration standards procedure; the objectives
+named in §3.2 are still met; and the documentation in §4 is current. Verification failure triggers rollback, not
+investigation-in-place.
+
+---
+
+## 10. Emergency and incident-derived change (CC8.1-R13, CC8.1-R11, CC8.1-R14)
+
+### 10.1 Emergency changes
+
+An emergency change is one where the delay of the normal sequence would itself cause material harm — an active
+incident, an exploited vulnerability, or an imminent availability loss. The compressed path:
+
+1. **Declared** as an emergency by the incident commander or the on-call lead, with the reason recorded at the
+   time.
+2. **A second authorized person concurs at the time.** This is not waivable — it is the one gate the emergency
+   path never compresses, because unilateral production change under time pressure is precisely the condition in
+   which errors and abuse are most likely.
+3. Automated gates still run. Where a gate genuinely cannot complete in the available time, the specific gate
+   skipped is named in the record and re-run immediately afterwards.
+4. Implemented through the pipeline where at all possible; a manual action is recorded keystroke-level in the
+   incident timeline and reconciled back into infrastructure-as-code within **one working day**.
+5. **Full documentation within one working day**, including everything §4 requires.
+6. **Ratified in the weekly change review**, which examines every emergency change of the period: was the
+   emergency real, was the compressed path justified, and has the record been completed. A pattern of emergencies
+   is treated as a process defect and investigated as such — a standing high rate of emergency change means the
+   normal path is too slow, and the answer is to fix the normal path, not to normalise the exception.
+
+### 10.2 Changes required to remediate incidents (CC8.1-R11)
+
+Identification of a needed change during an incident **initiates the change process immediately**, at the moment of
+identification rather than at the end of the incident. Incident-derived changes are tagged as such, so the weekly
+review examines them as a set and the quarterly incident-pattern review can see whether remediations are actually
+landing. A corrective action from a post-incident review that requires a change enters the register with an owner
+and a due date and is tracked to closure; an overdue corrective action escalates to the CISO.
+
+### 10.3 Patching (CC8.1-R14)
+
+Patches are identified from the intelligence sources in the monitoring procedure, evaluated for applicability
+against the retained per-release bill of materials, tested through the standard gates, approved by peer review,
+and implemented through the pipeline — to the deadlines in the vulnerability management procedure (**7 days
+critical or known-exploited, 30 days high, 90 days medium, 180 days low**). Because the runtime is immutable,
+patching production **is** deploying a new artifact: the same tested, approved, reversible path, which is why the
+deadlines are achievable rather than aspirational. Endpoint patching runs on a monthly cadence with an emergency
+path for critical items. Patches that cannot meet a deadline follow the exception process, with compensating
+controls, a named owner, a dated plan, and CISO approval; exceptions expire rather than persisting.
+
+---
+
+## 11. Governance
+
+| Activity | Frequency | Owner | Evidence |
+|---|---|---|---|
+| Change review — emergency changes, incident-derived changes, single-reviewer changes | Weekly | Head of Engineering | Review record with dispositions |
+| Deployment-to-change-record reconciliation | Weekly | Engineering management | Reconciliation with exceptions |
+| Drift reconciliation against the baseline | Weekly | Platform Engineering | Drift report |
+| Failed-change and rollback analysis | Monthly | Head of Engineering | Analysis with corrective actions |
+| Patch currency and SLA compliance | Monthly | Security Engineering | Backlog with ages |
+| Emergency-change rate trend | Quarterly | Head of Engineering | Trend with process findings |
+| Approval and segregation compliance sampling | Quarterly | Internal control function | Sample results |
+| Business-process to automated-control to general-control map review | Annually | Head of Engineering with CISO | Reviewed map |
+| Baseline review against upstream guidance | Annually | Platform Engineering | Approved baseline diff |
+| Policy review and approval | Annually | CISO and Head of Engineering | Approved version |
+
+Deficiencies are recorded in the control deficiency register with an owner and due date, tracked to closure, and
+reported to the Audit Committee quarterly.

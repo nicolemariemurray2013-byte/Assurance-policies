@@ -1,0 +1,242 @@
+# Audit Testing of Operational Systems Procedure
+
+**Document ID:** SEC-AUD-042
+**Version:** 1.2
+**Owner:** CISO
+**Approved by:** CISO and Head of Engineering
+**Approval date:** 2026-08-14
+**Next scheduled review:** 2026-12-31
+**Scope:** Every audit, assurance, assessment or verification activity that touches a live operational
+system — the production AWS accounts, the AgentCore runtime, the production data stores, the SaaS
+systems of record, and the endpoint fleet. It applies to external auditors, customer auditors,
+penetration testers, internal control testers, and the entity's own personnel when they are acting as
+a tester rather than as an operator.
+
+---
+
+## 1. The problem this procedure exists to solve
+
+An audit is a legitimate activity performed with illegitimate-looking access. A tester holds
+credentials they do not normally hold, reads data they do not normally read, and runs tools that look
+exactly like reconnaissance. Two failures follow if that is not governed: the audit itself becomes the
+largest unmanaged access event of the year, and a real intrusion during an audit window is
+indistinguishable from the audit.
+
+So audit access is treated as a **change** — planned, agreed, scoped, time-boxed, least-privilege,
+logged, and closed out — and never as a courtesy extended to someone with a clipboard.
+
+---
+
+## 2. Planning and management agreement
+
+**No audit test runs against an operational system until a written Audit Test Plan is agreed and
+signed.** The plan is raised by the audit's sponsor (the CISO for security audits, the AI System
+Accountable Owner for AI-system audits, Finance for financial-controls testing) and agreed with the
+owner of every system in scope.
+
+| The plan must state | Why |
+|---|---|
+| **Objective and the requirement or assertion being tested** | An audit without a stated question expands into whatever the tester finds interesting |
+| **Scope — the exact accounts, systems, data stores, resource types and record populations in scope, and what is explicitly OUT of scope** | Scope is the control; everything else in this procedure is derived from it |
+| **Method** — inspection, observation, re-performance, sampling (with sample size and selection basis), automated tooling, or technical testing | Determines the access mode and the risk |
+| **Access mode requested per system** — read-only, isolated-copy, or (exceptionally) write | Drives §3 and §5 |
+| **Any tool to be run, named and versioned** | Drives §6 |
+| **Window** — start, end, and the hours within which activity may occur | Drives §7 |
+| **Personnel** — named individuals, their employer, and their device identifiers | Drives §4 |
+| **Data handling** — what the auditor may extract, where it may go, retention, and return or destruction | Bounds the audit's own footprint |
+| **Availability risk assessment** — the sponsor's and system owner's joint judgement of whether any step could affect availability, performance or data integrity | Drives §7 |
+| **Rollback and stop conditions** — what ends the test immediately, and who can call it | An audit must be abortable |
+
+### 2.1 Agreement and sign-off
+
+| Role | Agrees to | Recorded as |
+|---|---|---|
+| **System owner** for each in-scope system | Scope, access mode, window, availability judgement | Named approval in the audit record |
+| **CISO** | The access grant, the tooling, and the monitoring plan | Named approval |
+| **Head of Engineering** | Any test with a non-zero availability judgement, and any write or isolated-copy access | Named approval |
+| **General Counsel** | Any test touching personal data, any external auditor's data extraction, and any cross-border access | Named approval |
+| **Audit sponsor** | The plan as a whole, and that the audit's objective justifies the access requested | Named approval |
+
+**Sign-off is per audit, never standing.** A recurring audit (the annual penetration test, the
+quarterly internal control test) has a recurring template but a freshly signed plan each cycle,
+because the environment it will touch has changed. **Scope changes mid-audit require the same
+signatures as the original plan** — an auditor asking for "just one more account" is a plan
+amendment, not a favour.
+
+### 2.2 The current period's agreed audit tests
+
+| Audit | Sponsor | Systems | Access mode | Window | Availability judgement | Signed |
+|---|---|---|---|---|---|---|
+| Annual independent penetration test | CISO | Production AWS account, public API, AgentCore runtime | Read-only + isolated-copy; authenticated app testing against pre-production | 2026-05-11 → 2026-05-22, 18:00–06:00 UTC for any load-generating step | Non-zero (load generation) → Head of Engineering approval obtained | 2026-04-28 |
+| SOC 2 Type II interim control testing | CISO | AWS accounts, SaaS systems of record, evidence store | Read-only | 2026-06-08 → 2026-06-19, business hours | Zero | 2026-05-29 |
+| Customer-initiated audit (Customer 3, contractual right) | CISO | Evidence store, access records, subprocessor register — customer-specific scope only | Read-only, isolated-copy for record extracts | 2026-07-13 → 2026-07-17 | Zero | 2026-07-02 |
+| Internal control re-performance, Q3 | CISO | AWS accounts, identity provider, change records | Read-only | 2026-08-03 → 2026-08-07 | Zero | 2026-07-27 |
+| Restore verification test | AI Operations Lead | Backup vault → isolated restore account | Isolated-copy, write within the isolated account only | 2026-04-19, 02:00–06:00 UTC | Non-zero → out-of-hours, Head of Engineering approval obtained | 2026-04-10 |
+
+---
+
+## 3. Access is read-only by default
+
+**Every audit access grant is read-only unless the signed plan states otherwise and both the CISO and
+the Head of Engineering have approved the exception.** This is a default in code, not a habit:
+
+| Population | Mechanism |
+|---|---|
+| **AWS** | Auditors receive a dedicated `AuditorReadOnly` role assumable only by the named individuals, for the plan's window only, scoped to the in-scope accounts, with an explicit `Deny` on every mutating action and on the data-plane read of customer evidence content. The role has no `iam:*` write, no `kms:Decrypt` on the evidence keys, and no `s3:GetObject` on evidence prefixes — metadata and configuration only |
+| **SaaS systems of record** | A read-only auditor seat, provisioned for the window and de-provisioned at its end |
+| **Application** | A read-only auditor account in the console with no assessment-mutating capability |
+| **Repositories** | Read access to the specific repositories in scope; no write, no workflow-dispatch, no secret read |
+| **Endpoints** | No auditor access to endpoints. Endpoint evidence is produced as an extract by the entity |
+
+### 3.1 Where read-only is not sufficient — the administrator-on-behalf-of protocol
+
+Some tests genuinely require an action the auditor may not hold: reading a value only an
+administrator can retrieve, demonstrating that a control blocks something, or exercising a workflow.
+**The action is performed by an experienced administrator on the auditor's behalf, with the auditor
+observing** — never by granting the auditor the privilege.
+
+| Element | Rule |
+|---|---|
+| **Who** | A named administrator experienced in the system concerned, drawn from the system's own on-call roster. Not the most junior person available, and not the person whose control is being tested where that can be avoided |
+| **How** | The auditor states the action in writing; the administrator confirms it is within the signed scope, performs it in a shared session with the auditor watching, and the auditor records the observed result |
+| **What is refused** | An action outside the signed scope, an action the administrator judges unsafe, or an action whose effect cannot be undone. Refusal is recorded with its reason in the audit record and reported to the sponsor — a refusal is an audit finding for the auditor to weigh, not a private disagreement |
+| **Record** | Requested action, requesting auditor, performing administrator, timestamp, session recording reference, result, and the auditor's acknowledgement |
+| **Current period** | 14 on-behalf-of actions across the four audits; 1 refused (a request to disable a Config rule to demonstrate detection, refused as an availability and integrity risk and satisfied instead in the pre-production account) |
+
+---
+
+## 4. Auditor devices and pre-access verification
+
+An audit is a supply-chain path into the environment. **Access is not granted until the device that
+will use it has been verified against a baseline**, and the verification is recorded per device per
+audit — not per firm, and not once ever.
+
+| Requirement on any device used for audit access | How it is verified before access |
+|---|---|
+| Supported OS at a vendor-supported patch level, with the OS patch level no more than 30 days behind | Attestation from the auditing firm's IT function naming the OS build, plus device-posture check at the identity provider on first sign-in |
+| **Anti-malware / EDR present, running, and with definitions no more than 7 days old** | Firm attestation naming the product, plus the posture check |
+| Full-disk encryption enabled | Firm attestation plus posture check |
+| Screen lock ≤ 5 minutes, password or biometric | Firm attestation |
+| Centrally managed by the firm, with remote wipe available | Firm attestation |
+| No local administrator rights for the auditor's own account, or a documented justification | Firm attestation |
+| **Conditional-access enforcement** | The auditor role and the auditor SaaS seats are behind a conditional-access policy that requires a compliant, registered device and phishing-resistant MFA; a device that fails posture cannot obtain a session, so the baseline is enforced at every sign-in and not only at the first |
+| Device identifiers recorded | Device serial or managed-device ID recorded in the audit record and bound to the auditor's registered authenticators |
+
+**Personal and unmanaged devices are refused, without exception.** Where an auditing firm cannot meet
+the baseline, the entity issues a managed loan device for the engagement — 2 issued this period, both
+wiped and re-imaged on return. Where an auditor requires a screen recording or extract to be taken,
+it is taken on the entity's device and delivered through the agreed channel rather than pulled to the
+auditor's own storage.
+
+---
+
+## 5. Isolated copies, and their disposal
+
+Any audit activity that is **not** read-only against the live system runs against an **isolated copy**,
+never the operational system:
+
+| Rule | Detail |
+|---|---|
+| **What is copied** | Only the records within the signed scope. A copy is a scoped extract, not a clone of production |
+| **Where** | A dedicated isolated AWS account with no network or identity path to production, no outbound internet egress beyond the auditor's access path, and its own KMS key |
+| **Personal and customer data** | De-identified before copying wherever the audit's objective survives de-identification. Where the audit's objective genuinely requires real records (e.g. verifying that an evidence record's content matches its metadata), the General Counsel's approval is required, the record count is minimised and named, and the access is on-behalf-of under §3.1 rather than by copy |
+| **Write access** | Permitted **inside the isolated account only**, and only for the plan's stated purpose |
+| **Logging** | The isolated account's CloudTrail delivers to the central trail like any other account; an isolated environment is not an unwatched one |
+| **Deletion on completion** | **The isolated copy and every account, role, key and artifact created for the audit are deleted within 5 business days of the audit's completion**, and the deletion is evidenced by a record naming what was destroyed, by whom, when, and verified by a second person |
+| **Protected retention where required** | Where a copy must be retained — a regulatory retention obligation, an open legal hold, or an unresolved finding whose evidence must survive — retention is **explicitly approved by the General Counsel, given a named expiry date, recorded in the retention register, and held under the same access controls and encryption as the production original**. It is never left in place by default and never held without an expiry |
+| **Current period** | 3 isolated copies created; 3 deleted within the window (mean 2 business days), each with a verified destruction record; **1 extract retained under legal hold to 2027-01-31 by GC approval dated 2026-07-20** |
+
+---
+
+## 6. Special or additional processing — audit tools
+
+Running a tool against an operational system is additional processing the system was not provisioned
+for, and it is treated as such.
+
+| Step | Rule |
+|---|---|
+| **Identification** | Every tool intended to touch an operational system is named in the plan with its version, its vendor, what it reads, whether it writes, its concurrency and request-rate profile, and where its output goes |
+| **Assessment** | The CISO assesses the tool for its own supply-chain risk (provenance, integrity verification, whether it phones home), its resource profile, and its blast radius. An unassessed tool is not run |
+| **Management agreement** | **The system owner and the Head of Engineering must agree in writing to each tool before it is run**, separately from the plan's general approval, because a tool's effect is a different question from an audit's scope |
+| **Rate limits and guardrails** | Agreed request rates, a hard concurrency cap, and a named person watching the system's own dashboards for the duration |
+| **Prohibited without a separate exception** | Any tool that writes to an operational system; any tool that generates load against production during business hours; any destructive or availability test against production; any tool that exfiltrates data to a vendor-hosted service |
+| **Own-built scripts** | Treated as tools: named, reviewed by an entity engineer before execution, and run through the on-behalf-of protocol where they need privilege |
+| **Record** | Tool, version, approver, agreed rate, actual observed rate, start and end time, and any deviation |
+| **Current period** | 6 tools agreed (2 cloud-configuration scanners, 1 web application scanner run only against pre-production, 1 dependency analyser, 2 read-only query scripts); 1 refused (a credential-spraying module in the penetration tester's default suite, refused against production identities and satisfied in pre-production) |
+
+---
+
+## 7. Scheduling around availability
+
+| Rule | Detail |
+|---|---|
+| **The availability judgement is made before the plan is signed**, jointly by the system owner and the sponsor, and recorded in the plan | An unstated judgement means the test is treated as availability-affecting |
+| **Any test judged capable of affecting availability, performance, latency or data integrity is scheduled OUTSIDE business hours** — defined as 08:00–19:00 in the primary geography's business day — and outside any customer-committed assessment window | The customer's assessment run is the service; an audit must not be the reason one fails |
+| **Load-generating, scanning-at-rate, failover, restore and resilience tests are always treated as availability-affecting**, regardless of the judgement | These are the tests that have historically caused the incident |
+| **Change-freeze and peak periods** | No availability-affecting audit test during a declared change freeze, during an active incident at Sev-2 or above, or in the 48 hours before a customer's contractual reporting deadline |
+| **Notification** | The on-call rota, the status-page owner and the customer-facing team are notified before any availability-affecting test begins and after it completes, so a real incident during the window is not mistaken for the test — and the test is not mistaken for a real incident |
+| **Stop conditions** | Named in the plan (latency above a threshold, error rate above a threshold, any customer-visible failure, any alarm the test did not predict). **Any of the entity's on-call engineers may stop an audit test unilaterally** — no auditor may overrule a stop, and the stop is not a finding against the engineer |
+| **Current period** | 2 availability-affecting tests, both run out-of-hours as planned; 0 stops invoked; 0 customer-visible impact |
+
+---
+
+## 8. Monitoring and logging every audit session
+
+**All audit and test access is monitored and logged — every session, every identity, every action —
+and the logging is a precondition of the grant, not a follow-up.**
+
+| Layer | What is captured | Retention |
+|---|---|---|
+| **Authentication** | Every sign-in and sign-in failure by an auditor identity, with device, location, MFA method and session id, at the identity provider | 7 years |
+| **AWS** | Every API call under the auditor role in CloudTrail — management and data plane — with the assumed-role session name bound to the named individual | 7 years |
+| **SaaS** | The provider's own audit log for the auditor seat, exported to the central log store | 7 years |
+| **Application** | Every read by the auditor account against the assessment console, at record granularity | 7 years |
+| **On-behalf-of actions** | The administrator's own logged action plus the §3.1 record tying it to the requesting auditor and the shared session | 7 years |
+| **Isolated account** | Full CloudTrail from the isolated account, including the audit's own writes | 7 years |
+| **Session recording** | Screen recording for any on-behalf-of session and any session with isolated-account write access | 1 year |
+
+### 8.1 Watching it while it happens
+
+| Control | Detail |
+|---|---|
+| **A named monitor for the duration** | Every audit has a named entity-side monitor who watches the auditor's activity against the plan daily and signs off at close-out |
+| **Real-time alerting** | Alarms fire on: any auditor action outside the in-scope accounts; any denied mutating attempt; activity outside the agreed window or outside agreed hours; a request rate above the agreed cap; any auditor authentication from an unregistered device or an unexpected geography; any attempt to read evidence content |
+| **Correlation with the plan** | At close-out the auditor's actual actions are reconciled against the plan's scope, and any action outside it is recorded as a deviation with the sponsor's disposition |
+| **Independence** | The audit access logs are outside the auditor's own reach: an auditor cannot read, alter or delete the record of their own session, and the trail is log-file-validated and object-locked |
+| **Retention beyond the audit** | The session record is retained on the entity's own schedule regardless of what the auditing firm retains |
+| **Current period** | 4 audits monitored; 2 deviations recorded (one read against an out-of-scope account, disposed as an inadvertent console default and confirmed as a metadata-only read; one query rate above the agreed cap for 90 seconds), both closed with the sponsor's disposition; **0 unexplained auditor actions** |
+
+---
+
+## 9. Close-out
+
+Within 5 business days of an audit's stated end:
+
+1. Every auditor identity, role, seat and key created for the audit is **revoked and de-provisioned**,
+   and the revocation is evidenced. Standing auditor access does not exist.
+2. Isolated copies are deleted per §5, or retained only under a GC-approved dated exception.
+3. The actual activity is reconciled against the plan; deviations are recorded and dispositioned.
+4. Loan devices are returned, wiped and re-imaged.
+5. The audit record — plan, approvals, device verifications, tool agreements, on-behalf-of log, session
+   logs reference, deviations, deletion evidence, and the findings the auditor issued — is closed and
+   retained for 7 years.
+6. Findings enter the deficiency register under the monitoring procedure; this procedure governs the
+   audit's *conduct*, not its conclusions.
+
+**Verification that this procedure operated:** the CISO reviews all audit records quarterly against
+§§2–8 and reports to the Audit Committee. Current-period review (2026-08-05) found all five audits
+planned and signed in advance, all devices verified before access, all tools agreed, all access
+revoked within the window (mean 1.8 business days), and the two recorded deviations properly
+dispositioned. One weakness was raised: **the close-out reconciliation for the May penetration test was
+completed on day 7 rather than day 5 — D-2026-022, corrective action to add the reconciliation to the
+audit's own project plan rather than leaving it to follow the report.**
+
+---
+
+## 10. Review history
+
+| Version | Date | Reviewer | Outcome |
+|---|---|---|---|
+| 1.0 | 2025-11-14 | CISO | Initial procedure: plan, sign-off, read-only default, revocation on close |
+| 1.1 | 2026-03-19 | CISO, Head of Engineering | Added the administrator-on-behalf-of protocol after an auditor request for a privileged action could not be satisfied within the read-only default |
+| 1.2 | 2026-08-14 | CISO, Head of Engineering, approved by both | Added auditor-device security requirements with pre-access verification and conditional-access enforcement (§4); isolated-copy handling with deletion-on-completion and GC-approved protected retention (§5); the audit-tool identification and management-agreement process (§6); the out-of-hours scheduling rule for availability-affecting tests with named stop conditions (§7); and the full audit-session monitoring, logging, alerting and reconciliation regime (§8), together with the current period's operating record throughout |

@@ -1,0 +1,357 @@
+# Choice, Consent, and Collection Limitation Procedure
+
+**Document ID:** PRV-CON-035
+**Version:** 3.0 (current) — **effective 2026-06-01**
+
+**Revision note.** Version 3.0 separates the entity's two distinct privacy roles — controller for workforce
+information, processor for personal information incidentally present in customer evidence — which version 2.x
+conflated into a single set of undifferentiated commitments. It adds the documented basis for implicit
+consent, the sensitive-information explicit-consent path, and the new-purpose notification process, none of
+which version 2.x addressed. It supersedes version 2.3 of 2025-12-08.
+
+**Owner:** Privacy Owner (Head of Engineering, acting)
+**Approved by:** Head of Engineering 2026-05-28; reviewed by the Audit Committee 2026-05-29
+**Next scheduled review:** Annually (next by 2026-12-31), and on any change to collection methods or purposes
+
+**Scope.** All personal information the entity collects, in either of its two roles. The reference
+implementation is AWS account **471885797689**, region **us-west-2**.
+
+Companion documents: the retention and disposal standard; the data subject rights procedure; the third-party
+disclosure procedure; the data quality and complaints procedure; the information requirements standard (which
+classifies personal information as a data class).
+
+---
+
+## 1. The two roles, stated before anything else
+
+Almost every defect in a privacy programme of this kind comes from answering a controller question with a
+processor answer, or the reverse. So the roles are fixed here first:
+
+| Role | Whose personal information | What the entity decides | Who the data subject deals with |
+|---|---|---|---|
+| **Controller** | Workforce: employees and contractors of the entity | Purposes, retention, lawful basis | The entity, directly |
+| **Processor** | Any personal information incidentally present in customer-uploaded evidence documents, or in a customer's scanned account configuration | Nothing about purpose — the entity processes only on the customer's instruction | The **customer** (the data controller); the entity responds to the controller, not to the subject directly |
+
+**The entity does not knowingly collect personal information from members of the public, and operates no
+consumer-facing service.** It is a business-to-business compliance assessment service invoked by a scheduler,
+never by a data subject.
+
+**The processor role is the larger one by volume and the one most likely to be misread.** Where a requirement
+below speaks of informing or obtaining consent from data subjects, the processor-role answer is that the
+entity does so **through and on the instruction of the data controller**, under the terms of the service
+agreement — and that is stated explicitly rather than left as an implication.
+
+---
+
+## 2. Limiting collection to what is necessary (P3.1-R1)
+
+Collection is limited by design, not by policy alone. The complete inventory of personal information the
+entity collects:
+
+| # | Personal information | Role | Purpose | Why it is necessary | Alternative rejected |
+|---|---|---|---|---|---|
+| 1 | Workforce name and corporate email | Controller | Authentication, access authorisation, accountability for control activities | An access record with no identity cannot support accountability | Pseudonymous accounts — rejected because they defeat the audit trail |
+| 2 | Workforce role and reporting line | Controller | Least-privilege permission assignment; approval routing | Permissions are assigned by role | Per-person manual grants — rejected as unreviewable |
+| 3 | Workforce federated identity subject identifier | Controller | Session establishment | Required by the identity protocol | n/a |
+| 4 | Workforce training and attestation records | Controller | Competence evidence for control operation | The competence criterion requires it | n/a |
+| 5 | Workforce on-call contact details | Controller | Incident paging | An unreachable responder is a control failure | Shared alias only — rejected because it delays paging |
+| 6 | Names and email addresses of customer personnel appearing in customer-uploaded evidence (for example, a policy's named owner and approver) | **Processor** | None of the entity's own — the document is assessed as the customer submitted it | Not collected by choice; present because control evidence names its owners | Redaction on upload — **considered and rejected**, see §2.1 |
+| 7 | Identifiers in a customer's scanned account configuration that may incidentally be personal, such as an IAM user name derived from a person's name | **Processor** | Evaluating the customer's access controls | The control being assessed is *about* those identities | Hashing before evaluation — rejected because the assessment must report the actual identity to be actionable |
+
+**Nothing else is collected.** The entity collects no biometric, location, financial, health, or
+device-telemetry information about any individual; it deploys no cookies, trackers, or analytics against
+individuals; and it does not acquire personal information from data brokers or any other third-party source.
+
+### 2.1 The one collection the entity would prefer not to make
+
+Items 6 and 7 are collected **incidentally and unavoidably**, and this is stated plainly rather than
+described as a deliberate minimised collection:
+
+- Automatic redaction of names from uploaded evidence was evaluated in Q1 2026 and rejected: a control
+  document's value as evidence depends substantially on naming its accountable owner, and redacting the
+  owner would make the document fail the very criteria it is submitted against.
+- The compensating limits are that this information is **never used for any purpose beyond assessing the
+  document or configuration in which it appears**, is never aggregated into a profile of any individual, is
+  never used to train or fine-tune any model, and is retained only as long as the evidence record itself
+  (see the retention standard).
+- **Registered limitation:** because the entity does not parse uploaded documents for personal information, it
+  cannot enumerate which individuals are named across the evidence corpus without reading it. This limits the
+  completeness of a subject-accounting response and is registered as such in §9 and in the data subject
+  rights procedure.
+
+## 3. Collection by fair and lawful means, reviewed before implementation (P3.1-R2, P3.1-R3)
+
+Every collection method is reviewed **before** it is implemented, by the Privacy Owner jointly with the Head
+of Security Engineering. The review is a gate in the change process, not a retrospective sign-off: a change
+that introduces or alters a collection of personal information cannot merge without it.
+
+| Collection method | Reviewed on | Fairness determination | Lawfulness determination |
+|---|---|---|---|
+| Workforce onboarding record | 2025-09-14, re-reviewed 2026-05-28 | Collected openly at onboarding, with notice; no deception or intimidation; providing it is a condition of employment and stated as such | Necessary for performance of the employment contract and for the entity's legitimate interest in securing its systems |
+| Federated authentication | 2025-09-14 | Subject is authenticating knowingly and deliberately | Contract necessity |
+| On-call contact collection | 2025-11-02 | Voluntary within the on-call rota; an individual may decline the rota | Legitimate interest; consent for the personal-device channel specifically |
+| Customer evidence upload | 2026-01-20 | The uploading customer is informed in the service terms what happens to submitted content; the entity does not solicit personal information and asks for none | Processing on the controller's documented instruction |
+| Customer account scan | 2026-01-20 | The customer authorises the scan by enabling the assessment and permitting credential vending; scope is read-only | Processing on the controller's documented instruction |
+
+**Methods rejected at review** are recorded, because the rejections evidence that the review is real: an
+early design that would have cached scanned IAM user listings across assessments for performance was rejected
+in the 2026-01-20 review as retention beyond purpose; scans now always read fresh.
+
+## 4. Third-party sources (P3.1-R4)
+
+**The entity collects personal information from no third-party data source** — no brokers, no enrichment
+services, no public-record aggregation. The only parties from whom personal information arrives are the
+customer (as controller, on instruction) and the individual themselves (workforce).
+
+The processors that *handle* personal information on the entity's behalf are assessed for reliability under
+the third-party disclosure procedure, which covers the vendor set (cloud provider, identity provider, source
+control, observability, ticketing, communication platform). That assessment includes whether each collects
+fairly and lawfully to the extent it collects at all.
+
+## 5. Additional information developed about an individual (P3.1-R5)
+
+The entity **derives** a small amount of information about workforce individuals rather than collecting it:
+control-activity attribution (who performed which activity, and whether within the deadline) and on-call
+response latency.
+
+Individuals are informed that this is derived, at onboarding and again in the annual privacy notice
+refresh, because derived information is exactly the category people do not expect. The notice states what is
+derived, that it is used for control-operation evidence and for on-call rota fairness, and that it is not used
+for automated decisions about the individual. **No profiling and no automated decision-making about any
+individual takes place.**
+
+For the processor role, the entity derives nothing about customer personnel: an assessment's conclusions are
+about the *customer's controls*, not about the people named in them.
+
+---
+
+## 6. Communicating choices, and the consequences of each (P2.1-R1, P2.1-R2, P2.1-R3)
+
+### 6.1 What is communicated, to whom, and when
+
+| Audience | Vehicle | Timing | Contents |
+|---|---|---|---|
+| Workforce | Privacy notice issued at onboarding; refreshed annually | At or before collection | The seven items in §2, purposes, retention, the choices in §6.2, the consequences in §6.3, the rights in the data subject rights procedure, and how to complain |
+| Workforce | On-call rota briefing | Before joining the rota | The personal-device channel choice specifically |
+| Customers (as controllers) | Service terms and the published privacy commitments | Before the service is enabled | What is processed, for what purpose, sub-processors, retention, breach notification, and how the entity supports the controller's own obligations to its data subjects |
+| Data subjects in the processor role | **Via the controller**, whose notice governs | Controller's responsibility, supported by the entity | The entity supplies the controller with the processing description the controller needs in order to give notice |
+
+**The notice states that consent is required where consent is the basis, and states where it is not the
+basis.** Conflating the two is the common failure: telling someone their data is processed "with your consent"
+when the real basis is contract necessity misrepresents a choice they do not have. The notice therefore names
+the basis per item (§7.2).
+
+### 6.2 The choices actually available
+
+| Choice | Available to | Effect if exercised |
+|---|---|---|
+| Decline the on-call rota, or decline the personal-device paging channel and use a corporate device only | Workforce | No paging to a personal device; rota participation adjusted. **No employment consequence.** |
+| Decline optional profile details (photograph, pronouns, displayed timezone) | Workforce | Omitted from internal directory; no other effect |
+| Withdraw consent for optional items at any time | Workforce | Item deleted within 30 days; §6.3 consequences apply only to that item |
+| Object to a specific processing on legitimate-interest grounds | Workforce | Balancing test performed and the outcome given in writing with reasons |
+| Instruct deletion or return of submitted evidence | Customer (controller) | Executed per the retention and disposal standard |
+| Decline to submit a document, or submit a redacted one | Customer (controller) | The affected requirement is assessed on scan evidence alone and may score lower — a substantive consequence, stated plainly |
+
+### 6.3 Consequences of refusing or withdrawing — stated at collection time
+
+Consequences are given **at the point of collection**, next to the request, not buried in a policy the person
+reads later:
+
+| If the individual declines… | Consequence |
+|---|---|
+| Name and corporate email | Access cannot be granted; the role cannot be performed. This is a genuine bar and is stated as one |
+| Role and reporting line | Permissions cannot be assigned |
+| Federated identity | Authentication is impossible; there is no alternative access path |
+| Training and attestation records | The individual cannot be recorded as competent to operate controls, and so cannot hold control ownership |
+| On-call contact details | Cannot join the on-call rota. **No other consequence, and no effect on standing or advancement** |
+| Optional profile details | None beyond absence from the directory |
+
+**Where the consequence is "you cannot use the service or hold the role", the notice says exactly that.** A
+notice that implies a choice exists where it does not is a misrepresentation, and is treated here as a defect
+rather than as reassuring language.
+
+---
+
+## 7. Obtaining consent, and the basis for implicit consent (P2.1-R4, P2.1-R5, P2.1-R10, P2.1-R11)
+
+### 7.1 When and how consent is obtained (P2.1-R4)
+
+Consent, where it is the basis, is obtained **at or before collection** — never retrospectively:
+
+| Item | Mechanism | Record kept |
+|---|---|---|
+| On-call personal-device channel | Explicit opt-in at rota briefing | Dated acknowledgement, retained for the rota period plus 1 year |
+| Optional profile details | Explicit act of supplying them, with the optional status shown at the point of entry | The record's existence is itself the consent record |
+| Customer evidence submission | The controller's acceptance of the service terms, plus the deliberate act of upload with declared control references | Upload record with timestamp, submitter, and declared references |
+
+### 7.2 Documented basis for implicit consent (P2.1-R10)
+
+Most workforce processing does **not** rest on consent, and the basis is documented per item so that no
+implicit consent is inferred where a different basis applies:
+
+| Item | Basis | Why not consent |
+|---|---|---|
+| 1, 2, 3 (identity, role, federated identifier) | Contract necessity and the entity's legitimate interest in securing its systems | Consent would be unfree in an employment relationship, and withdrawal cannot be honoured without ending access — a consent that cannot be withdrawn is not consent |
+| 4 (training records) | Legal and framework obligation; legitimate interest | Same |
+| 5 (on-call contact) | Legitimate interest for the corporate channel; **explicit consent** for the personal-device channel | The personal device is genuinely optional, so consent is available and is used |
+| Optional profile details | **Consent**, freely given and withdrawable | Genuinely optional |
+| 6, 7 (customer evidence and configuration) | Not the entity's determination — processed on the controller's documented instruction | The entity is not the controller and must not purport to obtain consent for it |
+
+**Implicit consent is relied on in exactly one place**: an individual who voluntarily supplies an optional
+profile detail is treated as consenting to its display in the internal directory, because supplying it in
+response to a request that states its purpose is an unambiguous affirmative act. Every other basis is either
+explicit consent or a named non-consent basis. **No implicit consent is inferred from silence, from
+inactivity, or from continued use of a system.**
+
+### 7.3 Consent is confined to the stated purpose (P2.1-R11)
+
+Consent, where obtained, is scoped to the purpose stated at the time and to that purpose only. The entity
+does not use a consent given for one purpose to justify another — see §8 for what happens when a new purpose
+arises. Consent text names the purpose, the retention period, and the withdrawal method in the same sentence
+as the request, so the scope is not separable from the ask.
+
+### 7.4 Confirming and implementing expressed preferences (P2.1-R5)
+
+A preference is not merely recorded; it is **confirmed to the individual and then enforced**:
+
+1. The preference is recorded against the individual with a timestamp.
+2. A confirmation is sent to the individual restating the preference as recorded, so a mis-recorded preference
+   is visible to the person best placed to notice it.
+3. The system state is changed to match — for example, removing a personal-device paging target.
+4. The change is verified within 5 business days, and the verification is recorded.
+5. **Quarterly, recorded preferences are reconciled against actual system state.** The reconciliation exists
+   because a preference honoured on paper and not in configuration is the failure mode that matters. The Q1
+   2026 reconciliation covered all workforce preferences and found no discrepancy.
+
+Withdrawal is implemented within **30 days**, and the individual is told when it has been completed.
+
+---
+
+## 8. New purposes for information already collected (P2.1-R6, P2.1-R7, P4.1-R1, P4.1-R2)
+
+### 8.1 Use is confined to the purpose of collection (P4.1-R1, P4.1-R2)
+
+Each item in §2 carries exactly one purpose column, and use outside it is prohibited. Four specific
+prohibitions are stated because they are the plausible temptations for a system of this kind:
+
+- **Customer evidence and scanned configuration are never used to train, fine-tune, or evaluate any model.**
+  Inference is invoked per assessment with the customer's content in the request and nothing is retained by
+  the entity for model improvement.
+- **Assessment content is never used for the entity's own marketing, benchmarking, or cross-customer
+  analysis.** No aggregate derived from one customer's evidence is shown to another.
+- **Workforce control-activity attribution is never used for performance management**, only for control
+  evidence and rota fairness.
+- **No personal information is used for automated decision-making about the individual.**
+
+Use is permitted without consent only where a law or regulation specifically requires it — for example, a
+lawful order compelling disclosure — and any such instance is recorded in the disclosure record and, where
+lawful to do so, reported to the affected controller.
+
+### 8.2 Documenting and notifying a new purpose (P2.1-R6, P2.1-R7)
+
+When a purpose not already in the privacy notice is proposed:
+
+1. **The new purpose is documented** in the change record, naming the item, the proposed purpose, the basis,
+   and whether it is compatible with the original purpose. This documentation is created **before** any use.
+2. The Privacy Owner determines compatibility. Where the new purpose is incompatible, the original consent or
+   basis does **not** carry over.
+3. **Data subjects are notified, and implicit or explicit consent obtained, before the new use begins** — the
+   privacy notice is updated and the update is actively communicated, not silently republished.
+4. Where the basis is consent, the new use applies **only** to individuals who have consented; the entity
+   does not proceed on the basis of non-response.
+5. In the processor role, a new purpose is **not the entity's to adopt**: the entity asks the controller for
+   an instruction, and does nothing until it arrives.
+
+**No new purpose has been adopted for previously collected information in the current reporting period**, so
+this process has been exercised only in a tabletop walkthrough (2026-04-15) rather than in production. That is
+stated rather than implied, and is registered in §9.
+
+---
+
+## 9. Sensitive personal information, and endpoint transfers (P2.1-R8, P2.1-R9, P3.2)
+
+### 9.1 The entity does not collect sensitive personal information
+
+**No special-category or sensitive personal information is collected in the controller role**: no racial or
+ethnic origin, political opinion, religious belief, trade union membership, genetic or biometric data, health
+data, sex life or sexual orientation, precise geolocation, government identifier, or financial account data.
+
+This is enforced rather than asserted: the seven items in §2 are the complete permitted set, and the
+pre-implementation review in §3 is the gate through which any new item — sensitive or not — must pass.
+
+### 9.2 The explicit-consent path, which exists and is tested (P3.2-R1, P3.2-R2, P3.2-R3, P2.1-R8)
+
+A procedure that has nothing to apply to still has to work the first time it is needed, so the path is
+defined and exercised:
+
+1. **Determination.** The Privacy Owner determines at pre-implementation review whether a proposed collection
+   includes sensitive personal information, or information that any applicable law requires explicit consent
+   for. The determination is recorded either way.
+2. **Communication of the need for consent, before collection** (P3.2-R1). The individual is told, in advance
+   of any collection: that the item is sensitive, that **explicit consent is required and is the sole basis**,
+   what the item is, the purpose, the retention period, who it may be disclosed to, and how to withdraw.
+3. **Communication of the consequences of not consenting** (P3.2-R2). The individual is told what will and
+   will not happen if they decline. Because no sensitive item is necessary to any role in the entity, the
+   consequence is stated as: **the item is not collected and there is no effect on employment, standing,
+   advancement, or system access.** A sensitive collection that carried an adverse consequence for refusal
+   would not be freely consented and would be rejected at step 1.
+4. **Explicit consent obtained before collection** (P3.2-R3, P2.1-R8). Consent is a separate, affirmative,
+   unbundled act — never a pre-ticked box, never bundled with another agreement, never inferred from
+   continued employment or continued use of a system, and **obtained directly from the data subject**, not
+   from an employer, a colleague, or any other intermediary.
+5. **No collection proceeds without a recorded consent.** Absence of a response is not consent.
+
+### 9.3 Retention of explicit consent documentation (P3.2-R4)
+
+Documentation of explicit consent is retained for **the lifetime of the processing plus 3 years**, so that the
+lawfulness of a past processing can be demonstrated after it has ceased. Each record holds: the individual,
+the exact consent text presented, the affirmative act and its timestamp, the version of the privacy notice in
+force, the purpose consented to, and — where applicable — the withdrawal and its timestamp.
+
+Consent records are held in the governance store, encrypted at rest, access-controlled to the Privacy Owner,
+and are **exempt from routine deletion** while the underlying processing continues, because deleting the
+consent record would destroy the evidence that the processing was lawful. Existing explicit consent records
+for the personal-device paging channel are retained on this basis and were verified present at the 2026-04-08
+evidence currency check.
+
+### 9.4 Endpoint device transfers (P2.1-R9)
+
+Personal information is transferred to or from an individual's endpoint device in exactly two circumstances,
+each consented:
+
+| Transfer | Consent |
+|---|---|
+| Paging notification to a personal mobile device | Explicit opt-in per §7.1; withdrawable, and withdrawal removes the target |
+| Workforce access to entity systems from a managed endpoint | Consented at onboarding as part of the endpoint management terms, which state what the entity can and cannot see on the device |
+
+**No personal information is transferred to a customer's or data subject's endpoint device**, because the
+entity has no consumer-facing interface. No transfer occurs to an unmanaged personal endpoint other than the
+paging channel above.
+
+---
+
+## 10. Registered deficiencies
+
+| Deficiency | Effect | Owner | Due |
+|---|---|---|---|
+| Uploaded evidence is not parsed for personal information, so individuals named in customer documents cannot be enumerated without reading the corpus | Limits the completeness of a subject-accounting response in the processor role | Privacy Owner | 2026-10-31 |
+| The new-purpose notification process (§8.2) has been exercised in a tabletop only, never in production | First production use will be the first real test | Privacy Owner | Exercise again at the 2027 review |
+| The sensitive-information explicit-consent path (§9.2) has never been invoked, as no sensitive information is collected | Untested in production, by design | Privacy Owner | Annual walkthrough; next by 2027-06 |
+| Privacy Owner is held concurrently by the Head of Engineering rather than independently | Reduces independence of privacy challenge | Head of Engineering | Reassess if headcount grows; reviewed 2026-05-28 |
+| Preference-to-system-state reconciliation is quarterly, not continuous | A preference honoured on paper but not in configuration could persist up to 90 days | Privacy Owner | 2026-12-31 |
+
+---
+
+## 11. Governance
+
+| Activity | Frequency | Owner | Evidence |
+|---|---|---|---|
+| Pre-implementation review of any new or changed collection method | Per change, as a merge gate | Privacy Owner with Head of Security Engineering | Dated review record, including rejections |
+| Privacy notice review and active re-communication | Annually | Privacy Owner | Versioned notice, distribution record |
+| Consent record completeness check | Quarterly | Privacy Owner | Sampling record |
+| Preference-to-system-state reconciliation | Quarterly | Privacy Owner | Reconciliation record with discrepancies |
+| Collection inventory review against actual processing | Annually | Privacy Owner | Approved inventory (§2) |
+| Basis-for-processing review, including implicit consent basis | Annually | Privacy Owner | Approved basis table (§7.2) |
+| Sensitive-information path walkthrough | Annually | Privacy Owner | Walkthrough record |
+| Deficiency tracking to closure | Quarterly | Privacy Owner | Deficiency register |
+| Reporting to the Audit Committee | Quarterly | Privacy Owner | Committee minutes |

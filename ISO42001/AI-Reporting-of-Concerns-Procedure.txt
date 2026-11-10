@@ -1,0 +1,123 @@
+# AI Reporting of Concerns Procedure
+
+**Document ID:** AIMS-PRO-004
+**Version:** 2.0
+**Owner:** General Counsel (process owner); AI Governance Board (AIGB) escalation authority
+**Approved by:** AI Governance Board
+**Approval date:** 2026-01-22
+**Next scheduled review:** 2026-12-31
+**Scope:** Concerns about the organization's role with respect to any AI system, at **any stage of its
+life cycle** — inception, design, development, evaluation, release, deployment, operation, change,
+or decommissioning — including the Bedrock agents and AgentCore runtimes in AWS account
+471885797689.
+
+---
+
+## 1. Purpose
+
+This procedure establishes the organization's process for **reporting concerns about the
+organization's role with respect to an AI system throughout its life cycle**. It exists so that any
+person who believes an AI system is being built, sold, operated or used in a way that conflicts with
+the AI Policy (AIMS-POL-001), the law, or our stated responsible-AI principles has a defined,
+protected route to raise it and receive an answer.
+
+Concerns in scope include, but are not limited to: harmful, biased or discriminatory output; use of
+a system outside its documented intended use; inadequate human oversight; unlawful or unlicensed
+training data; undisclosed automated decision-making; unsafe deployment; suppression of evaluation
+results; and pressure to bypass a release gate or an AIMS control.
+
+## 2. Who may report
+
+The process is **available to employed and contracted persons alike**: permanent and fixed-term
+employees, interns, contractors, contingent workers, agency staff, secondees and vendor personnel
+working on or with our AI systems. Customers and members of the public may raise AI concerns through
+the external channel in section 3.4, which feeds the same triage queue.
+
+No person needs permission from their manager to report, and no reporter is required to establish
+that the concern is well-founded before reporting — a good-faith concern is enough.
+
+## 3. Reporting channels
+
+| # | Channel | Confidential | Anonymous | Notes |
+|---|---|---|---|---|
+| 3.1 | AI Concerns intake form on the AIMS portal | Yes | Optional | Reporter chooses "named", "confidential" or "anonymous" at submission |
+| 3.2 | Independent third-party ethics hotline (24/7, telephone and web, operated by an external provider) | Yes | Yes | The provider forwards the report without reporter identity unless the reporter consents |
+| 3.3 | Direct to the Responsible AI Lead, AI Risk Manager, General Counsel or any AIGB member | Yes | No | For reporters who prefer a named person |
+| 3.4 | External AI concerns address published in the Responsible AI Statement | Yes | Yes | Customers, users and the public |
+
+**Confidentiality and anonymity.** Concerns may be raised **confidentially, anonymously, or both**.
+For confidential reports, the reporter's identity is known only to the Investigation Lead and the
+General Counsel and is not disclosed to the reported party or to line management. For anonymous
+reports, no identifying metadata is retained; the hotline provides a reference code so an anonymous
+reporter can follow up and receive the outcome without ever identifying themselves.
+
+## 4. Protection from reprisals
+
+Retaliation against a person who raises an AI concern in good faith, or who participates in an
+investigation as a witness, subject-matter expert or investigator, is a **disciplinary offence up to
+and including dismissal**, and is treated as a nonconformity in the AIMS.
+
+- Protection extends to **all reporting and investigation participants**, not only the reporter.
+- Protection applies even where the concern is ultimately not substantiated, provided it was raised
+  in good faith.
+- For 12 months after a report closes, any adverse employment action affecting a participant
+  (performance rating, role change, termination, compensation decision) requires prior review and
+  written clearance by HR and the General Counsel.
+- Reporters may raise a retaliation concern through any channel in section 3; retaliation concerns
+  are escalated directly to the AIGB.
+
+## 5. Qualified personnel with authority
+
+Concerns are handled by personnel who are **qualified and hold the authority to investigate, resolve
+and escalate**:
+
+| Role | Qualification | Authority |
+|---|---|---|
+| Triage Officer (General Counsel's office) | Trained in whistleblowing intake and AI risk taxonomy | Classifies severity; assigns Investigation Lead within 3 business days |
+| Investigation Lead | Independent of the reported team; trained investigator | Compels access to systems, logs, evaluation records and personnel interviews |
+| Responsible AI Lead | Responsible-AI subject-matter expert | Assesses fairness, transparency and oversight concerns on the merits |
+| AI Security Lead | Security and adversarial-testing expert | Assesses security and model-abuse concerns |
+| AI Governance Board | Management body owning the AIMS | **Authority to halt or suspend any AI system deployment or operation**, order corrective action, and escalate to the Executive Leadership Team |
+
+Investigators are always independent of the AI system and team that the concern is about. Where a
+concern implicates a member of the AIGB, that member is recused and the Executive Leadership Team
+appoints the Investigation Lead.
+
+## 6. Response time frames and outcomes
+
+The process includes defined mechanisms to **respond within an appropriate time frame and to provide
+reporting or escalation outcomes**:
+
+| Stage | Target | Severity 1 (safety, legal, or live harm) |
+|---|---|---|
+| Acknowledgement to reporter | 2 business days | Same business day |
+| Severity classification and Investigation Lead assigned | 3 business days | 24 hours |
+| Interim risk decision (continue / restrict / suspend the AI system) | 10 business days | 48 hours, by the AIGB |
+| Investigation concluded and findings issued | 30 business days | 10 business days |
+| Outcome communicated to reporter | 5 business days after conclusion | 2 business days after conclusion |
+| Corrective actions verified closed | 90 days | 30 days |
+
+**Outcome communication.** Every reporter — including anonymous reporters, via the hotline reference
+code — receives the outcome: whether the concern was substantiated, what corrective action was taken
+or why none was required, and their route to escalate if dissatisfied. Escalation outcomes are
+reported to the AIGB quarterly in aggregate, and immediately for Severity 1.
+
+**Maintaining confidentiality while reporting outcomes.** Outcome communications are written to
+preserve the reporter's confidentiality or anonymity, the privacy of individuals named in the
+concern, and **business confidentiality** — commercially sensitive detail, customer identities and
+security-sensitive specifics are summarized or withheld, and the reason for withholding is stated so
+the reporter knows the omission is deliberate rather than an incomplete answer.
+
+## 7. Records and continual improvement
+
+Every concern is recorded in the AI Concerns Register (AIMS-REG-005) with severity, dates against
+each time frame in section 6, outcome and corrective actions; records are retained for 7 years.
+Anonymous reports are recorded without identifying metadata. The AIGB reviews register trends
+quarterly, and themes feed the AI Risk Register (AIMS-REG-001) and the annual review of the AI Policy.
+
+## 8. Review history
+
+| Version | Date | Reviewer | Outcome |
+|---|---|---|---|
+| 1.0 | 2024-05-30 | General Counsel | Initial issue; approved by AIGB |
+| 2.0 | 2026-01-22 | General Counsel | Added the independent third-party anonymous hotline, the 12-month adverse-action clearance, and explicit Severity 1 time frames; confirmed suitable and effective; approved by AIGB |

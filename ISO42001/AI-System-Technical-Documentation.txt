@@ -1,0 +1,127 @@
+# AI System Technical Documentation and Documentation Register
+
+**Document ID:** AIMS-DOC-012
+**Version:** 3.0
+**Owner:** AI Development Lead
+**Approved by:** AI System Accountable Owner (relevant management) — approval recorded below
+**Approval date:** 2026-03-06
+**Next scheduled review:** 2026-12-31, and on every operational change (§5)
+**Status:** Accurate and up to date as of the approval date
+**Scope:** The compliance-evaluation AI system in AWS account 471885797689 (us-west-2) — the Bedrock
+agent and Bedrock AgentCore runtime.
+
+---
+
+## 1. Technical documentation needed for each category of interested parties
+
+The organization has **determined what technical documentation each relevant category of interested
+party needs, and the appropriate form in which it is provided.** Need is determined by what each party
+must decide or do, not by what happens to be written.
+
+| Interested-party category | What they need it for | Documentation provided | Form provided in |
+|---|---|---|---|
+| **Assessed organizations (customers / users)** | Decide whether to rely on a verdict; understand purpose, limits and their obligations | System overview and intended purpose, usage instructions, technical limitations, monitoring and influence capabilities (§2) | Customer-facing product documentation portal and in-product help; plain language, no internal identifiers |
+| **Compliance analysts and auditors (operators, human oversight point)** | Review, explain and override verdicts | §2 plus rationale interpretation guide, evidence-citation model, override procedure, the assessment journal | Operator guide plus the in-product journal view; worked examples |
+| **External auditors and certification bodies** | Obtain assurance over the AIMS and this system | Design and architecture (AIMS-DOC-009), V&V records (AIMS-PLAN-010), impact assessments, deployment records, event logs | Controlled evidence pack, released on request under NDA; document IDs and versions cited |
+| **Regulators / supervisory authorities** | Verify legal obligations | Intended purpose, data categories and provenance, impact assessment, human oversight, logging and retention | Regulatory dossier assembled from the register in §4 |
+| **Operations and on-call engineers** | Run, monitor and repair the system | Runbook, alarm catalogue, failure-management and health-monitoring processes, SOPs, roles, update documentation (§3) | AIMS-PRO-007 runbook plus alarm and dashboard definitions |
+| **Developers and reviewers** | Change the system safely | Architecture, design choices, interface and tool contracts, data-quality assumptions, test strategy | In-repository technical docs and AIMS-DOC-009, versioned with the code |
+| **Security reviewers** | Assess and re-assess threats | Threat model incl. AI-specific threats, trust boundary, credential and data-flow documentation | AIMS-DOC-009 §6 plus the security review record |
+| **Model and infrastructure suppliers** | Support and capacity | Usage profile, model identifiers, region, throughput and quota needs | Supplier engagement record (AIMS-PRO-010) |
+| **Internal management and the AIGB** | Govern and authorize | Impact assessments, release authorizations, performance and incident reporting, exceptions | Governance pack for the quarterly AIGB review |
+| **The organization's own employees who use results** | Understand what a score does and does not mean | Intended purpose and limitations, out-of-purpose statement | Internal enablement material |
+
+Access is role-appropriate: customer-facing documentation excludes internal infrastructure detail, and
+prompts and rubrics are withheld as intellectual property (AIMS-DOC-009 §6) while the rationale behind
+every verdict is always disclosed.
+
+## 2. Core AI system information
+
+| Element | Content |
+|---|---|
+| **General description** | An orchestrated, five-node inference graph that assesses an organization's compliance with a managed control framework using foundation models on Amazon Bedrock. It gathers scope and evidence, reads the customer's cloud environment read-only, analyses supplied documents, and produces a per-requirement verdict with a cited rationale and a control-level score. Architecture in AIMS-DOC-009 §2. |
+| **Intended purpose** | Automated, evidence-cited compliance assessment of an organization's own environment and documentation against a supported managed framework, to support — never replace — qualified human compliance judgement. Out-of-purpose uses are listed in AIMS-PRO-007 §7.1. |
+| **Usage instructions** | Register the environment and establish the read-only trust relationship; create a project and select the framework; upload evidence documents and link them to the specific controls they support (an unlinked document is not visible to a control); run an assessment at control or framework level; review per-requirement verdicts with their cited evidence; annotate or override; act on the requirement-tied remediation tasks. Evidence must be a supported content type, with the declared type matching the file. |
+| **Deployment assumptions** | Cloud-only on the managed container runtime in us-west-2; no on-premises or edge deployment. Assumes the supported model identifiers are available in-region with sufficient quota; that the customer has established the cross-account read-only trust relationship; that supporting storage, queue and record stores exist and are reachable; and that the front-end control plane is contract-compatible. Full development-versus-deployment differences in AIMS-PLAN-008 §3. |
+| **Operation assumptions** | Machine-invoked, asynchronously, one assessment at a time per assessment record (a lock serializes it) while the platform scales out across assessments. Assumes evidence supplied is the customer's own and lawfully held; that scan reads are authorized; and that a qualified human reviews consequential verdicts. |
+| **Technical limitations** | (a) Accuracy characterized only within the documented domain of use — English-language evidence, supported managed frameworks (AIMS-PLAN-010 §3.2); (b) a scan can only observe what the underlying APIs expose, so process, human and outside-AWS controls must be evidenced by document; (c) verdicts are probabilistic model judgements, not deterministic tests — only the score arithmetic is deterministic; (d) a result is a point-in-time observation, not continuous monitoring; (e) not a certification or attestation; (f) unreadable evidence yields an explicit read-failure state, not a compliance verdict; (g) supplier model behaviour can change beneath a model identifier, so results are reproducible only in conjunction with the recorded model identifier and version. |
+| **Monitoring capabilities and functions that let users or operators influence operation** | Users and operators can: read the assessment journal (every phase, tool call and intermediate result); see per-requirement rationale and cited evidence; distinguish an evidence gap from a failure in the output; **override** any verdict; annotate; **halt or re-scope** an assessment; add or replace evidence and re-run; suspend the system entirely (AIGB authority); and view health, latency, error-rate and verdict-distribution dashboards. Operators additionally control the model identifier and the enabled framework set as configuration. |
+
+## 3. Technical information for responsible operation
+
+| Element | Where documented | Summary |
+|---|---|---|
+| **Failure-management plan** | AIMS-PRO-007 §4 | Severity scale, acknowledge/mitigate/repair targets, repair mechanisms, mandatory retrospectives. Bias to safety: fail the assessment visibly rather than publish a doubtful verdict |
+| **Health-monitoring process** | AIMS-PRO-007 §2 | Health endpoint, error-rate, dependency, throttling, coverage, verdict-distribution and cost signals with alarm thresholds |
+| **Failure-handling process** | AIMS-PRO-007 §4 | Detect → triage → mitigate → root cause → repair → verify with V&V → close; automatic stale-lock takeover so a crashed run self-heals |
+| **Standard operating procedures** | AIMS-PRO-007 §§4–6, AIMS-PLAN-008 §2 | Deployment and rollback, incident response, support triage and escalation, evidence-retention job handling, model-identifier change, quarterly no-change regression |
+| **Operational roles and accountabilities** | AIMS-POL-003 (roles), AIMS-PRO-007 §1 | AI System Accountable Owner (release authority), AI Development Lead, AI Operations Lead, Responsible AI Lead, AI Security Lead, Data Steward, Support Lead — each element in §1 of the runbook has a named owner |
+| **System-update documentation** | AIMS-POL-006 §4, AIMS-PRO-007 §5 | Change classes and approvals, release schedule, regression requirements, user communication matrix and timing |
+| **Event logging and traceability** | AIMS-STD-013 | Which life-cycle phases log, what is recorded, retention |
+| **Decommissioning** | AIMS-PRO-014 | Data deletion and retention obligations discharged and evidenced |
+
+## 4. Life-cycle information register
+
+The technical documentation set covers the life cycle, not initial development alone. Each item is
+version-controlled and its current approved version is recorded here.
+
+| Life-cycle information required | Document | Version | Approved by | Date |
+|---|---|---|---|---|
+| Design and architecture specifications | AIMS-DOC-009 §2 | 5.2 | AI System Accountable Owner, Chief AI Officer | 2026-03-06 |
+| Design choices and their rationale | AIMS-DOC-009 §3 | 5.2 | as above | 2026-03-06 |
+| Quality measures applied in design and development | AIMS-DOC-009 §§3.3, 4; AIMS-POL-006 §2.2 | 5.2 / 3.1 | AI System Accountable Owner / AIGB | 2026-03-06 / 2026-02-24 |
+| Information about data used during development | AIMS-REG-006 §3; AIMS-POL-006 §2.5 | 4.0 / 3.1 | Data Steward / AIGB | 2026-03-02 / 2026-02-24 |
+| Data quality assumptions and characteristics | AIMS-REG-006 §3.4; AIMS-DOC-009 §3.3 | 4.0 / 5.2 | Data Steward / AI System Accountable Owner | 2026-03-02 / 2026-03-06 |
+| Data management activities | AIMS-REG-006 §3 (provenance, labelling, retention, deletion) | 4.0 | Data Steward | 2026-03-02 |
+| Verification and validation records | AIMS-PLAN-010 §6 (release record) | 4.1 | AI System Accountable Owner | 2026-03-04 |
+| Requirements and specification | AIMS-SPEC-007; AIMS-POL-006 §6 | 2.4 / 3.1 | AI Development Lead / AIGB | 2026-02-24 |
+| Impact assessment documentation | AIMS-PRO-005 impact assessment record + AIMS-PLAN-010 §4 (IC-1…IC-12) | current 2026-03-04 | Responsible AI Lead | 2026-03-04 |
+| Deployment information | AIMS-PLAN-008 | 3.3 | AI System Accountable Owner | 2026-03-05 |
+| Operation, monitoring and support | AIMS-PRO-007 | 4.2 | AI System Accountable Owner | 2026-03-08 |
+| **Operational changes** | Release records and change log per AIMS-POL-006 §4; summarized in §5 below | continuous | AI Operations Lead | current |
+| Event logging and retention | AIMS-STD-013 | 2.0 | AI Operations Lead | 2026-03-07 |
+| Threat model | AIMS-DOC-009 §6 | 5.2 | AI Security Lead | 2026-02-20 |
+| Roles and responsibilities | AIMS-POL-003 | 2.1 | AIGB | current |
+| Decommissioning | AIMS-PRO-014 | 1.2 | AI System Accountable Owner | 2025-11-20 |
+
+## 5. Accuracy, currency, approval and procedures for operational change
+
+**Accuracy and currency.** Documentation is updated **in the same change as the system change it
+describes**; a change whose documentation is not updated fails peer review, and documentation currency
+(RC-10) is a release criterion that blocks release. Every document carries an owner, a version, an
+approval and a review date; an out-of-date document is a nonconformity raised in the AIMS
+corrective-action log.
+
+**Approval by relevant management.** Technical documentation is approved by the AI System Accountable
+Owner; responsible-AI content additionally by the Responsible AI Lead, security content by the AI
+Security Lead, and policy-level documents by the AIGB. Approvals are recorded in §4.
+
+**Procedures to address operational changes.** Every operational change is classified (Minor,
+Standard, Material, Emergency — AIMS-POL-006 §4). The classification determines the documentation,
+regression and communication obligations:
+
+| Step | Requirement |
+|---|---|
+| 1. **Internal evaluation of the type of change** | The AI Development Lead proposes a class; the AI Operations Lead and, for anything verdict-affecting or oversight-affecting, the Responsible AI Lead confirm it. Material classification re-triggers the impact assessment. Classification is recorded with the change and is auditable — a change may be reclassified upward in review, never downward without Responsible AI Lead agreement |
+| 2. Documentation update | Affected documents in §4 updated and re-approved in the same change |
+| 3. Verification | Regression scope per the class (AIMS-PLAN-010 §2) |
+| 4. **Communication to users** | Per the matrix in AIMS-PRO-007 §5.2 — verdict-affecting changes announced at least 10 business days ahead with their effective date and expected effect; documentation published before or with the change, never after |
+| 5. Post-change confirmation | AI Operations Lead confirms the deployed system matches the documentation; discrepancy is a defect |
+
+**Recorded operational changes since the last review:**
+
+| Date | Change | Class | Documentation updated | User communication |
+|---|---|---|---|---|
+| 2026-01-15 | Formalized the trust boundary for customer-supplied content; injection suite made a release gate | Standard | AIMS-DOC-009 v5.0 | Release note |
+| 2026-02-11 | Verdict-distribution monitoring added to post-deployment verification | Minor | AIMS-PLAN-008 v3.2 | Internal changelog |
+| 2026-02-20 | Opus-class model adopted for the auditor node | **Material** | AIMS-DOC-009 v5.1, AIMS-PLAN-010 regression record | Customer notice 10 business days ahead |
+| 2026-03-06 | Scan-versus-document precedence documented; evasion threat added | **Material** (scoring semantics) | AIMS-DOC-009 v5.2, AIMS-PLAN-010 v4.1 §6.1 | Customer notice with effective date |
+| 2026-03-07 | Event-log retention lengthened to meet the audit-record obligation | Standard | AIMS-STD-013 v2.0 | Internal changelog |
+
+## 6. Review history
+
+| Version | Date | Reviewer | Outcome |
+|---|---|---|---|
+| 2.0 | 2025-11-19 | AI Development Lead | Established the interested-party documentation matrix |
+| 2.1 | 2026-01-16 | AI Development Lead | Added the operator guide for rationale interpretation and override |
+| 3.0 | 2026-03-06 | AI Development Lead, approved by AI System Accountable Owner | Added the life-cycle register (§4) with versions and approvals, the change-type evaluation procedure (§5), and the recorded operational-change log |

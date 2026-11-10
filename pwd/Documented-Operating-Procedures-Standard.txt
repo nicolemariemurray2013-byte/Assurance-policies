@@ -1,0 +1,214 @@
+# Documented Operating Procedures Standard
+
+| Field | Value |
+|---|---|
+| Document ID | OPS-STD-049 |
+| Version | 2.2 |
+| Owner | Director, IT Operations (accountable); CISO (security procedures); Head of Engineering (service procedures) |
+| Approved by | Security Governance Board, 2026-08-19 |
+| Effective date | 2026-08-19 |
+| Review cycle | Annual, and on any change to the operating model, the tooling estate, or the document platform — next review 2026-12-31 |
+| Applies to | Every operating procedure for an information-processing facility in scope of the management system, in every geography and both legal entities |
+
+## 1. What this standard governs, and what it deliberately does not
+
+This standard governs **the procedures themselves as controlled objects** — how they come to exist,
+how a person who needs one finds it, how it is changed, who may authorise the change, and how it is
+kept from going stale. It does not contain the procedures. Those live in the runbooks, standards and
+registers named in §2, each with its own owner.
+
+The distinction matters because the two failure modes are different. A wrong procedure is a content
+problem, caught by the people who use it. A procedure that is correct but **unfindable, unread, or
+silently out of date** is a governance problem, and nobody catches it — the operator improvises,
+succeeds, and the gap between the written procedure and the practised one widens without anyone
+noticing. Every requirement in this standard is aimed at the second failure mode.
+
+Two consequences shape the rest of the document:
+
+- **A procedure nobody can reach is not a control.** §3 therefore treats availability as a
+  requirement with its own evidence, including availability during the incident in which the
+  procedure is most needed and the platform holding it may be unavailable.
+- **A procedure changed without authorisation is an undocumented change to how the organization
+  operates.** §5 gives procedure changes their own authorisation path, distinct from the code-merge
+  rule, because a procedure can be materially rewritten without a line of code changing.
+
+## 2. The procedure set
+
+Operating procedures are maintained for every activity where an operator's action affects the
+confidentiality, integrity or availability of in-scope information. The set is enumerated — not
+described in the abstract — because an unenumerated set cannot be reviewed for completeness.
+
+| Domain | Procedure | Owner | Primary audience |
+|---|---|---|---|
+| Service operation | `OPS-RBK-016` AI System Operations and Monitoring Runbook — start, stop, health, degraded-mode and rollback | Head of Engineering | On-call engineers (9) |
+| Deployment and change | `SEC-CHG-019` Change Management and Release Control | Head of Engineering | All engineers (22) |
+| Configuration and hardening | `SEC-CFG-025` Configuration Standards and Vulnerability Management | Head of Security Engineering | Platform engineers (7) |
+| Access administration | `SEC-IAM-021` Logical Access Control and Authentication | Head of Security Engineering | IAM administrators (4), all approvers (14) |
+| Backup and restore | `SEC-BCK-018` Backup, Recovery and Environmental Protection | Director, IT Operations | On-call engineers, restore testers |
+| Continuity and recovery | `BCP-PLN-020` Business Continuity and Recovery Testing Plan | COO | Incident commanders (5), all engineers |
+| Incident handling | `SEC-IRP-012` Incident Response and Recovery Program | CISO | All personnel (report), on-call (handle) |
+| Evidence and forensics | `SEC-FOR-045` Digital Evidence Collection and Forensic Readiness | Evidence Custodian | Qualified Handlers (3), First Responders (14) |
+| Monitoring and detection | `SEC-MON-026` Security Monitoring, Detection and Anomaly Analysis | Head of Security Engineering | Security on-call |
+| Time and clock | `SEC-STD-048` Time Synchronization and Clock Accuracy | Head of Infrastructure Engineering | Platform engineers |
+| Capacity | `OPS-STD-028` Capacity Management | Director, IT Operations | Platform engineers |
+| Media and disposal | `SEC-STD-024` Information Retention and Secure Disposal | Director, IT Operations | IT Operations, all leavers' managers |
+| Physical | `SEC-PRO-013` Physical Access and Facility Security | AI Security Lead | Facilities lead, all badge holders |
+| Endpoint and remote working | `SEC-STD-027` User Endpoint Device and Remote Working | Director, IT Operations | All personnel |
+| Supplier operation | `SEC-PRO-020` Third-Party and Vendor Risk Management | Head of Procurement | Procurement, engineering leads |
+| Records of operation | `OPS-REC-034` Control Operation Records and Timeliness Register | Compliance Manager | Control owners (18) |
+
+**Completeness test.** At each annual review the procedure set is reconciled against two independent
+lists: the asset and service inventory (does every in-scope processing facility have a procedure that
+covers operating it?) and the on-call escalation catalogue (is there a procedure for every scenario
+an operator can be paged for?). The 2026-08 reconciliation found one gap — no written procedure for
+the clock-skew alarm introduced in `SEC-STD-048` §6 — which is why that alarm's response is now in
+`OPS-RBK-016`. A reconciliation that finds nothing is reported as such, with the lists it was run
+against, so that "no gaps" is a result and not a silence.
+
+## 3. Distribution, storage and availability
+
+| Requirement | How it is met |
+|---|---|
+| **Single authoritative location** | Every procedure has exactly one authoritative copy, in the controlled documentation repository. There is no second maintained copy. Where a procedure is referenced elsewhere (a ticket template, a wiki page, an onboarding checklist) the reference is a link, never a paste — a pasted copy becomes wrong the first time the original changes |
+| **Discoverability** | The repository is indexed and searchable, and each procedure carries its document ID, owner, version and effective date in a header block. The set in §2 is itself published as the index, so a procedure can be found by domain as well as by search |
+| **Access** | Read access for all personnel by default. A procedure is restricted only where its content would itself aid an attacker — currently two: the monitoring-system design detail in `SEC-PRO-013` §12 and the break-glass mechanics in `SEC-IAM-021` §7. Restriction is by exception, recorded, and reviewed annually, because a default of restriction produces procedures nobody reads |
+| **Availability to the people who need them** | Audience is named per procedure in §2 and provisioned at that granularity, so availability is verifiable per role rather than assumed from a global permission |
+| **Availability when the platform is not** | The procedures needed during a disruption — `BCP-PLN-020`, `SEC-IRP-012`, `OPS-RBK-016`, and the on-call escalation contacts — are additionally held as offline copies: an encrypted local copy on each incident commander's endpoint, refreshed automatically on each published version, and a printed copy in the HQ incident folder. **This is the one deliberate exception to the single-copy rule**, and it is bounded to four documents, automated so the copy cannot silently drift, and tested in the continuity exercise. The alternative — a continuity plan reachable only through the system that is down — is not a plan |
+| **Notification of change** | On publication of a material change, the named audience is notified through the operations channel and, for changes affecting an on-call action, in the on-call handover. Notification records are retained |
+| **Retention of superseded versions** | Every prior version is retained with its effective and superseded dates, so that an action taken in the past can be judged against the procedure in force at the time rather than the current one. This is what makes an operational record auditable after a procedure changes |
+| **Comprehension where the procedure carries risk** | For the procedures in the on-call set, availability is not sufficient — the operator walks the procedure during onboarding and during the annual exercise. Reading is evidenced by use, not by an acknowledgement click |
+
+Period record: 16 procedures published; 100% carrying a complete header block; 4 in the offline set,
+all refreshed within 24 hours of their last publication; 2 restricted by recorded exception; 11
+change notifications issued; 0 instances found of a maintained duplicate copy during the quarterly
+documentation sample (40 artifacts sampled).
+
+## 4. Review lifecycle, triggers and update criteria
+
+A procedure is reviewed on a cadence **and** on an event. The cadence catches slow drift; the events
+catch the changes that would otherwise wait up to a year.
+
+| Trigger | Timescale | Who assesses |
+|---|---|---|
+| Scheduled periodic review | Annually, on a staggered calendar so the set is not all reviewed in one month | Procedure owner |
+| A change to the system, service or tooling the procedure operates | Before the change is released — the procedure update is part of the change, not a follow-up | Change requester; verified at release approval |
+| An incident, near miss, or a failed step during an exercise | Within 10 business days of the post-incident review | Procedure owner, with the incident reviewer |
+| An operator reporting that the procedure did not match reality | Within 10 business days; **any operator may raise this and it is expected, not exceptional** | Procedure owner |
+| A control deficiency or audit finding touching the procedure | To the finding's remediation date | Procedure owner, with Compliance |
+| A change in law, regulation or contract | Within 30 days of the register assessment (`SEC-REG-047` §4) | Procedure owner, with General Counsel |
+| A change in ownership of the procedure or the underlying system | At handover | Incoming owner |
+| Personnel change removing the only person who has performed the procedure | Before the departure completes | Procedure owner |
+
+**Criteria applied at review** — a review produces one of four outcomes, and "no change" is a
+recorded outcome with reasons, not an absence of a record:
+
+1. **Accurate and current** — the procedure matches practice and the system. Recorded with the date
+   and the reviewer.
+2. **Correct but incomplete** — a step, a decision point or a failure branch is missing. Updated.
+3. **Diverged from practice** — the written procedure and what operators actually do differ. This is
+   the finding that matters most, because it means the procedure has stopped being the control.
+   Resolution requires deciding *which one is right*: either practice is corrected to the procedure,
+   or the procedure is corrected to practice with the change authorised under §5. It is never left
+   as a note.
+4. **Obsolete** — the activity no longer exists. Withdrawn, with the withdrawal authorised and the
+   superseded copy retained.
+
+Period record: 16 scheduled reviews completed on calendar (0 overdue); 7 event-triggered reviews (3
+change-driven, 2 incident-driven, 1 operator-reported, 1 law-driven); 4 outcomes of
+"correct but incomplete"; **1 divergence found** — `OPS-RBK-016` described a manual scaling step that
+had been automated four months earlier, reported by an on-call engineer, resolved by correcting the
+procedure to practice; 1 withdrawal.
+
+## 5. Authorisation of changes to procedures
+
+A change to a procedure changes how the organization operates. It therefore requires authorisation
+in its own right, on a path separate from — and additional to — the two-approval code-merge rule in
+`SEC-CHG-019`, because a procedure can be rewritten entirely without any code changing.
+
+| Change class | Definition | Authorisation required | Additional review |
+|---|---|---|---|
+| **Editorial** | Typography, formatting, a corrected cross-reference, no change to any instruction | Procedure owner alone; recorded, no approval | None |
+| **Clarifying** | The instruction is unchanged; the wording is made unambiguous | Procedure owner + one peer who performs the procedure | None |
+| **Material** | Any change to a step, a threshold, a decision point, a role, an approval, or a failure branch | Procedure owner + the accountable executive for the domain (per §2) | CISO where the change touches a security control; Compliance where it touches a control with a stated frequency in `OPS-REC-034` |
+| **Structural** | New procedure, withdrawal of a procedure, or transfer of ownership | Accountable executive + CISO | Security Governance Board notified at the next meeting |
+| **Emergency** | A change required during an active incident because the procedure is actively wrong | Incident commander may authorise and act immediately | **Retrospective authorisation within 5 business days**, on the material path, by the normal approvers. An emergency change that is not retrospectively authorised is reverted — the emergency path is a deferral of approval, not an exemption from it |
+| **Legally driven** | A change required by law, regulation or contract | Accountable executive + General Counsel | Cannot be declined on operational grounds; where operationally difficult, the difficulty is escalated, not used as a reason not to comply |
+
+Rules that apply to every class:
+
+- **Classification is not the author's unilateral choice.** The class is proposed by the author and
+  confirmed by the approver. A material change presented as editorial is a control failure, and the
+  quarterly documentation sample specifically tests for it (0 found this period).
+- **No self-approval on material or above.** The author may not be the sole approver, and the
+  procedure owner cannot approve their own material change without the accountable executive. Where
+  the owner *is* the accountable executive, the CISO approves.
+- **Every change is recorded** with author, class, approvers, date, the substance of the change, and
+  the trigger from §4 that prompted it. The record is in the repository's version history, which is
+  append-only.
+- **Effective date is explicit**, and a change affecting an on-call action does not take effect
+  mid-shift.
+
+Period record: 22 procedure changes — 6 editorial, 5 clarifying, 9 material, 1 structural, 1
+emergency (retrospectively authorised on day 3); 0 self-approvals on material or above; 0
+misclassifications found in sampling.
+
+## 6. Consistent management tooling — a stated organizational principle
+
+**The organization operates its in-scope information systems and networks through a single,
+consistently applied set of management tools.** This is a deliberate architectural principle with a
+named owner, not an observation about what the estate happens to look like. It is stated here so it
+can be complied with, tested, and — where it must be departed from — waived on the record.
+
+Why it is a principle rather than a preference: divergent tooling produces divergent evidence.
+Two fleets managed by two tools produce two audit trails with two schemas, two definitions of
+"compliant", and two places for a gap to hide. The security cost is not the second tool; it is the
+loss of a single answer to "is this true everywhere?"
+
+| Management function | The one tool | Scope it covers | Recorded departure |
+|---|---|---|---|
+| Configuration definition and enforcement | Infrastructure-as-code in the service repository | All AWS resources in all accounts and regions | None |
+| Configuration compliance evaluation | AWS Config — 368 rules evaluated continuously | All in-scope AWS resources | None |
+| Vulnerability identification | Amazon Inspector | Compute, container images, functions | Endpoint OS/app patching uses the endpoint management suite, because Inspector does not cover corporate laptops. **Recorded departure `D-2026-036`**, with the compensating requirement that both feed the same finding register so there is still one answer |
+| Change and release | The single CI/CD pipeline | All production changes | Emergency break-glass path, itself in `SEC-CHG-019` and logged |
+| Identity and access administration | AWS IAM Identity Center, federated from the corporate directory | All human and workload access | None. The one retired local IAM user is a frozen-environment finding tracked separately, not a tooling departure |
+| Logging and log retention | CloudWatch Logs and CloudTrail into the write-once audit account | All in-scope systems | The managed SIEM holds a copy for analysis; the audit account remains authoritative |
+| Monitoring and alerting | CloudWatch alarms with a single notification path | All in-scope systems | None |
+| Endpoint management | The endpoint management suite | All 48 corporate endpoints | None |
+| Secret management | AWS Secrets Manager and KMS | All production secrets | None |
+| Documentation and procedures | The controlled documentation repository | All procedures in §2 | The four offline continuity copies in §3, automated and bounded |
+| Ticketing and control records | The single ticketing system, feeding `OPS-REC-034` | All change, incident and access requests | None |
+
+**Governing rules.** Introducing a management tool that duplicates a function above requires
+Security Governance Board approval, a stated reason the existing tool cannot serve, and either a
+migration plan or a recorded departure with a named compensating control. Departures are enumerated
+above rather than summarised — there are two, `D-2026-036` and the bounded offline copies — and both
+are reviewed annually. The uniformity claim is tested rather than asserted: the quarterly
+reconciliation compares the resource inventory against each tool's coverage and reports any resource
+managed by no tool or by two. This period: 0 resources unmanaged; 0 double-managed; 1 departure newly
+recorded (`D-2026-036`, on the endpoint-patching boundary, which had previously been an unstated
+inconsistency).
+
+## 7. Governance
+
+| Activity | Frequency | Owner | Evidence |
+|---|---|---|---|
+| Procedure-set completeness reconciliation | Annually | Director, IT Operations | Reconciliation record with the two lists used |
+| Scheduled procedure reviews | Annually, staggered | Procedure owners | Dated review outcomes with the §4 classification |
+| Availability verification, including the offline set | Quarterly | Director, IT Operations | Access test per named audience; offline-copy freshness report |
+| Documentation sample — duplicates, headers, change classification | Quarterly | Compliance Manager | Sample results and any deficiency raised |
+| Retrospective authorisation of emergency changes | Per event, within 5 business days | Accountable executive | Authorisation record or revert record |
+| Management-tooling uniformity reconciliation | Quarterly | Head of Security Engineering | Coverage report; unmanaged and double-managed counts |
+| Departure and restriction-exception review | Annually | CISO | Reviewed departure list |
+| Review of this standard | Annually | Director, IT Operations | Approved version |
+
+Deficiencies from any activity above enter the control deficiency register with an owner and a due
+date, and are reported to the Audit Committee quarterly.
+
+## 8. Review history
+
+| Version | Date | Change | Driver |
+|---|---|---|---|
+| 1.0 | 2025-03-18 | Initial standard: the procedure set, single-copy rule, annual review | Baseline |
+| 2.0 | 2026-03-05 | Added the event triggers in §4 and the change classes in §5 after an emergency procedure edit was made during an incident with no subsequent authorisation | Incident lesson |
+| 2.1 | 2026-06-24 | Added the offline continuity set after a continuity exercise found the recovery plan reachable only through the platform being recovered | Exercise finding |
+| 2.2 | 2026-08-19 | Added §6 as a stated principle with its two recorded departures (previously uniformity was practised but unwritten, so a departure could not be waived); added the divergence outcome and the operator-reported trigger to §4; added named-audience provisioning to §3 | Annual review; the `OPS-RBK-016` divergence |

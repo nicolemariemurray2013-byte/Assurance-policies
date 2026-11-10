@@ -1,0 +1,494 @@
+# Third-Party Disclosure, Privacy Commitments, and Breach Notification Procedure
+
+**Document ID:** PRV-TPD-038
+**Version:** 3.0 (current) — **effective 2026-06-12**
+
+**Revision note.** Version 3.0 adds the two disclosure records — authorised and unauthorised — that version
+2.x described but never constituted, together with the completeness, accuracy and timeliness controls over
+each. It adds vendor privacy commitments with a periodic compliance assessment, the vendor
+breach-notification commitment, and the breach-notification determination process with its methods, timelines
+and recipients. It supersedes version 2.1 of 2025-12-15.
+
+**Owner:** Privacy Owner (Head of Engineering, acting)
+**Approved by:** Head of Engineering 2026-06-09; reviewed by the Audit Committee 2026-06-10
+**Next scheduled review:** Annually (next by 2026-12-31), and on any change to the sub-processor set
+
+**Scope.** Disclosure of personal information to third parties; the records of authorised and unauthorised
+disclosure; privacy commitments obtained from vendors and their assessment; and notification of privacy
+breaches to data subjects, controllers, regulators and others. Reference implementation: AWS account
+**471885797689**, region **us-west-2**.
+
+Companion documents: the choice and consent procedure (roles, purposes, bases); the data subject rights
+procedure (which reads the disclosure record for accounting and propagation); the retention and disposal
+standard; the incident response plan (which this procedure invokes); the complaints procedure.
+
+---
+
+## 1. The disclosure position, stated plainly first
+
+The entity's actual disclosure posture, because the requirements below are best read against it:
+
+- **The entity discloses personal information to no third party for that party's own purposes.** There is no
+  sale, no sharing for advertising, no data brokerage, no cross-customer analytics, and no disclosure for any
+  purpose of the recipient's own.
+- The only third parties that **handle** personal information are the **sub-processors** in §3.1, each of which
+  processes solely on the entity's or the customer's instruction under a written agreement.
+- A disclosure to a sub-processor is nonetheless **recorded as a disclosure** (§4). Treating "it is only a
+  processor" as a reason not to record would empty the record of the only entries it currently has.
+- **No unauthorised disclosure or breach of personal information has occurred** in the current or any prior
+  reporting period. §5 states how that negative is established rather than merely asserted.
+
+---
+
+## 2. Disclosing only for the collected purpose, with consent (P6.1-R2, P6.1-R4)
+
+### 2.1 Permitted grounds
+
+A disclosure occurs only on one of these grounds, each of which is recorded against the entry in §4:
+
+| Ground | Applies to | Consent position |
+|---|---|---|
+| Processing by a sub-processor necessary to deliver the service | The §3.1 set | Covered by the basis for the underlying processing; controllers are informed of the sub-processor set before the service is enabled |
+| Explicit instruction of the data controller | Customer data | The controller's instruction is the authority; the entity does not second-guess it beyond legality |
+| Explicit consent of the data subject | Workforce data disclosed beyond the sub-processor set | Obtained in advance, for the specific recipient and purpose |
+| A law, regulation, or lawful order specifically requires it | Any | No consent; recorded, and the affected controller informed where lawful |
+
+**No other ground exists.** In particular, business convenience, a vendor's request, and internal analytics
+are not grounds.
+
+### 2.2 A new purpose requires prior consent (P6.1-R4)
+
+Where a disclosure is proposed for a purpose beyond that for which the information was collected or created:
+
+1. The proposal is documented before any disclosure — recipient, purpose, categories, basis.
+2. The Privacy Owner determines whether the new purpose is compatible with the original.
+3. **Prior implicit or explicit consent is obtained from the data subject** where the entity is controller;
+   where the entity is processor, a **documented instruction is obtained from the controller** and the entity
+   does nothing until it arrives.
+4. Disclosure proceeds only for those individuals from whom consent was obtained. Non-response is not consent.
+5. The new purpose is added to the privacy notice and actively communicated.
+
+**No disclosure for a new purpose has been made in the current reporting period.** The process was walked
+through on 2026-04-15; that its production use is untested is registered in §8.
+
+### 2.3 Onward disclosure is prohibited by contract
+
+Each sub-processor agreement prohibits onward disclosure except to a further sub-processor that has accepted
+equivalent obligations, and requires prior notice of any such addition. This is what stops the recorded
+disclosure set in §3.1 from silently growing.
+
+---
+
+## 3. Communicating privacy policies to third parties, and obtaining commitments (P6.1-R1, P6.1-R3, P6.4-R1, P6.5-R1, P6.5-R2, P6.4-R6)
+
+### 3.1 The sub-processor set, and what each has committed to
+
+Commitments are obtained **before** any personal information reaches the party, as a gate in the vendor
+onboarding process. Each row reflects a written agreement in force.
+
+| # | Third party | Role | Personal information handled | Privacy commitments in force | Breach notice commitment | Location |
+|---|---|---|---|---|---|---|
+| 1 | Cloud provider (compute, storage, identity, monitoring, inference) | Sub-processor | All classes, as processor | Data processing terms; process only on instruction; confidentiality; security measures; sub-processor notice; deletion and return on termination; audit rights via third-party assurance reporting | **Yes — contractual, without undue delay** | us-west-2 |
+| 2 | Identity provider / federation | Sub-processor | Workforce identity attributes | Data processing terms; purpose limitation; security measures; deletion on termination | **Yes — contractual** | Regional |
+| 3 | Source control and build vendor | Sub-processor | Workforce identity; change records | Data processing terms; confidentiality; security measures | **Yes — contractual** | Vendor infrastructure |
+| 4 | Observability vendor | Sub-processor | Workforce identity in telemetry; operational metrics | Data processing terms; purpose limitation; retention limits | **Yes — contractual** | Vendor infrastructure |
+| 5 | Ticketing / task vendor | Sub-processor | Workforce identity; incident and request records | Data processing terms; confidentiality | **Yes — contractual** | Vendor infrastructure |
+| 6 | Communication platform vendor | Sub-processor | Workforce identity; alert content | Data processing terms; confidentiality | **Yes — contractual** | Vendor infrastructure |
+| 7 | Mobile carrier, for the consented personal-device paging channel | Conduit | On-call contact number | Carrier terms; no processing beyond delivery | Not applicable — conduit only, no stored personal information beyond delivery metadata | Regional |
+
+**Disclosure is made only to parties with such an agreement in place (P6.1-R3).** A party without one does not
+receive personal information; onboarding a vendor without executed privacy terms is a change the process
+blocks rather than a risk it accepts.
+
+### 3.2 What is communicated to them (P6.1-R1)
+
+Each party receives, in the agreement or as documented instructions:
+
+1. The entity's privacy commitments and the relevant parts of its privacy notice.
+2. **Purpose limitation** — the specific purposes for which the information may be processed, and that any
+   other purpose is prohibited.
+3. **Handling requirements** — encryption in transit and at rest, access on least privilege, retention limits,
+   and the deletion or return obligation on termination.
+4. **The prohibition on onward disclosure** except as §2.3 permits.
+5. **The obligation to report an actual or suspected unauthorised disclosure**, with the timeframe and the
+   contact (§3.3).
+6. **The obligation to assist** with data subject requests and with the entity's own regulatory obligations.
+7. **The audit and evidence obligation** — to supply assurance reporting or answer a questionnaire on request.
+
+### 3.3 The process for obtaining breach-notification commitments (P6.5-R1, P6.4-R6, P6.5-R2)
+
+The commitment is obtained through a defined process rather than by hoping the standard terms cover it:
+
+| Step | Action | Gate |
+|---|---|---|
+| 1 | At vendor selection, determine whether the vendor will handle personal information | Recorded determination |
+| 2 | Where yes, require breach-notification terms as a **condition of onboarding** | No terms, no onboarding |
+| 3 | Verify the executed agreement contains: the obligation to notify on **actual or suspected** unauthorised disclosure, a defined timeframe, a named contact route, and a minimum content set — what happened, when, what information, how many subjects, what is being done | Contract review record |
+| 4 | Register the vendor's notification contact, and register the entity's inbound contact with the vendor, so a notice has a destination that is monitored | Vendor register |
+| 5 | Re-verify at the annual assessment (§6), and on any contract renewal | Assessment record |
+| 6 | Where a vendor will not accept the terms, escalate to the Head of Engineering for an accept-or-replace decision | Recorded decision |
+
+**All six sub-processors that hold stored personal information (rows 1–6) have breach-notification commitments
+in force**, verified at the 2026-04-16 vendor assessment. The obligation extends to **suspected** as well as
+confirmed disclosure, because a vendor that waits for confirmation before telling the entity has consumed the
+entity's own notification clock.
+
+---
+
+## 4. The record of authorised disclosures (P6.2)
+
+### 4.1 The record exists, and what it holds (P6.2-R1)
+
+A **disclosure register** is maintained by the Privacy Owner. One entry per disclosure arrangement or event,
+each carrying:
+
+| Field | Purpose |
+|---|---|
+| Entry identifier | Reference for the accounting and propagation processes |
+| Recipient, and their role | Who received it |
+| Date, or the effective date and standing nature of an ongoing arrangement | When |
+| Categories of personal information disclosed | What |
+| Purpose of the disclosure | Why |
+| Ground under §2.1, and the consent or instruction reference where applicable | Authority |
+| Individuals or population affected | Scope |
+| Whether onward disclosure is permitted | Downstream exposure |
+| Location of processing | Transfer position |
+| Source system the entry was derived from | Verifiability |
+
+### 4.2 Current contents
+
+The register presently contains **seven standing entries**, one per row of §3.1, each recorded as an ongoing
+arrangement rather than as discrete events, because a per-request entry for continuous processing would be
+noise rather than a record. **No ad-hoc, one-off, or law-enforcement disclosure has been made in the current
+or any prior reporting period**, and the register records that state explicitly with a nil return per quarter
+rather than by absence of entries.
+
+### 4.3 Retention of the record (P6.2-R2)
+
+The register is retained for **7 years**, on the governance retention schedule — longer than most of the
+information it describes, because the record of a disclosure must outlive the disclosure in order to evidence
+it. It is held in the governance store, encrypted at rest, access-controlled to the Privacy Owner, versioned,
+and **exempt from routine disposal** while any entry remains within its 7-year window.
+
+### 4.4 Completeness (P6.2-R3)
+
+Completeness is established by reconciliation against independent sources, not by assertion:
+
+| Control | Frequency | What it catches |
+|---|---|---|
+| Reconcile the register against the **sub-processor list in the vendor register** | Quarterly | A vendor onboarded without a register entry |
+| Reconcile against **executed agreements** held by the Head of Engineering | Annually | An arrangement in force with no entry |
+| Reconcile against **egress and integration configuration** — which external endpoints the system actually talks to | Quarterly | A data flow nobody recorded, which is the failure mode a document-only reconciliation cannot catch |
+| Nil-return confirmation for ad-hoc disclosures | Quarterly | An unrecorded one-off disclosure; the affirmative nil return forces the question to be asked |
+| Confirm every §2.1 ground appears with an entry | Quarterly | A ground exercised but unrecorded |
+
+Q1 2026 reconciliation, 2026-04-21: seven arrangements in the vendor register, seven entries in the disclosure
+register, seven executed agreements; egress configuration reconciled with no unrecorded external destination;
+nil return confirmed for ad-hoc disclosure. **No discrepancy.**
+
+### 4.5 Accuracy (P6.2-R4)
+
+| Control | Frequency |
+|---|---|
+| Each entry verified against the **executed agreement** it derives from — recipient, categories, purpose, location | Annually, and on renewal |
+| Categories verified against the **collection inventory**, so an entry cannot name a category the entity does not hold | Annually |
+| Entries corrected on any change to the arrangement, with the change dated and the prior value retained in the version history | On change |
+| Second-person review of any new or amended entry | Per change |
+
+The version history is retained rather than overwritten, so an entry's state at any past date can be
+reconstructed — the property that makes the register usable as evidence rather than merely as a current list.
+
+### 4.6 Timeliness (P6.2-R5)
+
+| Event | Entry made within |
+|---|---|
+| New arrangement, before any personal information flows | **Before the disclosure** — the entry is a precondition, not a follow-up |
+| Ad-hoc or one-off disclosure | **2 business days** |
+| Lawfully compelled disclosure | **2 business days** of compliance, or of the earliest date recording is lawful |
+| Change to an existing arrangement | **5 business days** |
+| Termination of an arrangement | **5 business days**, with the termination date and the deletion or return confirmation |
+
+**Timeliness is measured, not assumed**: the quarterly review compares each entry's creation date against the
+date of the event it records, and a late entry is recorded as a deficiency. All seven current entries predate
+their arrangements.
+
+---
+
+## 5. The record of unauthorised disclosures, including breaches (P6.3)
+
+### 5.1 The record exists and is retained (P6.3-R1)
+
+An **unauthorised disclosure register** is maintained separately from the authorised register, because merging
+them would let a breach be filed as a disclosure. It records **detected and reported** unauthorised
+disclosures, whether discovered internally, reported by a vendor, reported by a customer, or reported by any
+other party — and whether or not they proved on investigation to be actual disclosures.
+
+Each entry holds: entry identifier; how it was detected or reported, and by whom; date and time detected;
+date and time occurred, where determinable; the personal information categories involved; the number and
+categories of individuals affected; the cause; whether it was confirmed or found not to be a disclosure;
+containment actions and their timestamps; the notification determination under §7 and its outcome;
+notifications issued with dates and recipients; remediation actions with owners and due dates; and the
+post-incident review reference.
+
+**Retention: 7 years**, on the governance schedule, for the same reason as §4.3. Entries are retained
+including those closed as *not* an actual disclosure, since the pattern of near-misses is itself signal.
+
+### 5.2 Current contents, and how the nil return is established (P6.3-R2)
+
+The register currently contains **no confirmed unauthorised disclosure of personal information**, and **no
+suspected disclosure that proved on investigation to be one**, in the current or any prior reporting period.
+
+A nil return is only as good as the detection behind it, so the register records the **detection controls that
+produce it** rather than resting on the absence of reports:
+
+| Detection source | What it would surface | State in period |
+|---|---|---|
+| `AIGov-*` alarms over trail metric filters (10 alarms, 8 filters) | Unauthorised API calls, root usage, policy changes, unusual access patterns | 27 alarm transitions, all triaged; **none was an unauthorised disclosure** |
+| Account trail (`IsLogging=true`, no delivery error, verified weekly, 15 of 15) | Any control-plane access to stored personal information | No unauthorised access identified |
+| VPC flow logs, 400-day retention | Unexpected egress | No unexpected external destination |
+| Provider security findings, scoped to assessed resources | Exposure of a store holding personal information | Public access blocked on all 13 buckets; no exposure finding |
+| Vendor notification obligations (§3.3) | A disclosure at a sub-processor | **No vendor notification received** |
+| Customer or controller report | A disclosure the entity did not detect | None received |
+| Complaint channel (complaints procedure) | A subject-reported disclosure | None received |
+| Quarterly access review | Inappropriate standing access that could have enabled disclosure | Findings raised — see §5.5 |
+
+**Quarterly, the Privacy Owner records an affirmative nil return** confirming each source was reviewed and
+produced nothing, rather than leaving an empty register to speak for itself. An empty register with no nil
+return is indistinguishable from a register nobody maintained.
+
+### 5.3 Completeness (P6.3-R2)
+
+| Control | Frequency |
+|---|---|
+| Reconcile the register against **all security incidents** raised in the incident system, confirming each was assessed for a privacy dimension | Quarterly |
+| Reconcile against **alarm transitions**, confirming each was triaged and its privacy relevance recorded | Quarterly |
+| Reconcile against **vendor notifications received** | Quarterly |
+| Reconcile against **complaints and inbound reports** | Quarterly |
+| Confirm the nil return where no entries exist | Quarterly |
+
+Q1 2026: 2 security incidents raised, both assessed for a privacy dimension and both found to have none;
+27 alarm transitions triaged; 0 vendor notifications; 0 inbound reports. Reconciled 2026-04-21, no discrepancy.
+
+### 5.4 Accuracy (P6.3-R3)
+
+Entries are written **from the source records** — alarm history, trail, ticket timestamps — rather than from
+recollection, and each factual field cites the source it came from. Timestamps are taken from system records,
+not from narrative. Where a fact is not yet established, the entry says **"not yet determined"** rather than
+carrying an estimate that would later read as fact; the entry is then updated as the investigation proceeds,
+with each update dated. The post-incident review verifies the entry against the evidence before closure, and a
+second reviewer confirms the affected-population figure, since that number drives the notification
+determination.
+
+### 5.5 Timeliness (P6.3-R4)
+
+| Event | Recorded within |
+|---|---|
+| Detection or report of a suspected unauthorised disclosure | **Same business day** — the entry is created on suspicion, not on confirmation |
+| Vendor notification received | **Same business day** |
+| Containment action taken | **24 hours** of the action |
+| Notification determination under §7 | **24 hours** of the determination |
+| Notifications issued | **24 hours** of issue |
+| Investigation conclusion and closure | **5 business days** of resolution, with the post-incident review |
+
+**The entry is opened on suspicion.** Waiting for confirmation before opening it is how the timeline of the
+early hours — the part a regulator asks about — gets lost.
+
+**One open matter is recorded here for completeness.** The Q1 2026 access review found standing IAM users with
+long-lived static access keys holding administrative rights in the reference account, and root MFA not enabled.
+**This is a control deficiency, not a disclosure**: no evidence of unauthorised access or disclosure was found
+in the trail, and the condition is recorded as an access-control finding with an owner and a due date rather
+than as a breach. It is noted in this register because a condition that *could* enable an undetected
+disclosure belongs in the assessment even when the conclusion is that none occurred.
+
+---
+
+## 6. Assessing third-party compliance, and acting on failures (P6.4)
+
+### 6.1 Obtaining the commitments (P6.4-R1)
+
+Covered by §3.1 and §3.2: commitments are a **precondition of onboarding**, verified against the executed
+agreement, and recorded in the vendor register with the review date.
+
+### 6.2 The procedure for evaluating whether controls are effective (P6.4-R4)
+
+An assessment evaluates **effectiveness**, not merely the existence of a promise:
+
+| Evidence type | Preference order | What it establishes |
+|---|---|---|
+| Independent assurance report (SOC 2 Type II, ISO 27001 with scope, or equivalent) | **First choice** | Independently tested operating effectiveness |
+| Sub-processor list and change notices | Always | Whether the downstream set has moved |
+| Documented security and privacy questionnaire responses | Where no assurance report exists | Design, self-reported |
+| Public breach and incident history | Always | Track record |
+| The entity's own configuration of the vendor — retention settings, access grants, what is actually sent | Always | The exposure the entity controls itself |
+| Contract review against current requirements | Annually | Whether terms have kept pace |
+
+**Where a vendor supplies no independent assurance report, the assessment is explicitly marked as
+design-only** and the vendor is rated accordingly. Substituting a questionnaire for tested effectiveness
+without saying so is the misstatement this section avoids. **Scope is checked, not just existence**: an
+assurance report that excludes the service the entity actually uses is recorded as not covering it.
+
+### 6.3 Periodic and as-needed assessment (P6.4-R2)
+
+| Trigger | Timing |
+|---|---|
+| Periodic assessment of every vendor handling personal information | **Annually** |
+| Higher-risk vendors — those holding customer confidential information | **Annually, with assurance report scope reviewed each time** |
+| **As-needed**, on: a reported breach at the vendor; a sub-processor change notice; a material change to the service; adverse public information; a contract renewal; or a control failure the entity observes | **Within 30 days of the trigger** |
+
+Most recent periodic assessment: **2026-04-16**, covering all seven parties in §3.1. Outcome: assurance
+reports obtained and scope-checked for rows 1–3; rows 4–6 assessed on questionnaire and configuration review
+and **recorded as design-only**; row 7 assessed as a conduit. Breach-notification terms re-verified for rows
+1–6. **No as-needed assessment was triggered** in the period.
+
+### 6.4 Corrective action on a compliance deficiency (P6.4-R3)
+
+| Severity | Action | Timeline |
+|---|---|---|
+| Minor — documentation or reporting gap | Deficiency raised with the vendor; remediation date agreed; tracked in the vendor register | 90 days |
+| Moderate — a control not operating, no evidence of disclosure | Written notice; remediation plan required; **increased monitoring**; scope of information sent reviewed for reduction | 30 days |
+| Major — a control failure that could permit unauthorised disclosure | **Suspend the flow of personal information** where operationally possible; written notice; escalate to the Head of Engineering; assess replacement | Immediate |
+| Critical — confirmed unauthorised disclosure or misuse | §6.5 remediation; incident response invoked; notification determination under §7; begin replacement | Immediate |
+
+Deficiencies are tracked to closure in the vendor register and reported to the Audit Committee quarterly. **A
+vendor that does not remediate within the agreed period is escalated for an accept-or-replace decision**,
+recorded with reasons — the step that stops an unremediated finding from ageing quietly.
+
+### 6.5 Remedial action on misuse by a third party (P6.4-R5, P6.5-R5)
+
+Where a third party to whom the entity transferred personal information misuses it:
+
+1. **Contain** — suspend the transfer and, where possible, the party's access, immediately on credible report.
+2. **Demand written account** of what was done, with what information, affecting whom, and for how long.
+3. **Require cessation and deletion**, with written confirmation and, where warranted, evidence of destruction.
+4. **Invoke the incident response plan** and open an entry in the unauthorised disclosure register (§5).
+5. **Determine notification** under §7, treating the misuse as an unauthorised disclosure.
+6. **Assess affected individuals' exposure** and act to reduce ongoing harm.
+7. **Enforce the agreement** — indemnity, audit rights, termination as the facts warrant.
+8. **Terminate and replace** where misuse was deliberate or recurrent.
+9. **Post-incident review**, including why the entity's own vendor assessment did not anticipate it.
+10. **Report to the Audit Committee**, and to regulators where §7 requires.
+
+**No misuse of personal information by any third party has occurred or been reported.** This process was
+walked through on 2026-04-16 as part of the vendor assessment; its production use is untested, and that is
+registered in §8.
+
+---
+
+## 7. Reporting, acting on, and notifying breaches (P6.5-R3, P6.5-R4, P6.6)
+
+### 7.1 Receiving and reporting a vendor notification internally (P6.5-R3)
+
+| Step | Action | Timing |
+|---|---|---|
+| 1 | Notification arrives at the registered inbound contact — a **monitored** channel, not an individual's mailbox | — |
+| 2 | Recipient reports it to the **Privacy Owner and the incident commander** | **Within 1 hour** of receipt |
+| 3 | Entry opened in the unauthorised disclosure register (§5) | Same business day |
+| 4 | Where customer personal information is involved, the **affected data controller is informed** | **Within 24 hours** |
+| 5 | Escalation to the Head of Engineering, and to the Audit Committee where material | 24 hours |
+| 6 | Where workforce information is involved, the affected individuals' line management is informed as needed to protect them | 24 hours |
+
+**The inbound channel is monitored, and this is verified quarterly**, because a notification obligation
+discharged into an unattended mailbox is the vendor's obligation met and the entity's control failed.
+
+### 7.2 Acting on it under the incident response procedure (P6.5-R4)
+
+A vendor notification **invokes the incident response plan** on the same footing as an internally detected
+incident — it is not handled as correspondence:
+
+1. Incident declared; incident commander assigned (named alternate available).
+2. Severity assessed on the personal information involved and the population affected.
+3. Containment — suspend the transfer, revoke access, rotate any implicated credential.
+4. Investigate the entity-side scope: what was sent, when, to whom, and what the trail shows.
+5. Notification determination under §7.3, on the clock from **the entity's** awareness.
+6. Notifications issued per §7.4.
+7. Remediation, with owners and due dates.
+8. **Post-incident review within 5 business days** of resolution, covering the vendor assessment's failure to
+   anticipate the event.
+9. Vendor corrective action under §6.4, up to replacement.
+
+### 7.3 Determining whether notification is required (P6.6-R1, P6.6-R2, P6.6-R3, P6.6-R4)
+
+The determination is made by the Privacy Owner with the incident commander, **within 24 hours** of confirming
+an unauthorised disclosure, and is **recorded with its reasoning whichever way it goes** — a decision not to
+notify is a decision that must be defensible later.
+
+**Inputs:** the categories of personal information; the number and categories of individuals; whether the
+information was encrypted or otherwise unintelligible to the recipient; the identity of the recipient and the
+likelihood of misuse; the likelihood and severity of harm; the entity's role (controller or processor); and the
+applicable legal, regulatory and contractual obligations.
+
+**The role determines who notifies whom.** As **processor**, the entity's primary obligation is to notify the
+**controller**, without undue delay and within **24 hours** of becoming aware; the controller then determines
+notification to its own data subjects and regulators, and the entity supports it with the information it needs.
+As **controller** (workforce data), the entity makes the determination itself.
+
+| Recipient | Method (P6.6-R2) | Timeline (P6.6-R3) | Trigger (P6.6-R4) |
+|---|---|---|---|
+| **Affected data controller (customer)** | The registered controller contact, in writing, plus a direct call for a major incident | **Without undue delay, and within 24 hours** of awareness | Any confirmed or reasonably suspected unauthorised disclosure of that controller's data |
+| **Affected data subjects — controller role** | Direct written notice to the individual by the most reliable channel on record; a substitute public notice only where direct contact is not reasonably possible | **Without undue delay, and within 72 hours** of the determination | Likely risk of harm to the individual |
+| **Supervisory authority / regulator** | The authority's prescribed channel and form | **Within 72 hours** of awareness, per the applicable regime; a partial notification is filed on time and completed later rather than filed late | Where the regime requires it on the facts |
+| **Law enforcement** | Via the Head of Engineering, with legal advice | As appropriate | Suspected criminal act |
+| **Others — affected third parties, sub-processors requiring action** | Written notice via the registered contact | 72 hours | Where they must act to contain |
+| **Audit Committee** | Written report | 72 hours; immediately for a major incident | Any confirmed breach |
+
+**Notification content**, in every case: what happened and when; the categories of personal information
+involved; the number and categories of individuals affected; the likely consequences; the containment and
+remediation measures taken and planned; what the recipient should do; and a named contact for further
+information. Where a fact is not yet established it is stated as not yet established, and a follow-up
+commitment is given with a date.
+
+**A partial notification filed on time beats a complete one filed late.** Where facts are still emerging, the
+entity notifies within the deadline with what is known and supplements it.
+
+### 7.4 Providing the notice (P6.6-R5)
+
+| Step | Action | Owner |
+|---|---|---|
+| 1 | Draft from the determination record, using the standing templates for controller, subject, and regulator notice | Privacy Owner |
+| 2 | Review for accuracy against the register entry, and for legal adequacy | Head of Engineering |
+| 3 | Issue by the method in §7.3, recording recipient, channel, timestamp and content version | Privacy Owner |
+| 4 | Confirm delivery; where direct notice fails, escalate to the substitute method and record why | Privacy Owner |
+| 5 | Operate a **named contact** for enquiries arising from the notice, resourced for the volume the population implies | Privacy Owner |
+| 6 | Record all notifications in the register (§5) within 24 hours of issue | Privacy Owner |
+| 7 | Report the notifications made to the Audit Committee | Privacy Owner |
+
+**Templates for controller, data subject and regulator notice are maintained and reviewed annually**, so the
+drafting is not done for the first time under a 72-hour clock. Reviewed 2026-04-16.
+
+**No notification has been required or issued**, there having been no unauthorised disclosure. The
+determination and notification process was exercised in a **tabletop on 2026-02-19**, alongside the annual
+continuity exercise, using a simulated vendor-reported disclosure of workforce contact details; the exercise
+produced two findings, both closed, and is registered in §8 as the extent of the testing.
+
+---
+
+## 8. Registered deficiencies
+
+| Deficiency | Effect | Owner | Due |
+|---|---|---|---|
+| Rows 4–6 of §3.1 are assessed on questionnaire and configuration review only, with no independent assurance report | Design-only assurance for three sub-processors; operating effectiveness not independently tested | Privacy Owner | 2026-11-30 |
+| The breach notification process has been exercised in tabletop only, never in production | First production use will be the first real test of the 24/72-hour clocks | Privacy Owner | Tabletop annually; next by 2027-02 |
+| Third-party misuse remediation (§6.5) is untested in production | As above | Privacy Owner | 2026-12-31 |
+| New-purpose disclosure consent (§2.2) is untested in production | As above | Privacy Owner | Walkthrough annually |
+| Standing IAM users with long-lived static access keys and administrative rights, and root MFA not enabled, in the reference account | A condition that could permit an undetected disclosure; **no disclosure detected**, but the exposure is real and open | Head of Security Engineering | 2026-09-30 |
+| Disclosure register completeness relies partly on a quarterly manual reconciliation rather than automated egress discovery | An unrecorded flow could persist up to 90 days | Privacy Owner | 2026-12-31 |
+| Privacy Owner role held concurrently with Head of Engineering | Reduced independence in the notification determination | Head of Engineering | Reassess if headcount grows |
+
+---
+
+## 9. Governance
+
+| Activity | Frequency | Owner | Evidence |
+|---|---|---|---|
+| Obtain privacy and breach-notification commitments before onboarding | Per vendor, as a gate | Privacy Owner | Executed agreement, contract review record |
+| Maintain the authorised disclosure register | Continuous | Privacy Owner | Register with version history |
+| Maintain the unauthorised disclosure register, including nil returns | Continuous; nil return quarterly | Privacy Owner | Register, nil-return record |
+| Reconcile both registers for completeness, including against egress configuration | Quarterly | Privacy Owner | Reconciliation record |
+| Verify both registers for accuracy against executed agreements and source records | Annually; on change | Privacy Owner | Verification record |
+| Measure entry timeliness against event dates | Quarterly | Privacy Owner | Timeliness report |
+| Periodic vendor privacy compliance assessment | Annually; as-needed within 30 days of a trigger | Privacy Owner | Assessment record with evidence type and scope |
+| Verify the vendor notification inbound channel is monitored | Quarterly | Head of Security Engineering | Channel verification record |
+| Review and refresh notification templates | Annually | Privacy Owner | Versioned templates |
+| Breach notification tabletop exercise | Annually | Privacy Owner with incident commander | Exercise record and findings |
+| Vendor deficiency tracking to closure, with accept-or-replace escalation | Quarterly | Privacy Owner | Vendor register |
+| Reporting to the Audit Committee | Quarterly; immediately for a major incident | Privacy Owner | Committee minutes |

@@ -1,0 +1,127 @@
+# AI Data Management Process
+
+**Document ID:** AIMS-PRO-020
+**Version:** 3.1
+**Owner:** Data Steward
+**Approved by:** Chief AI Officer; privacy content approved by Legal & Privacy
+**Approval date:** 2026-03-02
+**Next scheduled review:** 2026-12-31
+**Scope:** All data used in the development, enhancement and operation of the organization's AI systems,
+including the compliance-evaluation AI system in AWS account 471885797689 (us-west-2).
+
+---
+
+## 1. Defined, documented and implemented data management processes
+
+The organization **defines, documents and implements** data management processes covering every
+category of data used to develop, enhance and operate its AI systems. The processes are implemented —
+each has a named owner, a mechanism, and evidence that it runs.
+
+| # | Process | Owner | Implementation and evidence that it runs |
+|---|---|---|---|
+| P-1 | **Data acquisition and selection** — what data is obtained, from where, under what rights | Data Steward | AIMS-REC-021 acquisition record; no data enters a corpus without an entry |
+| P-2 | **Data quality definition and measurement** | Data Steward | AIMS-STD-022 quality requirements; quality gate blocks corpus entry |
+| P-3 | **Data preparation and transformation** | AI Development Lead | AIMS-PRO-023 methods and criteria; each corpus entry records the transforms applied |
+| P-4 | **Provenance recording** | Data Steward | AIMS-PRO-024 provenance process; provenance chain recorded per entry and per evidence item |
+| P-5 | **Labelling and annotation** | Data Steward | Dual independent labelling by qualified analysts with recorded inter-rater agreement |
+| P-6 | **Classification, access control and minimization** | Data Steward + AI Security Lead | Data classified on ingest; access role-based and logged; evidence content excluded from logs and telemetry |
+| P-7 | **Retention, archival and deletion** | Data Steward | Retention schedule (AIMS-STD-013 §4); retention jobs monitored; deletion requests tracked to closure |
+| P-8 | **Splitting and isolation of evaluation data** | AI Development Lead | Test split held out and never used for tuning; split assignment recorded and immutable |
+| P-9 | **Change and version control of data** | Data Steward | Corpus entries version-controlled and peer-reviewed; a corpus change is a Standard change (AIMS-POL-006 §4) |
+| P-10 | **Data incident handling** | AI Security Lead | Integrity failure, leakage or unauthorized access handled under AIMS-PRO-007 §4 |
+| P-11 | **Periodic data review** | Data Steward | Annual review of representativeness, bias and continued fitness; findings feed P-2 and P-3 |
+
+### 1.1 Data categories in scope
+
+| Category | Used for | Owner | Notes |
+|---|---|---|---|
+| Framework and control requirement text | Development and operation | Data Steward | Sourced only from the curated managed catalogue; marked trusted |
+| Labelled evaluation corpus (de-identified historical assessments) | Development, V&V | Data Steward | The only corpus data; **not** training data — used for evaluation, since no model is trained |
+| Prompts, rubrics and scoring definitions | Development and operation | AI Development Lead | Version-controlled artefacts, treated as data under change control |
+| Customer evidence documents | Operation only | Customer (we are processor) | Never used for training, tuning or corpus assembly without explicit contractual permission; default is prohibition |
+| Environment scan evidence (raw API responses) | Operation only | Customer | Collected fresh per assessment; never reused as current evidence |
+| Assessment results and journals | Operation, audit record | Customer / joint | Retained as the audit record |
+| Operational telemetry | Operation | AI Operations Lead | Minimized; excludes evidence content and personal data |
+
+**Structural note.** The organization performs **no model training or fine-tuning**, so there is no
+training-data set in the conventional sense. The data-dependency that matters here is the **evaluation
+corpus** (which determines whether we can tell that the system works) and **operational customer data**
+(which determines what any single verdict is based on). Both are governed by the processes above, and
+the absence of training does not reduce the obligation — it relocates it.
+
+## 2. Privacy and security implications of data use
+
+### 2.1 Privacy
+
+| Implication | Assessment | Treatment |
+|---|---|---|
+| **Personal data appears incidentally in customer evidence** — policy owners, approvers, reviewers, signatories | Real and unavoidable: governance documents name people. These individuals are not users and did not choose the processing | Minimization: only evidence the customer links to a control is read; evidence content is never written to logs or telemetry; access is role-based and logged; retention is defined; deletion requests are honoured against evidence content |
+| Personal data in the evaluation corpus | Historical assessments would otherwise carry names | **De-identification is a mandatory stage** before corpus entry; an entry that fails de-identification review is rejected, not repaired |
+| Personal data in operational telemetry and event logs | Operator identities are recorded for accountability | Retained deliberately for attribution (7 years for oversight actions), access-controlled; no customer personal data in logs |
+| **Sensitive / special-category data** | Not solicited and not required by any assessment. It could nonetheless arrive inside a customer document (for example health or diversity data quoted in an HR-related policy) | Treated as sensitive on arrival: same encryption and access control as all evidence, no extraction into any secondary store, no corpus use, and no content in logs. Customers are instructed not to supply special-category data, since no requirement needs it |
+| Lawful basis and processor obligations | We act as processor for customer evidence and controller for our own corpus and telemetry | Reviewed by Legal & Privacy at each impact assessment; DPA terms in place; cross-border transfer assessed |
+| Purpose limitation | Risk of secondary use of aggregate customer posture data | Prohibited without explicit contractual permission; no aggregate customer data is used for product analytics or model improvement |
+| Data-subject rights | Requests reach the customer, not us, but we must be able to act | Deletion and export are implemented through the API; the *record* that a deletion occurred is retained even when the data is not |
+
+### 2.2 Security
+
+| Implication | Treatment |
+|---|---|
+| Confidential business data (configurations, control gaps) is highly sensitive to the customer | Encryption in transit and at rest; per-tenant partitioning; cross-tenant access is a Severity 1 incident with zero tolerance |
+| Evidence is customer-controlled input flowing into model context | Structural trust boundary: customer content is data, never instructions; injection suite is a release gate |
+| Scan credentials reach into a customer account | Short-lived, read-only, vended per environment, role resolved server-side; every read attributable in CloudTrail |
+| Stored evidence could be tampered with | Integrity checks on retrieval; failure causes rejection, never silent repair; access to evidence stores logged |
+| Data in logs becoming a second uncontrolled copy | Content minimization is a documented rule, verified by a quarterly scan for evidence content and personal data in logs |
+
+### 2.3 Security and safety threats arising from data-dependent development
+
+Threats that exist **because** the system depends on data, assessed at the data layer:
+
+| Threat | Consequence | Treatment |
+|---|---|---|
+| **Corpus poisoning** — a malicious or careless corpus entry with a wrong label | Systematically wrong verdicts across all customers; the most consequential data threat here | Corpus entries version-controlled and peer-reviewed; dual independent labelling with recorded agreement; the test split is protected from tuning so poisoning cannot be masked by tuning to it |
+| **Requirement-text tampering** | Every assessment of that control becomes wrong | Requirement text sourced only from the trusted managed catalogue, version-tracked, and marked trusted in the evidence envelope; customer-authored text never carries that marking |
+| **Prompt injection via evidence data** | Verdicts manipulated | Trust boundary; adversarial suite; anomalous tool-sequence monitoring |
+| **Adversarial / overstated evidence** | Compliance theatre | Observed technical state governs where the scan reads the setting; compensating controls capped below full compliance |
+| **Data drift in the operational population** — new services, new document styles, new languages | Accuracy silently degrades outside the characterized domain | Scan-coverage and `unable_to_assess` monitoring; annual representativeness review; out-of-domain evidence routed to human review |
+| **Label drift** — analyst interpretation of a requirement changes over time | Ground truth stops being ground truth | Quarterly rubric review with practising analysts; affected corpus entries re-labelled and the change recorded |
+| **Unreadable or corrupt data treated as a finding** | Fault mis-attributed to the customer (a safety-of-outcome issue) | Read failure is a distinct state, excluded from scoring |
+| Over-collection | Larger breach surface and privacy exposure for no benefit | Only control-linked evidence is read; scan reads are limited to the control's plan |
+
+## 3. Transparency and explainability aspects
+
+| Aspect | How the process addresses it |
+|---|---|
+| **Data provenance is recorded and disclosable** | Every corpus entry and every piece of operational evidence carries its origin, custody chain and last-updated date (P-4, AIMS-PRO-024). Provenance is available to auditors on request |
+| **Explaining how data determined an output** | Each published verdict cites the specific data that produced it — the document excerpt, or the raw API response for the named resource. The assessment journal exposes each phase, each tool call and each intermediate result, so the path from data to verdict is inspectable rather than asserted |
+| Raw data retained beside the conclusion | Scan evidence is retained verbatim with its assessment, so a disputed verdict is re-checkable against what was actually observed rather than against a summary of it |
+| Distinguishing "not compliant" from "not readable" | The output shows an evidence gap distinctly from a failure, so a reader is not misled about what the data supported |
+| Trusted versus untrusted data is visible | The evidence envelope marks which data is organization-trusted (requirement text) and which is customer-supplied |
+| Corpus transparency | Composition, strata, known limitations and the English-language narrowness are documented (AIMS-STD-022, AIMS-PLAN-010 §3.2) and disclosed to auditors |
+| Limits on transparency, stated | Prompts and rubrics are withheld as intellectual property. This is a deliberate, recorded limit; the rationale behind every verdict is always disclosed even though the rubric text is not |
+
+## 4. Fitness of data for development and enhancement
+
+| Fitness dimension | Requirement | How it is met and evidenced |
+|---|---|---|
+| **Representativeness relative to the operational domain of use** | The evaluation corpus must represent the domain in which the system is actually used: real customer evidence, real requirement text, multiple frameworks, and the full range of environment conditions | Defined strata (AIMS-PLAN-010 §3.2): framework coverage, evidence quality (compliant / partial / non-compliant / terse-compliant / verbose-empty / wrong-subject / corrupt), environment conditions (rich, sparse, **zero-in-scope-resource**, permission-denied), adversarial, negative controls. Representativeness is reviewed annually against the actual production population |
+| **Known limitation on representativeness** | Must be stated, not hidden | The corpus is English-language and over-represents recent frameworks. Consequence: accuracy is claimed only for that domain; non-English evidence is routed to human review; the corpus is rebalanced annually |
+| **Accuracy** | Labels must reflect qualified human judgement, not one person's opinion | Dual independent labelling by analysts qualified in the framework, with recorded inter-rater agreement; disagreements adjudicated and the adjudication recorded |
+| **Integrity** | Data must be what it claims to be, unaltered | Content-type and integrity checks on ingest and retrieval; failure causes rejection, never silent repair; corpus entries version-controlled so alteration is visible; CloudTrail on the stores |
+| **Completeness** | Every canonical requirement must be exercised by the corpus | Coverage assertion: a control with no corpus coverage is flagged and cannot be claimed as validated |
+| **Currency** | Stale requirement text or stale environment readings produce wrong verdicts | Requirement text version-tracked against the managed catalogue; **scan evidence is always collected fresh for the assessment it supports and never reused as current evidence** |
+| **Relevance / fitness for purpose** | Data must bear on the requirement being judged | Evidence is discovered only through explicit control linkage; wrong-subject evidence is a negative-control stratum the system must not pass on |
+| **Sufficiency** | Enough data to support a claim | A requirement with no bearing evidence yields the read-failure/unable-to-assess state rather than a manufactured verdict |
+| Balance | The corpus must not be dominated by passing examples | Strata are deliberately balanced across compliant, partial and non-compliant outcomes |
+
+**Enforcement.** Data that fails a fitness requirement does not enter the corpus, and an assessment
+whose operational data fails an integrity check fails visibly rather than producing a verdict. Fitness
+findings feed P-2 and the annual review (P-11).
+
+## 5. Review history
+
+| Version | Date | Reviewer | Outcome |
+|---|---|---|---|
+| 2.0 | 2025-08-19 | Data Steward | Established the eleven data management processes with named owners |
+| 3.0 | 2025-12-08 | Data Steward + Legal & Privacy | Added the special-category-data handling rule and the mandatory de-identification stage |
+| 3.1 | 2026-03-02 | Data Steward, approved by Chief AI Officer | Added §2.3 data-dependent threats (corpus poisoning, label drift) and the explicit representativeness limitation in §4 |

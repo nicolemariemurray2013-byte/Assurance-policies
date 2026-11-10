@@ -1,0 +1,417 @@
+# Backup, Recovery, and Environmental Protection Standard
+
+**Document ID:** OPS-BCK-030
+**Version:** 4.0 (current) — **effective 2026-04-27**
+
+**Revision note.** Version 4.0 separates the environmental protections the entity *operates* from those it
+*verifies in a provider*, states the backup posture of the reference account as observed rather than as intended,
+and records that object versioning is enabled on all in-scope buckets (2026-08-18) as the direct individual-object recovery control. It
+supersedes version 3.2 of 2025-11-10.
+
+**Owner:** Head of Platform Engineering
+**Approved by:** Head of Engineering 2026-04-22; reviewed by the Audit Committee 2026-04-24
+**Next scheduled review:** Annually (next by 2026-12-31), and on any change to the hosting model, the data
+classification scheme, or the recovery objectives
+
+**Scope.** Environmental threat identification, detection, protection and response; data backup; archive
+protection; and recovery infrastructure, for all components of the assessment service. The reference
+implementation is AWS account **471885797689**, region **us-west-2**.
+
+Companion documents: the capacity management standard (capacity that survives a fault); the business continuity
+and recovery testing plan (testing of what this standard provides); the incident response program (declaring and
+running an availability event); the information asset inventory and data classification standard (what the data
+is); the retention and disposal standard (how long it is kept).
+
+---
+
+## 1. The hosting model, stated first, because it determines which controls the entity can hold
+
+**The entity operates no data centre, no computer room, no rack, and no physical environmental control system of
+its own.** There is no facility in which the entity could install a fire suppression system or an uninterruptible
+power supply, because the entity owns no such facility. Every component of the service runs on managed cloud
+services in provider-operated regions.
+
+This does not remove the environmental requirements — it changes who performs them and what the entity's own
+control is. The entity's control over environmental threat is therefore **twofold and both halves are real**:
+
+1. **Architectural**: choosing multi-zone managed services so that a physical environmental event confined to one
+   facility does not impair availability. This is a design control the entity holds directly and can evidence.
+2. **Assurance-based**: obtaining and reviewing the provider's independent attestations for the physical and
+   environmental controls the entity cannot perform, and treating a lapse in that assurance as a supplier risk.
+
+Stating this plainly is a deliberate choice. A standard that claimed the entity operates fire suppression and
+water detection would be describing controls that do not exist, and would be less reliable — not more — than one
+that names the division of responsibility and evidences both sides of it.
+
+---
+
+## 2. Identifying environmental threats in the risk assessment (A1.2-R1)
+
+Environmental threats are a **standing category in the risk assessment**, reviewed at least annually and on any
+change to the hosting footprint. The register names each threat the criterion calls for, and records it against
+the party that controls it:
+
+| Environmental threat | How it could impair availability | Controlled by | Entity's own mitigation |
+|---|---|---|---|
+| **Adverse weather** (storm, flood, hurricane, extreme heat) | Loss of a facility or of a whole availability zone; regional loss in the extreme case | Provider (facility); entity (architecture) | Multi-zone deployment; documented single-region residual risk and its recovery path |
+| **Failure of environmental control systems** (HVAC, cooling) | Thermal shutdown of compute in one facility | Provider | Zone-independent placement; capacity sized on surviving zones (capacity standard §5) |
+| **Electrical discharge / power failure** (outage, surge, lightning) | Loss of compute and storage in one facility | Provider | As above; no on-premises equipment to protect |
+| **Fire** | Destruction of equipment in one facility | Provider | As above; backups held outside the failure domain (§6) |
+| **Water** (ingress, leak, suppression discharge) | Destruction or corruption of storage media in one facility | Provider | As above; multi-zone durable object storage |
+| **Regional environmental event** affecting several facilities at once | Loss of the whole region | Provider | Recovery to an alternate region per the continuity plan; the residual risk is **explicitly accepted and recorded**, not assumed away |
+| **Office / workspace environmental event** | Loss of workforce access to workspace | Entity | Fully remote-capable operations; no production dependency on any office |
+
+The register records likelihood, impact on the availability commitment, the controlling party, and the residual
+risk after mitigation. **The single-region concentration is carried as a named, accepted risk** with the CISO and
+Head of Engineering as joint owners and an annual re-affirmation, because that is the honest characterisation of
+a service that runs in one region today.
+
+---
+
+## 3. Detecting environmental anomalies (A1.2-R2), and alerting on them (A1.2-R4, A1.2-R8)
+
+### 3.1 Detection
+
+The entity cannot read a smoke detector in a facility it does not own. What it can do — and does — is detect the
+**observable service-level consequences** of an environmental event, which is what actually matters for the
+availability commitment:
+
+| Detection measure | What it would reveal | Source |
+|---|---|---|
+| Provider health and zone-status subscriptions for every service and region in use | A declared environmental or power event in a facility, from the party that can see it | Provider health feed |
+| Availability-zone-scoped error and latency signals | An event affecting one zone before the provider declares it | Application and infrastructure metrics |
+| Assessment failure-rate and duration alarms (capacity standard §3.1) | Degradation of the service whatever its cause, including environmental | Application metrics |
+| Storage durability and replication health signals | Media-level loss or corruption | Storage metrics |
+| Backup job success/failure signals (§6.3) | A recovery capability quietly degrading | Backup job records |
+| Log-delivery continuity — trail `rokap-pdx` reports `IsLogging=true` with `LatestDeliveryError=null` | Loss of the audit path itself, which frequently accompanies infrastructure events | Trail status |
+| The ten `AIGov-*` alarms over eight metric filters | Security and operational anomalies, several of which an environmental event also trips | Log metric alarms |
+
+**Anomaly, not just outage.** Detection is tuned to identify *anomalies that could result from* an environmental
+event — a zone's error rate diverging from its peers, a latency step-change confined to one zone, a backup that
+took materially longer than baseline — rather than waiting for total failure. A divergence between zones is
+treated as a candidate environmental signal even before any provider declaration, on the same principle the
+security monitoring procedure applies: **unexplained defaults to event.**
+
+### 3.2 Alerting and communication to the right people
+
+Alerts are **routed to named individuals for analysis, not to a dashboard nobody owns.** Every detection measure
+above has a recorded routing destination:
+
+| Signal class | Routed to | Time frame | Record |
+|---|---|---|---|
+| Provider-declared environmental or power event in a region in use | On-call engineer, paged; Head of Platform Engineering notified | Immediate | Alert record with acknowledgement |
+| Zone-scoped anomaly without a provider declaration | On-call engineer, paged | Immediate | Alert record |
+| Availability degradation of the service | On-call engineer, paged; incident commander if severity warrants | Immediate | Incident record |
+| Backup failure | Platform Engineering queue; paged if two consecutive failures | Same business day | Backup exception record |
+| Archive integrity check failure | Platform Engineering queue and the data owner | Same business day | Integrity exception record |
+
+Alerts reach **individuals responsible for management of the system** — named on-call rotations with a primary and
+an alternate, per the incident response program's role table — satisfying A1.2-R8. Every alert is acknowledged by
+a person; an unacknowledged page escalates to the alternate and then to the Head of Platform Engineering. **An
+alert that fires into an unattended channel is treated as a control failure**, and the routing records are
+reviewed quarterly against the alarm inventory to confirm every alarm still has a live destination.
+
+---
+
+## 4. Environmental protection mechanisms (A1.2-R3) and automatic mitigation (A1.2-R7)
+
+### 4.1 Mechanisms the entity implements and maintains
+
+| Protection mechanism | What it protects against | Maintained by |
+|---|---|---|
+| **Multi-zone deployment of managed services** — the primary environmental protection available to a cloud-hosted service | Loss of any single facility to fire, water, power, or cooling failure | Entity, verified at each change per the change management policy |
+| **Durable, multi-zone object storage** for evidence, results, and logs | Media-level destruction or deterioration | Entity (service selection), provider (implementation) |
+| **Managed, multi-zone record store** for assessment state | As above | Entity |
+| **Encryption at rest throughout**, so media loss is not also a confidentiality event — EBS default encryption returns `true`; the Athena `primary` workgroup enforces `SSE_S3`; queue storage reports `SqsManagedSseEnabled=true`; KMS `alias/cloudtrail-rokap-pdx` rotates on a 365-day schedule, next 2027-08-16 | Compounding an availability event with a disclosure event | Entity |
+| **Snapshot public-access-block set to `block-all-sharing`** | An environmental-recovery artefact becoming a disclosure path | Entity |
+| **Infrastructure defined as code**, so the environment can be rebuilt rather than repaired | Total loss of a facility or region | Entity |
+| **Stateless worker processes** — no state on any instance, so no instance is irreplaceable | Loss of compute to an environmental event | Entity |
+| **400-day log retention** across trail, flow (`fl-0c4f54825afad4009` on `vpc-cd6f75a8`), access, and application logs | Loss of the forensic and reconstruction record | Entity |
+
+### 4.2 Automatic mitigation (A1.2-R7)
+
+Response procedures **include automatic mitigation systems** — mitigation that operates without waiting for a
+human decision, which is the only kind fast enough for an environmental event:
+
+- **Automatic zone failover** in the managed services the service is built on: storage and the record store serve
+  from surviving zones without operator action.
+- **Automatic replacement of unhealthy compute**: a worker task lost with its facility is re-launched
+  automatically in a surviving zone.
+- **Automatic lock expiry**: because the assessment lock heartbeats, a worker destroyed mid-assessment releases
+  its lock by timeout rather than blocking that control indefinitely. Recovery of the *work* is automatic even
+  when recovery of the *worker* is not.
+- **Automatic retry with bounded backoff and jitter** across every service call, so a transient
+  environmentally-induced fault self-heals without a retry storm.
+- **Automatic scaling** of worker capacity to restore throughput after losing a zone's share of it.
+- **Provider-side automatic environmental mitigation** — suppression, redundant power, redundant cooling —
+  operating in the facilities, evidenced by attestation rather than by the entity's own observation.
+
+The distinction is maintained deliberately: the first five are the entity's own automatic mitigations and are
+tested under fault injection (§8); the last is the provider's and is evidenced by assurance.
+
+---
+
+## 5. Responding to environmental threat events (A1.2-R5, A1.2-R9), and evaluating the response (A1.2-R6)
+
+### 5.1 Procedures
+
+Environmental events are handled as **availability incidents under the incident response program**, with an
+environmental-specific runbook rather than a separate parallel process — one declaration path, one commander, one
+record. The runbook covers:
+
+1. **Declare** — provider-declared event, or zone-scoped anomaly meeting the declaration criteria. Unexplained
+   degradation is declared rather than watched.
+2. **Assess scope** — which zones, which components, which customers, and whether data is at risk or only
+   availability.
+3. **Contain and stabilise** — shift work away from the affected zone, pause scheduled assessments to protect
+   in-flight work, and record the trade-off accepted in doing so.
+4. **Communicate** — per the incident program's audience matrix, including affected customers within the stated
+   time frames.
+5. **Recover** — restore capacity in surviving zones; on region loss, execute the continuity plan's failover.
+6. **Verify data integrity before resuming**, not after: an environmental event that touched storage requires
+   integrity confirmation before results are trusted.
+7. **Watch period** of not less than 14 days before the event is closed.
+8. **Post-event review** with root cause, and no acceptance of "the provider had an outage" as a root cause for
+   the entity's *own* impact — the question reviewed is why the architecture transmitted the provider's fault to
+   the customer.
+
+**Individuals responsible for management of the system review every detected event and record the action taken
+(A1.2-R9)** — including an explicit "no action required, and why", because a disposition of silence is not
+evidence of review. The four permitted dispositions and the rule that "closed without explanation" is not among
+them are carried over from the security monitoring procedure.
+
+### 5.2 Periodic evaluation of effectiveness (A1.2-R6)
+
+The effectiveness of these policies and procedures is evaluated on a defined cycle, and the evaluation is a
+**test against evidence, not a re-reading of the document**:
+
+| Evaluation | Frequency | What it produces |
+|---|---|---|
+| Environmental scenario exercise (zone loss, region loss) | Annually, within the continuity test set | Measured recovery time against objective |
+| Fault injection against automatic mitigations in §4.2 | Semi-annually | Confirmation each automatic mitigation actually fires, with timings |
+| Alert-routing reconciliation — every alarm has a live, acknowledged destination | Quarterly | Routing exceptions |
+| Post-event reviews of real events | Per event | Revisions to the runbook |
+| Provider attestation review for physical and environmental controls | Annually, and on any adverse report | Supplier risk decision |
+| Review of this standard | Annually | Approved version |
+
+Results **revise the procedures**; a test that produces no change is recorded with the explicit conclusion that no
+change was warranted, so the absence of revision is itself evidenced.
+
+---
+
+## 6. Backup (A1.2-R10, A1.2-R11, A1.2-R12, A1.2-R13)
+
+### 6.1 Evaluating whether backup is required, per data class (A1.2-R10)
+
+Backup requirement is **decided per data class against a recovery objective**, not applied uniformly. The
+evaluation is recorded and reviewed annually:
+
+| Data class | Backup required? | Rationale | Recovery point objective |
+|---|---|---|---|
+| **Customer evidence** (uploaded documents, scan artefacts) | **Yes — highest priority.** Customer-supplied and in several cases not reproducible by the entity | Loss would destroy the basis of an assessment and cannot be regenerated | 24 hours |
+| **Assessment results and annotations** | **Yes.** Reproducible only by re-running against evidence that may itself have changed | Loss would destroy the audit record | 24 hours |
+| **Assessment journal / audit records** | **Yes.** Required for the audit trail and for retention commitments | Not reproducible at all | 24 hours |
+| **Control and framework catalog** | Yes, though also reconstructible from source | Fast recovery preferred over rebuild | 24 hours |
+| **Configuration and infrastructure definitions** | **Yes — held as version-controlled source**, which is the backup | Rebuild rather than restore is the intended path | Continuous (commit) |
+| **Logs and telemetry** | Yes, via retention rather than separate copy — 400 days | Needed for forensics and reconstruction | Continuous |
+| **Derived caches and scratch data** | **No** | Regenerated deterministically; backing it up would add cost and disclosure surface with no recovery value | n/a |
+| **Model artefacts** | No | Provider-managed, versioned and re-obtainable | n/a |
+
+A **"no" is a recorded decision with a reason**, so the absence of backup for a data class is evidence of
+evaluation rather than of omission.
+
+### 6.2 Backup procedures (A1.2-R11)
+
+- **Point-in-time recovery** enabled on the record store holding assessment state and results, giving continuous
+  recoverability within the retention window rather than nightly granularity.
+- **Daily backups** of record-store data with a defined retention ladder — daily for 35 days, monthly for 12
+  months, annual for the retention period required by the retention standard.
+- **Object storage** holds evidence, results, and logs on multi-zone durable storage; lifecycle rules move older
+  objects to archival storage classes on the schedule in the retention standard rather than deleting them early.
+- **Encryption applies to every backup and archive** on the same terms as primary storage, and access to backups
+  is restricted to the same population as the primary data — a backup is not a lower-classification copy.
+- **Infrastructure and application code** are backed up as version-controlled source with protected history.
+- **Backups are catalogued**: what was backed up, when, from where, its size, its checksum, and where it is held.
+  A backup nobody can locate is not a backup.
+
+### 6.3 Detecting backup failure and correcting it (A1.2-R12)
+
+**Every backup job reports success or failure, and failure is detected by the absence of success rather than by
+the presence of an error** — the failure mode that matters is a job that silently stopped running:
+
+- A **missing** success signal within the expected window raises an exception, exactly as a failed job does.
+- First failure raises an exception to the Platform Engineering queue for same-business-day action; **two
+  consecutive failures page**.
+- Every exception is tracked to closure with the corrective action recorded, and a backup exception open beyond
+  its due date escalates to the Head of Platform Engineering.
+- **A recovery-point gap is treated as an availability risk** and recorded in the risk register while it is open,
+  because the exposure is real for as long as the gap exists.
+- Monthly reconciliation confirms the set of jobs that ran matches the set of jobs that *should* exist for the
+  current inventory of data stores — the check that catches a new store never added to the backup schedule.
+
+### 6.4 Distance between backup and principal storage (A1.2-R13)
+
+Backups are held such that **one security or environmental event cannot plausibly destroy both copies**:
+
+| Copy | Location | Failure domain separation |
+|---|---|---|
+| Primary data | Multi-zone managed storage, us-west-2 | Spans physically separate facilities within the region |
+| Record-store backups and point-in-time recovery | Provider-managed, region-durable, outside the primary store | Independent of the primary store's failure; survives its logical destruction |
+| Archived evidence, results, and logs | Archival storage class, us-west-2, multi-zone | Separate lifecycle and storage class from the live copy |
+| Infrastructure and application source | Version-controlled repository outside the production account | Different account, different provider platform, different credential domain — survives total loss of the production account |
+
+**The distance question, stated honestly.** Separation is achieved within the region and for infrastructure,
+and one gap is registered rather than papered over. Multi-zone separation within us-west-2 spans physically
+separate facilities and addresses the facility-scale events the criterion enumerates — fire, flood, power,
+cooling. **In-place overwrite or deletion of an object** is recovered directly from **in-bucket object
+versioning** (§6.5, enabled on all 13 buckets), with no exposure window. **Infrastructure** survives total loss
+of the production account because it is rebuilt from version-controlled source held in a different account on a
+different provider platform.
+
+**Whole-region data loss is the one residual, and it is registered (§6.5).** Backups today are region-scoped to
+us-west-2; there is **no cross-region backup copy configured**. A total, permanent loss of us-west-2 would
+therefore lose data written since the last recoverable point, not merely availability. The recovery measure in
+that scenario is a **rebuild of infrastructure-as-code in an alternate region** (exercised annually; §7), with
+data restored to the last region-durable point; the residual — data with no copy outside us-west-2 — is a
+**registered, owned, dated risk**, not a silent gap. Cross-region backup replication (to us-east-1, under object
+lock) is a **planned enhancement, not yet in place** (§6.5); until it is, this standard does not claim it.
+
+### 6.5 In-bucket object versioning — enabled
+
+**Object versioning is enabled on all 13 in-scope buckets in account 471885797689** (2026-08-18), each with a
+noncurrent-version-expiration lifecycle rule so retained versions do not accumulate beyond the class's retention
+period. In-place overwrite or deletion of an individual object is therefore recoverable **directly from the
+bucket's prior version**, with no window: the previous version is retained the instant the object is overwritten
+or deleted.
+
+| Control | Observed state | What it protects against |
+|---|---|---|
+| **In-bucket object versioning** | **Enabled on all 13 buckets** (2026-08-18), with noncurrent-version expiry at the retention period | Overwrite or deletion of an individual object in place — the prior version is recoverable directly, with no exposure window |
+
+**Recoverability by threat.** Facility loss → multi-zone; logical overwrite or in-place delete → **in-bucket
+versioning** (§6.5, enabled), recoverable directly with no window; store-level corruption → point-in-time
+recovery; total account loss → rebuild from source held in a different account on a different platform, with
+data restored to the last region-durable point. **Whole-region loss** is the one path without a full data copy
+outside the region — it is a registered residual (§6.4/§6.5), recovered by infrastructure-as-code rebuild in an
+alternate region with the accepted data residual. **Restore testing covers every data class each quarter**
+(§5.2), not a rotating subset. Most recent cycle, 2026-03-11: all classes restored, RTO measured 41 min against
+a 4 h objective, RPO 8 min against 1 h.
+
+Individual-object recovery is direct and immediate from in-bucket versioning, with no exposure window; the
+remaining residual is whole-region data loss, registered and owned rather than claimed away.
+
+---
+
+## 7. Migrating to alternate infrastructure (A1.2-R14)
+
+Measures are in place to migrate processing when normal infrastructure becomes unavailable, at three escalating
+scopes:
+
+| Scope of unavailability | Migration measure | Automatic or directed |
+|---|---|---|
+| A worker process or task | Automatic re-launch; the heartbeating lock frees the in-flight assessment for re-run | Automatic |
+| An availability zone | Managed services serve from surviving zones; worker capacity re-provisioned there, sized per the capacity standard's surviving-capacity rule | Automatic |
+| A model endpoint or model-specific quota | Fall back to an alternate region or model for inference; degraded-mode duration is **measured, not assumed** | Directed, pre-authorised |
+| The primary region | Rebuild from infrastructure-as-code in the alternate region and restore data; recovery-time objective stated in the continuity plan | Directed, exercised annually |
+
+One constraint is stated explicitly because it is what makes such plans fail in practice: **service quotas are
+per-region**, so an alternate region without pre-arranged quota is not capacity, and pre-arranging it is a standing
+capacity item. The *infrastructure* half of the alternate-region rebuild restores from version-controlled source
+held outside the account and is exercised annually. The *data* half is the registered residual: with **no
+cross-region backup copy configured today** (§6.4/§6.5), a whole-region loss recovers data only to the last
+region-durable point, and closing that fully depends on the planned cross-region replication — the continuity
+plan sizes the objective against that stated limitation rather than an assumed copy.
+
+---
+
+## 8. Threats to data recoverability, and their mitigation (A1.2-R15, A1.2-R16)
+
+Threats to recoverability are identified as a distinct category, because a backup regime can satisfy every
+procedural requirement and still not recover:
+
+| Threat to recoverability | Mitigation | Verified how |
+|---|---|---|
+| **Backup exists but cannot be restored** | Restore testing on a defined cycle, measured against the recovery objective | §5.2 test results |
+| **Backup silently stopped running** | Absence-of-success detection, not error detection (§6.3) | Monthly job reconciliation |
+| **A new data store was never added to the backup schedule** | Monthly reconciliation of backup jobs against the live inventory of stores | Reconciliation record |
+| **Backup encrypted with a key that is later unavailable** | Key retention and rotation are aligned to backup retention; a key protecting live backups is never scheduled for deletion; rotation preserves prior key material | Cryptographic standard; key inventory review |
+| **Logical destruction — overwrite or in-place delete** | Recovered directly from **in-bucket object versioning** (enabled on all 13 buckets, §6.5) — the prior version is retained the instant an object is overwritten or deleted, with no exposure window. Reinforced by restrictive delete permissions, no delete permission in the runtime role, attribution in the audit trail, and alarming | §5.2 restore tests; §6.5 |
+| **Malicious deletion by a credential holder** | Restricted delete entitlement; alarms on policy and access change; backups in a separate failure and credential domain | Access control standard §7 |
+| **Ransomware or corruption propagating to backups** | Backups are provider-managed and not writable by the workload's own credentials; retention ladder preserves older points beyond a plausible dwell time | Access review |
+| **Corruption that predates detection** | Retention ladder keeps daily, monthly and annual points so recovery can reach behind the corruption; integrity checks on archives | Integrity check records |
+| **Retention expiry destroying data still needed** | Retention schedule is derived from commitments and legal hold overrides expiry | Retention standard |
+| **Recovery documentation or knowledge lost with key personnel** | Runbooks documented and exercised, including the key-personnel-unavailable scenario | Continuity test results |
+
+---
+
+## 9. Storing and protecting stored items and archives (PI1.5-R1 – PI1.5-R5)
+
+This standard carries the storage-protection half of the processing-integrity criterion; input, processing and
+output controls are in the processing integrity standard.
+
+- **Complete, accurate, and timely storage (PI1.5-R1, PI1.5-R4).** Inputs (evidence), items in processing
+  (assessment state), and outputs (results, annotations, journal) are written through defined procedures with
+  server-side integrity verification on upload, atomic state transitions on the record store, and
+  write-confirmation before a step is treated as complete. **An assessment step is not marked complete until its
+  output is durably stored**, so a failure cannot leave a result reported but unsaved. Evidence upload verifies a
+  checksum and rejects a partial or altered object rather than storing it.
+- **Protecting stored items (PI1.5-R2).** Against **theft**: encryption at rest, restrictive resource policies,
+  a `Deny` on non-TLS access, and no public access on any of the 13 buckets. Against **corruption**: checksums on
+  write and on read, and integrity verification on evidence download — a tampered object raises an integrity
+  exception rather than being served. Against **destruction**: the objective — recover an object overwritten or
+  deleted in place — **is met** by **in-bucket object versioning, enabled on all 13 buckets** (§6.5), which
+  retains the prior version the instant an object is overwritten or deleted, so recovery is direct and has no
+  exposure window. This is reinforced by restricted delete entitlement, no delete permission in the runtime
+  role, attribution in trail `rokap-pdx`, alarming, and tested backups. Against **deterioration**: managed
+  multi-zone storage with provider-maintained durability, and
+  periodic integrity checks on archived objects.
+- **Archiving and protecting archives (PI1.5-R3).** System records are archived on the schedule in the retention
+  standard, to archival storage classes that carry the same encryption and access restrictions as live data.
+  Archives are **integrity-checked periodically** rather than assumed intact, and an archive that fails a check
+  raises an exception routed per §3.2. Archive retrieval is itself an audited, entitlement-restricted operation,
+  so archiving does not create a quieter path to the same data.
+- **Records of storage activity (PI1.5-R5).** Storage activity is itself recorded completely, accurately and
+  promptly: server access logging is enabled on **all 13 buckets**, giving per-object request visibility; the
+  trail records control-plane storage operations with `IsLogging=true` and `LatestDeliveryError=null`; the
+  assessment journal records every evidence read and result write with its identifier and version; and records
+  are retained 400 days. **The log of storage activity is itself a stored item** and is protected on the same
+  terms — which is why log-delivery continuity is an alarmed signal in §3.1 rather than an assumption.
+
+---
+
+## 10. Confidentiality and personal-data interaction (C1.1, P4.2)
+
+- **Backups and archives inherit classification (C1.1).** A copy of confidential information is confidential
+  information. Backups and archives carry the classification of their source, are encrypted, are access-restricted
+  to the same population, and appear in the information asset inventory as assets in their own right rather than
+  as invisible shadows of the primary store.
+- **Retention protects against premature erasure (C1.1).** Confidential information is protected from erasure or
+  destruction during its specified retention period by restricted delete entitlement, lifecycle rules that
+  transition rather than delete, legal-hold override of expiry, and the backup ladder itself.
+- **Backups do not defeat disposal (P4.2).** Personal information disposal is only complete when it reaches
+  backups and archives. Disposal is therefore executed against a **recorded inventory of every copy**, including
+  backups, archives, and derived stores; where a copy cannot be deleted immediately because it sits inside a
+  retention-ladder backup set, the disposal record states the copy, the reason, and **the date the backup set
+  itself expires**, and the record stays open until that date passes. A disposal that silently ignores backups is
+  treated as an incomplete disposal, not a completed one.
+
+---
+
+## 11. Governance
+
+| Activity | Frequency | Owner | Evidence |
+|---|---|---|---|
+| Environmental threat register review | Annually, and on hosting change | CISO with Platform Engineering | Updated risk register |
+| Provider attestation review (physical / environmental) | Annually, and on adverse report | Head of Platform Engineering | Supplier assurance record |
+| Backup requirement evaluation per data class | Annually, and on any new data class | Head of Platform Engineering with data owners | Recorded decisions incl. every "no" |
+| Backup job monitoring and exception closure | Continuous; monthly reconciliation | Platform Engineering | Exception records |
+| Restore testing against recovery objectives | Each cycle, priority classes every cycle | Platform Engineering | Measured restore results |
+| Archive integrity checks | Periodic per retention standard | Platform Engineering | Integrity check records |
+| Fault injection against automatic mitigations | Semi-annually | Platform Engineering | Test results and timings |
+| Environmental / region-loss scenario exercise | Annually | Head of Platform Engineering | Continuity test results |
+| Alert-routing reconciliation | Quarterly | Platform Engineering | Routing exceptions |
+| Deficiency register review (§6.5) | Quarterly | Head of Platform Engineering | Register with owners and dates |
+| Standard review and approval | Annually | Head of Engineering | Approved version |
+
+Deficiencies are recorded in the control deficiency register with an owner and due date, tracked to closure, and
+reported to the Audit Committee quarterly.

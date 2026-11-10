@@ -1,0 +1,195 @@
+# Code of Conduct and Ethics Standard
+
+**Document ID:** GOV-STD-001
+**Version:** 4.2
+**Owner:** Chief Executive Officer, with the Audit Committee of the Board of Directors
+**Approved by:** Board of Directors
+**Approval date:** 2026-02-19
+**Next scheduled review:** 2026-12-31, and on any material change to the business or its obligations
+**Applies to:** All directors, officers, employees, interns, contractors, temporary staff and vendor
+personnel (together, **covered persons**) of the entity operating the compliance-evaluation service
+in AWS account 471885797689, us-west-2.
+
+---
+
+## 1. Standards of conduct — what is expected
+
+The Board of Directors and senior management have **defined and documented the standards of conduct**
+that articulate their expectations concerning integrity and ethical values. The standards below are
+the authoritative statement of those expectations; nothing in a team norm, a manager's instruction or
+a customer commitment overrides them.
+
+| # | Standard | What it requires in practice |
+|---|---|---|
+| S-1 | **Honest representation of the service** | No statement to a customer, prospect, auditor or regulator that overstates what the system does. Limitations are disclosed before contracting, not after |
+| S-2 | **Integrity of assessment results** | No adjustment of a compliance verdict, score or rationale to please a customer, close a deal or improve a metric. A verdict is changed only on evidence |
+| S-3 | **Truthfulness in records** | Records, journals, tickets, timesheets and reports state what happened. Backdating, selective deletion and retrospective editing of an audit record are prohibited |
+| S-4 | **Protection of entrusted data** | Customer data is used only for the purpose it was supplied for, accessed only with a business need, and never taken outside approved systems |
+| S-5 | **Speaking up** | A covered person who sees a deviation raises it. Failing to report a known material deviation is itself a deviation |
+| S-6 | **No retaliation** | Retaliation against anyone who raises a concern in good faith is a terminable offence, whether or not the concern is substantiated |
+| S-7 | **Conflicts of interest** | Declared on hire, annually, and within 5 business days of arising. Undeclared conflicts are treated as deviations |
+| S-8 | **Fair dealing** | No bribery, kickbacks, facilitation payments, anti-competitive collusion or misuse of a customer's confidential information |
+| S-9 | **Lawful and respectful workplace** | Compliance with applicable law; no harassment or discrimination |
+| S-10 | **Use of AI within our own operations** | Covered persons follow the Responsible Use Policy (AIMS-POL-018) when using AI internally; unapproved AI services are not used with entity or customer data |
+
+## 2. Tone at the top — directives, actions and behavior
+
+The Board and management at all levels demonstrate the importance of integrity and ethical values
+**through directives, actions and behavior**, not through the existence of this document. Evidence of
+each is recorded, because a claim of tone at the top that produces no artefacts is unverifiable.
+
+| Channel | Frequency | Owner | Record produced |
+|---|---|---|---|
+| Board resolution adopting this Standard and the Audit Committee charter | On material change; last 2026-02-19 | Board | Signed minute |
+| CEO written statement on integrity, issued with the Standard | Annually | CEO | Distributed statement, acknowledgement log |
+| Ethics item as a standing agenda point at the quarterly Board meeting | Quarterly | Audit Committee Chair | Minutes with the deviations report |
+| Management "decisions we made the hard way" briefing at the all-hands | Quarterly | CEO + Accountable Owner | Deck and recording |
+| Manager-led team discussion of one real case | Semi-annually | Each people manager | Attendance record |
+| Leadership escalation drill (a scripted request to soften a verdict) | Annually | Responsible AI Lead | Exercise report |
+
+**Actions and behavior, recorded.** Three decisions in the current period are documented in the Board
+minutes as the concrete demonstration that the standards bind management itself:
+
+1. **2025-11-14 — revenue declined over S-1/S-2.** A prospective enterprise customer asked for a
+   contractual commitment that assessments would not return findings below a stated threshold.
+   Management declined and recorded the lost opportunity rather than negotiate the wording.
+2. **2026-01-09 — a published result was corrected against interest.** A defect caused eight
+   assessments to overstate coverage. Management notified the affected customers within 3 business
+   days and reissued the results, before any customer had noticed.
+3. **2026-02-05 — an executive was sanctioned.** A senior manager instructed an engineer to omit a
+   known limitation from a customer-facing summary. The engineer raised it through the concerns
+   channel; the instruction was reversed, the summary corrected, and the manager received a formal
+   written warning and lost their variable compensation for the period (see §5, case D-2026-003).
+   The Audit Committee reviewed the case directly because the subject was a member of management.
+
+Case 3 is recorded deliberately. A deviation register containing only junior staff would be evidence
+that the process does not reach the people best placed to override it.
+
+## 3. Communication and understanding at all levels — including third parties
+
+The standards are **understood at all levels of the entity and by outsourced service providers and
+business partners**. Understanding is measured, not assumed: acknowledgement alone is treated as
+weak evidence, so comprehension is tested.
+
+| Audience | How the standards reach them | How understanding is evidenced | Current period result |
+|---|---|---|---|
+| Directors and officers | Board adoption; annual signed acknowledgement | Signed acknowledgement + annual conflicts declaration | 5 of 5 |
+| Employees | Onboarding within 5 business days; annual refresher with scenario questions | Acknowledgement + ≥ 80% on the scenario assessment | 34 of 34 acknowledged; 34 passed (2 on a second attempt) |
+| Interns and temporary staff | Same onboarding as employees | Acknowledgement + scenario assessment | 3 of 3 |
+| **Contractors and vendor personnel with system or data access** | Flow-down clause in every contract; the Standard is supplied as an annex; access is not provisioned until acknowledged | Countersigned annex per individual; access request records the acknowledgement | 11 of 11 individuals across 4 suppliers |
+| **Outsourced service providers** (sub-processors, labelling vendors, assessors) | Contractual obligation to maintain equivalent standards and to notify us of deviations affecting our service | Supplier attestation at onboarding and annually; reviewed in the supplier record (AIMS-PRO-010 §4) | 6 of 6 attested |
+| **Business partners and integrators** | Pass-through conduct and disclosure obligations in the partner agreement | Executed agreement with the conduct annex | 2 of 2 |
+
+**Measured comprehension, not just receipt.** The 2026 refresher included five scenarios drawn from
+real cases. Two employees initially answered incorrectly on the "customer asks you to soften a
+finding" scenario and were re-trained before passing; that result drove the addition of S-2 examples
+to the onboarding module. A 100% first-pass rate is treated as a sign the assessment is too easy
+rather than as a success.
+
+## 4. Evaluating performance against the standards
+
+**Processes are in place to evaluate the performance of individuals and teams against the expected
+standards of conduct.** Conduct is assessed separately from delivery, so strong delivery cannot mask
+a conduct problem.
+
+| Mechanism | Scope | Cadence | Owner | Output |
+|---|---|---|---|---|
+| Conduct rating in the performance review — a distinct, non-averaged rating | Every employee and intern | Semi-annual | People manager, calibrated by skip-level | Rating of Meets / Does Not Meet, with narrative |
+| Team-level conduct review | Each team | Semi-annual | Department head | Team findings, systemic issues escalated |
+| Manager attestation | Each manager, for their team | Semi-annual | Department head | Attestation of no unreported deviations |
+| Access and action review — actual behavior against S-3/S-4 | All privileged users | Quarterly | AI Security Lead | Exceptions list, investigated individually |
+| Verdict-integrity review — sampled assessments checked for unevidenced changes against S-2 | 25 sampled assessments | Quarterly | Responsible AI Lead | Findings; any unevidenced change is a deviation |
+| **Contractor and vendor personnel conduct evaluation** | All contractor/vendor individuals with access | Quarterly, and at engagement end | Engagement owner + Procurement | Continue / remediate / remove decision, recorded in the supplier record |
+| Supplier-level conduct evaluation | Each outsourced provider | Annually, per AIMS-PRO-010 | Third-Party Risk | Supplier record entry |
+
+A Does Not Meet conduct rating caps the overall review outcome regardless of delivery performance,
+blocks promotion for the cycle, and forfeits variable compensation. This is what makes the rating
+consequential rather than advisory.
+
+## 5. Identifying deviations in a timely manner
+
+Deviations are **identified in a timely manner** through channels that do not depend on the goodwill
+of the person a report concerns. All channels feed one register with one clock.
+
+| # | Channel | Open to | Anonymous? | Routed to |
+|---|---|---|---|---|
+| D-1 | Direct report to any manager | Anyone | No | Manager → HR + Ethics Officer |
+| D-2 | Ethics mailbox | Anyone, including contractors and vendor staff | Yes | Ethics Officer |
+| D-3 | Third-party hotline (independent operator, 24/7) | Anyone, including external parties | Yes | Ethics Officer, with direct copy to the Audit Committee Chair |
+| D-4 | Direct line to the Audit Committee Chair, bypassing management | Anyone | Yes | Audit Committee Chair |
+| D-5 | Concerns procedure for AI-specific concerns (AIMS-PRO-003) | Anyone | Yes | Responsible AI Lead |
+| D-6 | Detective controls — privileged-action alarms, access exception reports, verdict-integrity sampling | n/a (automated) | n/a | AI Security Lead |
+| D-7 | Supplier-notified deviation under the flow-down clause | Suppliers | n/a | Third-Party Risk |
+| D-8 | Customer or external-party report | Anyone | Yes | Ethics Officer |
+
+**The clock and its measurement.** Triage begins within **1 business day** of receipt. A preliminary
+assessment is completed within **5 business days**. D-4 exists specifically so that a deviation
+implicating management can be identified without passing through management, which is the failure
+mode that makes conduct programs ineffective. Detection latency is reported to the Audit Committee
+quarterly, measured from **the date of the conduct** where it can be established — not from the date
+of the report — because measuring from receipt would have made the case below look timely.
+
+Current period: 9 reports; median time from receipt to triage 0.5 business days; median time from
+conduct to detection 6 days. The **longest was 71 days** (case D-2026-002, an undeclared conflict
+found by the annual declaration rather than by a report), which drove the addition of the quarterly
+manager attestation in §4.
+
+## 6. Remedying deviations in a timely and consistent manner
+
+Deviations are **remedied in a timely and consistent manner**. Consistency is enforced by a defined
+sanctions framework applied by a standing panel rather than by individual managers, and by review of
+outcomes for disparity.
+
+| Severity | Definition | Standard consequence range | Decision by | Target closure |
+|---|---|---|---|---|
+| Minor | Procedural lapse, no harm, no concealment | Coaching, documented; re-training | Manager + HR | 10 business days |
+| Moderate | Repeated lapse, or a lapse with potential for harm | Written warning; conduct rating impact; variable-compensation impact | Conduct Panel | 20 business days |
+| Serious | Actual harm, or breach of S-1 to S-4 | Final warning to termination; access removed; customer notification if results affected | Conduct Panel + CEO | 30 business days |
+| Severe | Deliberate falsification, retaliation, data misuse, or any deviation by a member of management | Termination; contract termination for a supplier; referral to authorities where required | Audit Committee | 30 business days, no extension |
+
+**Consistency mechanisms:** a single Conduct Panel (HR, Legal, Ethics Officer, plus an independent
+Audit Committee member for Serious and above) decides all Moderate-and-above cases; precedent from
+the case register is reviewed before each decision; outcomes are analyzed semi-annually for disparity
+by role, seniority, tenure and employment type; and **contractor and vendor personnel are subject to
+the same framework**, with the consequence executed through the supplier contract (removal from the
+engagement, and where warranted termination of the supplier relationship).
+
+**Case register, current period** — every case, including the ones with an uncomfortable subject:
+
+| Case | Type | Subject | Severity | Outcome | Days to close |
+|---|---|---|---|---|---|
+| D-2026-001 | Credential shared between two engineers | Employees | Moderate | Written warnings; credential rotated; SSO gap closed | 12 |
+| D-2026-002 | Undeclared conflict — advisory role at a customer | Employee | Moderate | Declared and recused; written warning; detection gap fixed | 18 |
+| D-2026-003 | Instruction to omit a known limitation | **Member of management** | Serious | Final written warning; variable compensation forfeited; summary corrected; Audit Committee reviewed | 21 |
+| D-2026-004 | Vendor labeller retained sample data on a personal device | **Vendor employee** | Serious | Individual removed from the engagement; data destruction attested; supplier corrective action | 15 |
+| D-2026-005 | Retaliatory comment toward a reporter | Employee | Serious | Final written warning; reporter protection reviewed with the Audit Committee | 9 |
+| D-2026-006 to 009 | Four Minor procedural lapses | Employees (3), contractor (1) | Minor | Coaching and re-training | 4-9 |
+
+Nine reports, nine closed, none outside the target. Two implicated a member of management or a vendor
+employee — the two categories a conduct program most often fails to reach.
+
+## 7. Roles
+
+| Role | Responsibility |
+|---|---|
+| Board of Directors | Adopts the Standard; owns the tone at the top; decides Severe cases |
+| Audit Committee | Independent oversight of the program; receives all reports directly; reviews every case involving management |
+| CEO | Sets and demonstrates the tone; accountable for the program |
+| Ethics Officer (General Counsel) | Runs the register; triages; convenes the Conduct Panel |
+| People managers | Communicate the standards; evaluate conduct; escalate deviations |
+| Procurement / Third-Party Risk | Flows the standards down to suppliers; evidences supplier and vendor-personnel attestation |
+| Every covered person | Complies; raises deviations; cooperates with investigations |
+
+## 8. Program effectiveness and review
+
+Reviewed annually and on material change. Reported to the Audit Committee quarterly: report volume by
+channel, detection latency from conduct, closure time against target, outcome distribution and
+disparity analysis, acknowledgement and comprehension coverage including third parties, and open
+cases. **A quarter with zero reports is investigated as a reporting-channel failure**, not celebrated.
+
+| Version | Date | Approved by | Change |
+|---|---|---|---|
+| 3.0 | 2024-11-20 | Board | Established the standards, register and sanctions framework |
+| 4.0 | 2025-09-11 | Board | Added third-party flow-down and vendor-personnel coverage after a supplier deviation |
+| 4.1 | 2025-12-03 | Board | Added the Audit Committee direct channel (D-4) and management-case escalation |
+| 4.2 | 2026-02-19 | Board | Added comprehension testing, detection measured from conduct rather than receipt, and the disparity analysis |

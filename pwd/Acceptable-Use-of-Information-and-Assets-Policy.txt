@@ -1,0 +1,212 @@
+# Acceptable Use of Information and Associated Assets Policy
+
+| Field | Value |
+|---|---|
+| Document ID | SEC-AUP-052 |
+| Version | 1.0 |
+| Owner | CISO (accountable); Head of People (personnel application); Director, IT Operations (technical enforcement) |
+| Approved by | Security Governance Board, 2026-08-21 |
+| Effective date | 2026-08-22 |
+| Review cycle | Annual, and on any change to the asset classes in use, the classification scheme, or the monitoring performed — next review 2026-12-31 |
+| Applies to | **Every** person who uses an entity asset or handles entity or customer information: employees, contractors, temporary personnel, interns, and — through the terms in `SEC-REG-047` §6 — supplier personnel granted access. Both legal entities, every geography |
+| Classification | Internal — readable by all personnel, and this is deliberate: a rule people cannot read is a rule they cannot follow |
+
+## 1. What this policy is, and why it is a document of its own
+
+This is the **topic-specific acceptable use policy** required alongside the information security policy. It
+states, in one place a person can be pointed to, what may and may not be done with information and with the
+assets that hold it.
+
+It exists as its own artifact rather than as a section inside something larger for a plain reason: the
+audience is *everybody*, and the obligations are individual. A rule embedded in a data classification
+standard is read by the people who classify data; a rule embedded in an endpoint standard is read by the
+people who configure endpoints. Neither is the same population as "everyone who touches a customer's
+evidence document", and that population is the one this policy addresses.
+
+Related documents, and the boundary with each — stated because overlapping documents with no stated
+boundary is how a rule ends up in none of them:
+
+| Document | What it holds | What this policy holds instead |
+|---|---|---|
+| `SEC-POL-001` Information Security Policy | The overarching position and the management-system commitments | The individual's obligations |
+| `SEC-CLS-017` Data Classification Standard | How information is classified and labelled | What you may **do** with information once it is classified |
+| `SEC-STD-027` Endpoint Device and Remote Working Standard | How the device is configured, managed and protected | How the person may **use** it |
+| `AI-Responsible-Use-Policy` | The specific rules for AI systems and model interaction, which state expressly that they supplement and do not replace this policy | The general rules that AI use is also subject to |
+| `SEC-IAM-021` Logical Access Control | Who is granted what, and how | The rule that you use only your own access, only for its purpose |
+| Code of Conduct (S-4) | The employment-relationship consequences | The information-security rules whose breach the Code then addresses |
+| `SEC-AWR-041` Awareness Programme | How these rules are taught, with worked examples | The rules themselves |
+
+Two principles run through everything below:
+
+- **Assets are held on trust, for the entity's purposes.** Incidental personal use is tolerated within the
+  limits in §6; it is not a right, and it never overrides an information-handling rule.
+- **The rules are stated so that following them is possible.** A prohibition with no stated boundary
+  ("do not misuse information") tells nobody anything. Every rule below names the behaviour.
+
+## 2. Assets in scope, and who is permitted to use each
+
+| Asset class | Examples | Who may use it | Recorded where |
+|---|---|---|---|
+| Endpoint devices | Managed laptops (48), the one managed mobile configuration | The assigned individual only. **A device is not shared and not lent, including to a colleague** — an action taken under someone else's session is unattributable, which defeats every access record we keep | Asset inventory, with assignee and auxiliary-storage field |
+| Identity and access | The corporate directory identity, federated access to AWS, application access | The named individual, for the purpose the access was granted for | Identity provider; entitlement records |
+| Production systems and customer data | The assessment service, customer evidence, assessment results | Only personnel with a granted role, and only through the sanctioned path — never through a personal account or an unmanaged device | Entitlement records; `SEC-IAM-021` |
+| Source code and pipelines | Repositories, CI/CD, artifact registry | Engineering personnel per the access model in `ENG-SDL-048` §7A.1 | Repository access lists |
+| Cloud services | The 21 registered services | Per the register's per-service access list and named owner | Cloud service register (`SEC-POL-051` §3) |
+| Collaboration and communication | Mail, chat, ticketing, documentation repository | All personnel, within §3 and §4 | Directory group membership |
+| Physical facilities and equipment | HQ office, the one multifunction device, meeting-room displays | Badge holders per `SEC-PRO-013` | Badge system; asset inventory |
+| Information itself | Customer evidence, assessment output, personnel data, our own confidential material | Per classification, §3 | Classification labels |
+
+**The authorised-user record.** Permission to use an asset is a recorded fact, not a custom: the asset
+inventory carries the assignee, the entitlement records carry the access, and both are updated on every
+joiner, mover and leaver and reconciled quarterly. Operating evidence for that maintenance — including the
+one discrepancy the last reconciliation found — is in `OPS-REC-034` §2 row 20. An asset with no recorded
+authorised user is treated as unassigned and its access is withdrawn.
+
+## 3. Permitted and prohibited use, by classification
+
+Handling follows the classification. The rule set is stated per class so that a person holding a document
+can look up what they may do with it.
+
+| | **Public** | **Internal** | **Confidential** (incl. customer evidence) | **Personal data** (additional to its class) |
+|---|---|---|---|---|
+| **Access** | Anyone | All personnel | Only those with a granted role and a current need | Only with a purpose recorded under `SEC-REG-047` §5 |
+| **Store** | Anywhere | Managed systems and managed devices | Managed systems only; on a device only within the encrypted managed profile | As Confidential, plus within the retention period in `PRV-RET-036` §2 |
+| **Send internally** | Freely | Freely | To recipients with the role, named individually — **not to a broad channel or a distribution list**, because a list's membership changes without the sender knowing | As Confidential, plus minimised to what the recipient needs |
+| **Send externally** | Freely | Only with the owner's approval | **Only through the sanctioned channel, to a party under a current agreement**, and never as an attachment to a personal address | Only with a lawful basis and, for a transfer, a mechanism in place |
+| **Copy or extract** | Freely | For a business purpose | Only into another managed system with equal protection. **A bulk extract requires the information owner's approval**, and the entity's DLP alerts on volume regardless | As Confidential; an extract for a new purpose is a new purpose and needs assessment |
+| **Print** | Freely | Where necessary, collected immediately | **Discouraged; where unavoidable, collected immediately and shredded after use.** Never left on the device | As Confidential |
+| **Capture — screenshot, photograph, screen recording** | Freely | For a business purpose, into a managed system | **Only for a business purpose, only stored in a managed system, and never containing a credential, token or another customer's identifiers.** Tested quarterly by artifact sampling (`OPS-REC-034` §2.1(d)) | As Confidential; a capture of personal data is a copy of personal data |
+| **Discuss** | Freely | Within the entity | Only where the conversation cannot be overheard: **not in a public place, on public transport, in a shared workspace, or on a call in an open area without a headset**. This includes video calls where a screen is visible to others | As Confidential |
+| **Take out of a managed environment** | n/a | With approval | **Prohibited.** Confidential information does not leave a managed system, and there is no sanctioned removable-media path (`PRV-RET-036` §6.7.2) | Prohibited |
+| **Use for a new purpose** | Freely | With the owner's agreement | **Only the purpose it was provided for.** Customer evidence exists to support that customer's assessment and for nothing else — not for testing, not for demonstrations, not for our own analytics | Only on a recorded lawful basis |
+| **Dispose** | Freely | Per `PRV-RET-036` | Only through the disposal path, with the owner's authorisation | As Confidential, plus the erasure obligations |
+
+**Universal prohibitions**, which no classification, approval or business urgency permits:
+
+1. Using another person's credentials or access, or letting anyone use yours — **including your manager**,
+   and including "just this once" during an incident. The break-glass path in `SEC-IAM-021` §7 exists so
+   that credential sharing is never the answer under pressure.
+2. Attempting to obtain access you have not been granted, or retaining access after your need for it ends.
+3. Removing, disabling or circumventing a security control — encryption, endpoint protection, device
+   control, logging, DLP, a proxy or a browser policy. Where a control genuinely blocks legitimate work,
+   the answer is the exception process in `SEC-CFG-025` §5.2, not a workaround.
+4. Processing entity or customer information through a personal account, a personal device, or an
+   unregistered cloud service or browser extension (`SEC-POL-051` §2).
+5. Installing software outside the sanctioned path (`SEC-MAL-024` §2).
+6. Using entity assets for anything unlawful, for harassment, or for material that would breach the Code of
+   Conduct.
+7. Accessing information out of curiosity. **Looking is a use.** A customer's evidence is not readable
+   because you technically can reach it; access is logged, and a look with no business reason is a breach
+   whether or not anything was copied.
+8. Introducing entity information into a third-party service that would acquire rights over it, or into an
+   AI system outside the terms of the AI Responsible Use Policy.
+9. Misrepresenting yourself as the entity externally without authorisation, or publishing entity
+   information without the approval in `SEC-MON-026` §5.3.
+10. Concealing a mistake. **Reporting your own error is expected and is never sanctioned as such**
+    (§7) — the sanctionable act is the concealment.
+
+## 4. Handling obligations that attach to the person
+
+| Obligation | What it requires |
+|---|---|
+| **Know the classification** | Before you handle information, know its class. If it is unmarked, treat it as Confidential and get it marked (`SEC-CLS-017`) |
+| **Mark what you create** | A document, a ticket, an export or a message containing Confidential material carries the label. Marking is the mechanism every other rule depends on; operating evidence in `OPS-REC-034` §2 row 21 |
+| **Lock and clear** | Lock your screen when you step away — enforced at 5 minutes but the obligation is immediate; clear your desk of printed material; keep screens away from windows and from people behind you |
+| **Protect the device** | Do not leave it unattended in a public place or visible in a vehicle; report loss or theft immediately, at any hour, through the on-call path — **speed matters more than certainty, and a false alarm costs nothing** |
+| **Keep your credentials yours** | A unique passphrase per service, through the sanctioned password manager; MFA on every service that offers it; never approve an MFA prompt you did not initiate, and report one you did not initiate |
+| **Verify before you send** | Check the recipient before sending anything Confidential. Misdirected mail is the single most common information incident in organisations of our size, and it is caused by autocomplete, not by malice |
+| **Report** | Report a suspected incident, a phishing attempt, a control that is not working, an access you should not have, and information you have received that you should not have. Reporting routes are in `SEC-IRP-012` and take under a minute |
+| **Return** | On leaving, or on request, return every asset and delete entity information from anywhere it should not be. Handling and verification in `PRV-RET-036` §6.7.1 |
+| **Ask** | Where this policy does not clearly cover a situation, ask before acting. `security@` and the security channel answer within one business day; **the question is never the problem** |
+
+## 5. Monitoring, and the legal basis for it
+
+Personnel are told what is monitored, why, and on what basis, because monitoring people have not been
+informed of is both a legal problem and a trust problem — and because a control nobody knows about deters
+nobody.
+
+| What is monitored | Purpose | Lawful basis | Limits |
+|---|---|---|---|
+| Authentication and access events across identity, AWS, and applications | Detecting unauthorised access and account compromise | Legitimate interests (security of systems and of customer data), assessed and recorded | Retained per `PRV-RET-036`; not used for productivity measurement |
+| Administrative and data-access activity in production | Attributing action to actor; detecting misuse of granted access | Legitimate interests; also a contractual obligation to customers | Reviewed on an alert or an investigation, not browsed |
+| Endpoint security telemetry — process execution, detections, device-control events, compliance state | Malware and misuse detection; asset protection | Legitimate interests | **Not keystroke logging, not screen capture, not webcam or microphone access, not browsing history for its own sake.** Stated as an explicit limit so the boundary is knowable |
+| Mail and collaboration metadata, plus content scanning for malicious material and DLP patterns | Malware interception; preventing Confidential information leaving | Legitimate interests; DPIA recorded | Automated in the first instance; a human reads content only on an alert, with a second person present, and it is recorded |
+| Network egress destinations | Detecting unsanctioned services and exfiltration | Legitimate interests | Destination and volume, not content, other than the TLS-inspection position recorded in `SEC-CRY-022` §4A |
+| Physical access events and CCTV at HQ | Facility security | Legitimate interests; signage in place | Retention per `SEC-PRO-013`; not used for attendance |
+| Quarterly artifact sampling for capture and handling rules | Testing whether §3 is actually followed | Legitimate interests | Sampled artifacts already in managed systems; method and records in `OPS-REC-034` §2.1(d) |
+
+**Standing limits on all monitoring:** it is proportionate to the security purpose and to nothing else; it
+is not used to assess performance; personal information incidentally collected is not repurposed;
+investigatory access to an individual's content requires the CISO plus Head of People, is recorded, and
+the individual is informed unless doing so would prejudice an active investigation, in which case they are
+informed afterwards; personnel may ask what is held about them and exercise their rights under the data
+subject rights procedure. Monitoring is described here, in the privacy notice, and in the awareness
+programme, so nobody encounters it for the first time in an investigation.
+
+## 6. Incidental personal use
+
+Limited personal use of mail, chat, browsing and the device is permitted, on these conditions: it is
+incidental in time and volume; it does not breach §3 or any universal prohibition; it does not consume
+material resources or introduce software; it creates no expectation of privacy in entity systems beyond
+the monitoring limits in §5; and it stops being acceptable the moment it interferes with work or with a
+control. Personal information you store on an entity device is subject to the same erasure on return as
+everything else — so keep personal material off the device.
+
+## 7. Consequences of breach
+
+Consequences are stated because a rule with no stated consequence is advice.
+
+| Situation | Consequence |
+|---|---|
+| An honest mistake, self-reported | **No sanction for the mistake.** A coaching conversation, and where the mistake reveals a weak control, the control changes. This is a deliberate position: self-reporting is the fastest detection mechanism we have, and sanctioning it destroys it |
+| An honest mistake, not reported, found later | Handled as a conduct matter at the lowest tier, on the failure to report rather than the error |
+| Careless breach — a rule known and not followed | Conduct matter: documented discussion, refresher training, and in a repeat case a formal warning |
+| Deliberate breach — circumventing a control, sharing credentials, accessing information without a business reason | Formal disciplinary action up to and including dismissal. Access is suspended while it is investigated |
+| Breach involving customer or personal data | The above, plus the incident, notification and regulatory processes in `SEC-IRP-012` and `SEC-REG-047`, which run on their own clocks and independently of the conduct outcome |
+| Unlawful conduct | Referral to law enforcement, and cooperation with any investigation |
+| Contractor or supplier personnel | Access withdrawn; the matter is raised with their employer under the contract, which carries the equivalent obligations |
+
+Determination follows the conduct evaluation process, with sanctions decided consistently by the Head of
+People with the CISO, not by the affected system's owner. Operating records for the period — including the
+two matters handled at the lowest tier and the control change one of them produced — are in `OPS-REC-034`
+§6 and §2.1(d).
+
+## 8. Communication, acknowledgement and how we know it landed
+
+| Audience | Communication | Record |
+|---|---|---|
+| All personnel | Published to the documentation repository and announced in the all-hands channel and the monthly security note on 2026-08-22, with the five things that changed for an individual stated up front rather than "please read the attached policy" | Publication and announcement records |
+| All personnel | **Explicit acknowledgement required** — not a click-through: the acknowledgement restates the four obligations most often breached and requires a positive confirmation | Acknowledgement records: **48/48 complete** as at 2026-08-22 |
+| New joiners | Before first access is granted, as part of induction — access provisioning is gated on it, so the sequence cannot be reversed | Induction records; provisioning gate |
+| All personnel, annually | Re-acknowledged at the annual awareness cycle, and re-communicated on any material change | `SEC-AWR-041` completion records — 48/48 for the current cycle |
+| Contractors and temporary personnel | Same acknowledgement, before access | 2/2 current contractors |
+| Supplier personnel with access | Through the supplier's flow-down obligation, with the supplier confirming their personnel are bound | Supplier confirmations, 11/11 in-scope agreements |
+| Managers | Additionally briefed on §7, because inconsistent application of consequences is itself a control failure | Manager briefing 2026-08-21, 6 attendees |
+
+**Whether it landed is measured, not assumed.** Acknowledgement counts, phishing-simulation results, the
+quarterly artifact sampling in §3, and the unsanctioned-service discovery in `SEC-POL-051` §3 are the four
+independent signals; all four are reported to the Security Governance Board together, because a 100%
+acknowledgement rate alongside a rising unsanctioned-service count means the policy was read and not
+followed, which is a different problem from one that was never read.
+
+## 9. Governance
+
+| Activity | Frequency | Owner | Evidence |
+|---|---|---|---|
+| Acknowledgement completeness against the HR active list | Monthly | Head of People | Acknowledgement records reconciled to headcount |
+| Authorised-user and asset-assignment reconciliation | Event-driven and quarterly | Director, IT Operations | `OPS-REC-034` row 20 |
+| Marking and capture artifact sampling | Quarterly | Compliance Manager | `OPS-REC-034` §2.1(d) |
+| Monitoring proportionality and limits review | Annually, and on any new monitoring | DPO with CISO | Reviewed basis; DPIA where required |
+| Investigatory-access authorisations review | Quarterly | CISO with Head of People | Authorisation records |
+| Conduct matters and consistency of sanction review | Quarterly | Head of People with CISO | `OPS-REC-034` §6 |
+| Policy communication and re-acknowledgement | On publication and annually | CISO | Communication records per §8 |
+| Review of this policy | Annually, and on change to asset classes, classification or monitoring | CISO | Approved version |
+
+Deficiencies enter the control deficiency register with an owner and a due date and are reported to the
+Audit Committee quarterly.
+
+## 10. Review history
+
+| Version | Date | Change | Driver |
+|---|---|---|---|
+| 1.0 | 2026-08-22 | Initial policy. The acceptable-use rules previously existed across the Data Classification Standard, the Endpoint and Remote Working Standard, the Code of Conduct and the awareness programme's training content — enforced in practice and tested by sampling, but with no single artifact a person could be pointed to, no consolidated statement of the monitoring and its basis, and no one place where the consequences of breach were stated. The AI Responsible Use Policy's own note that it "does not replace the acceptable use policy" referred to a document that did not exist as such | Annual management-system review |

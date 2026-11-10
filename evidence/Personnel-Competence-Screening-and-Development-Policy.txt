@@ -1,0 +1,209 @@
+# Personnel Competence, Screening and Development Policy
+
+**Document ID:** HR-POL-004
+**Version:** 3.2
+**Owner:** Head of People Operations
+**Approved by:** CEO; reviewed by the Board of Directors 2026-02-19
+**Next scheduled review:** 2026-12-31, and on material change to the objectives or the workforce model
+**Applies to:** Employees, interns, contractors, vendor employees and outsourced service providers
+supporting the compliance-evaluation service in AWS account 471885797689, us-west-2.
+
+---
+
+## 1. Policies and practices reflecting competency expectations
+
+The entity has **established policies and practices that reflect the competency expectations necessary
+to support the achievement of objectives**. Competence is defined per role in a role profile, and the
+profile is derived from the objectives and commitments the role must deliver — not written
+generically — so that a competence shortfall can be identified against something specific.
+
+| Role | Competency expectations (from the role profile) | Objective / commitment it supports |
+|---|---|---|
+| Assessment / AI engineer | Model evaluation methodology; prompt engineering; the frameworks being assessed; statistical reasoning about output quality; secure coding | Processing integrity of assessment results |
+| Platform engineer | AWS architecture; IaC; secure SDLC; change management; on-call operations | Availability and security commitments |
+| Security engineer | Threat modelling; IAM and cryptography; detection engineering; vulnerability management; incident response | Security commitments |
+| Site reliability / on-call | Incident command; the recovery runbooks; capacity analysis | Availability commitments and the recovery objectives |
+| Compliance analyst | The trust services criteria and ISO/IEC 42001; evidence sufficiency; control testing | Control operation and the assertion |
+| Privacy / legal counsel | Applicable privacy law; DPIA methodology; contract drafting | Privacy and confidentiality commitments |
+| People manager | Performance and conduct evaluation; the escalation duties in GOV-STD-001 | The control environment itself |
+| Customer operations | The service's actual limitations; incident communication; confidentiality handling | Honest representation; confidentiality |
+| Board / committee member | The skills matrix in GOV-CHT-002 §3 | Oversight |
+
+**Practices that give the expectations effect:** a role profile is mandatory before a requisition
+opens; interview loops are structured against the profile with a written scorecard per competency and a
+designated bar raiser; a hiring decision requires the security-competency scorecard for any role with
+production access; competency expectations appear in the job description, the offer and the performance
+review; and access to production is provisioned only after role-specific training is complete
+(enforced in the access workflow, not by reminder).
+
+## 2. Background of personnel, contractors and vendor employees
+
+The entity **addresses the background of potential and existing personnel, contractors and vendor
+employees when determining whether to employ and retain the individuals.**
+
+| Population | Pre-engagement screening | Re-screening | Enforcement point |
+|---|---|---|---|
+| Employees and interns | Identity and right-to-work verification; employment-history verification for the last 7 years; education verification where claimed; criminal-records check where lawful; two professional references | Every 3 years for privileged-access roles; on promotion into a privileged role | Start date does not proceed without a cleared result; **production access is not provisioned until screening clears** |
+| **Contractors** | Same standard as employees, performed by the entity or evidenced by the supplier to the entity's standard | Every 3 years, or at contract renewal if sooner | Access request is rejected without a screening attestation on file |
+| **Vendor employees** with system or data access | Supplier must attest per named individual that screening equivalent to this policy was completed, and retain the evidence for audit | Annually per individual, plus at each engagement renewal | **No named-individual attestation, no access** — a hard gate in the access workflow |
+| Elevated-privilege roles (break-glass, identity administration, production data access) | Enhanced screening: the standard set plus a financial-probity check where lawful and an additional reference | Every 2 years | Elevated role is removed if re-screening lapses |
+| Outsourced service providers (organizational) | Corporate due diligence: SOC 2 or equivalent, security questionnaire, financial stability, sanctions screening | Annually per CC9 | No production data before DPA and diligence completion |
+
+Screening covers **existing** individuals, not only candidates, which is why re-screening cadences and
+lapse consequences are defined. Local law limits what can be checked in some jurisdictions; where a
+check is unlawful the limitation is recorded in the individual's screening record with the
+compensating control applied (additional reference and a 90-day supervised-access period).
+
+**Current period:** 11 employees and 3 interns screened before start; 11 vendor/contractor individuals
+attested; 1 case where employment history could not be verified for a 5-month gap, escalated to the
+Head of People and the hiring manager, resolved with a documented explanation and an additional
+reference; 2 re-screenings overdue at the 2026-Q1 review, both privileged users, whose elevated roles
+were **removed** until the re-screening completed. Recording the removal is the point — a screening
+policy with no consequence on lapse would not be a control.
+
+## 3. Technical competency of personnel, contractors and vendor employees
+
+The entity **addresses the technical competency of potential and existing personnel, contractors and
+vendor employees when determining whether to employ and retain the individuals.**
+
+| Determination point | How technical competency is assessed | Evidence produced |
+|---|---|---|
+| Hiring | Structured technical interview against the role profile; hands-on exercise (a real defect or a real architecture problem); security-competency scorecard for production roles | Scorecards per competency; written hiring decision citing them |
+| Probation / first 90 days | Manager assessment against the role profile at 30/60/90 days | Probation decision record; 1 employee did not pass probation in the current period on the assessment-quality competency |
+| Ongoing (existing personnel) | Semi-annual competency assessment separate from the delivery rating; on-call readiness sign-off; annual security-competency refresh with a pass threshold | Competency ratings; on-call certification list |
+| Privileged access | Role-specific competency verification before provisioning, re-verified annually | Access record references the verification |
+| **Contractors** | Same technical interview and scorecard as employees for equivalent work | Scorecards on file |
+| **Vendor employees** | Supplier proposes named individuals; the entity **reviews and may reject** each individual's competency; the entity interviews for any role touching assessment logic | Individual acceptance record; 2 proposed individuals rejected in the current period |
+| **Outsourced service providers** (organizational competence) | Diligence includes the provider's own competence practices and certifications; verified annually | Supplier record entry |
+
+Retention decisions use the same standard: the semi-annual competency assessment can conclude that an
+individual no longer meets the profile, which triggers §5.
+
+## 4. Evaluating competence across the entity and in outsourced service providers
+
+The Board and management **evaluate competence across the entity and in outsourced service providers
+in relation to the established policies and practices.**
+
+| Evaluation | Scope | Cadence | Performed by | Output |
+|---|---|---|---|---|
+| Individual competency assessment | Every employee, intern, contractor | Semi-annual | Manager, calibrated across managers | Rating per competency against the profile |
+| Role-coverage analysis | Every critical role and control | Semi-annual | Head of People + control owners | Single-point-of-knowledge list; feeds §6 |
+| Entity-wide competence review | All operating units | Annual | CEO + Head of People, presented to the Board | Competence report with gaps and actions |
+| On-call readiness review | On-call roster | Quarterly | VP Engineering | Certified / not certified per engineer |
+| Security and privacy competency test | All personnel, contractors, vendor staff with access | Annual | AI Security Lead / DPO | Pass rate; individual results |
+| **Outsourced provider competence evaluation** | Every provider in GOV-STR-003 §1.4 | Annual, per CC9 | Third-Party Risk + named owner | Provider competence conclusion in the supplier record |
+| **Vendor personnel competence evaluation** | Each named individual with access | Quarterly and at renewal | Engagement owner | Continue / remediate / remove |
+| **Board competence evaluation** | Directors | Annual (February) | Chair, per GOV-CHT-002 §3 | Skills matrix with identified gaps |
+
+**2026 entity-wide review — what it actually found.** The review, presented to the Board on
+2026-02-19, concluded competence was sufficient in six of eight operating units and identified three
+shortcomings: (a) privacy-law depth at Board level and one gap in Legal & Privacy; (b) detection
+engineering depth in Security — one engineer held effectively all of it; (c) incident-command
+competence thin outside two individuals. A review that identifies nothing is treated as evidence the
+review was not performed properly.
+
+## 5. Acting to address identified competence shortcomings
+
+The Board and management **act to address identified competence shortcomings.** Every shortcoming
+above carries a named owner, an action and a date, and closure is verified rather than assumed.
+
+| Shortcoming identified | Action taken | Owner | Status |
+|---|---|---|---|
+| Privacy-law depth at Board level | External privacy counsel retained 2025-10-01; privacy-law depth added as a required attribute for the next director; four director-education sessions delivered | Board Chair | **Closed** — verified by GOV-CHT-002 §4 |
+| Privacy-law gap in Legal & Privacy | Senior privacy counsel requisition opened 2026-02-24; counsel retainer covers the interim | General Counsel | **Open** — interim cover in place, hire targeted 2026-Q3 |
+| Detection engineering concentrated in one engineer | Second engineer trained and certified; managed SIEM provider retained for depth; runbooks written so the knowledge is not personal | AI Security Lead | **Closed** — verified by the 2026-Q2 on-call review |
+| Incident command thin beyond two individuals | Four additional engineers trained as Incident Commander; two led a live incident and two led a game-day exercise | VP Engineering | **Closed** — 6 certified ICs |
+| 1 employee below profile on assessment quality after probation | Did not pass probation; engagement ended | Hiring manager + Head of People | **Closed** |
+| 2 privileged users overdue for re-screening | Elevated roles removed until cleared; both cleared and restored | AI Security Lead | **Closed** |
+| Vendor supplier's proposed individuals below the competency bar | Both rejected; supplier proposed alternates who were accepted | VP Engineering | **Closed** |
+| Vendor supplier weak on secure-coding competence overall | Corrective action plan required; supplier's staff completed the entity's secure-coding module; scope restricted to non-production until verified | Third-Party Risk | **Closed** with scope restriction retained |
+| AI assurance depth at Board level | Independent AI assurance advisor retained 2025-11-15 | Board Chair | **Closed** |
+
+Action includes acting on **outsourced providers** (two entries above) and, where competence cannot be
+brought to standard, restricting scope — which is a control decision, not an HR one.
+
+## 6. Mentoring and training to attract, develop and retain personnel and providers
+
+The entity **provides the mentoring and training needed to attract, develop and retain sufficient and
+competent personnel and outsourced service providers.**
+
+| Mechanism | Population | Cadence |
+|---|---|---|
+| Assigned onboarding buddy plus a 90-day structured plan | Every new joiner, including contractors | On joining |
+| Named mentor outside the direct reporting line | Every employee who wants one; mandatory for anyone in the first year and for new managers | Continuous; 22 active pairings |
+| Manager 1:1s covering development, not only delivery | All employees | Weekly or biweekly |
+| Individual development plan with a funded learning budget | All employees | Set annually, reviewed semi-annually |
+| Conference, certification and continuing-education funding | All employees; contractors where role-relevant | On request, per the budget |
+| Internal technical deep-dive sessions | All engineering | Biweekly |
+| New-manager training including conduct and escalation duties | New people managers | On appointment |
+| Retention: compensation benchmarking, career-path framework, promotion cycle | All employees | Annual benchmark; semi-annual promotion cycle |
+| Attraction: published role profiles, structured and consistent interview loops, candidate-experience feedback | Candidates | Continuous |
+
+**Mentoring and training extended to outsourced providers and their personnel:** vendor and contractor
+individuals receive the entity's onboarding, the Code of Conduct annex, the secure-coding module and
+the annual security and privacy training; the entity delivered a targeted secure-coding program to a
+supplier's staff as the corrective action in §5; and provider-facing runbooks and standards are shared
+so the provider can meet the entity's bar rather than guess at it.
+
+Retention outcome for the current period: voluntary attrition 6%, no departures from a
+single-point-of-knowledge role, and 5 internal promotions. Attrition is reported to the Board because
+losing a competent individual in a control role is a control risk.
+
+## 7. Training programs, continuing education and technical competency maintenance
+
+The entity **provides training programs, including continuing education and training, to develop and
+maintain the skill sets and technical competency of existing personnel, contractors and vendor
+employees.**
+
+| Program | Audience | Frequency | Completion requirement | Current period |
+|---|---|---|---|---|
+| Security awareness and secure development | All personnel, contractors, vendor staff with access | Annual + on joining | Mandatory; pass threshold; access suspended if overdue by 30 days | 48 of 48 complete |
+| Privacy and data protection training | All personnel; enhanced module for those handling personal data | Annual | Mandatory | 48 of 48 |
+| Code of Conduct with scenario assessment | All covered persons | Annual | Mandatory; ≥ 80% | Per GOV-STD-001 §3 |
+| Responsible AI and AI risk | Engineering, product, assessment, customer ops | Annual | Mandatory | 31 of 31 |
+| Role-specific technical training per the role profile | By role | Annual, in the IDP | Manager-verified | 34 IDPs current |
+| Incident response and incident command certification | On-call roster and ICs | Annual + quarterly game day | Certification required to hold on-call | 6 ICs, 12 on-call certified |
+| Change management and secure SDLC | All engineers | Annual | Mandatory before merge rights | 19 of 19 |
+| Framework and criteria training (trust services criteria, ISO/IEC 42001) | Compliance, assessment engineering, customer ops | Annual, refreshed on framework changes | Mandatory | 14 of 14 |
+| Continuing education / certification maintenance (CISSP, CIPP, cloud certifications) | Individuals holding them | Per certifying body's CPE cycle | Funded; CPE evidence retained | 7 individuals current |
+| Phishing simulation with targeted follow-up training | All personnel | Quarterly | Follow-up mandatory on failure | 4 campaigns; 3 individuals re-trained |
+| Vendor-personnel technical onboarding | Vendor employees | On engagement + annually | Access gated on completion | 11 of 11 |
+
+Overdue training is a tracked exception with a 30-day access-suspension consequence; three suspensions
+were applied in the current period and all three cleared within a week. Completion is reported to the
+Board quarterly alongside the competence metrics.
+
+## 8. Succession and contingency planning for internal-control responsibilities
+
+Senior management and the Board **develop contingency plans for assignments of responsibility
+important for internal control.** Every control-critical role has a named deputy who is trained and
+has performed the duty, not merely nominated. Planned and unplanned absence are treated differently
+because they need different mechanisms.
+
+| Control-critical role | Primary | Named deputy | Deputy exercised? | Emergency succession |
+|---|---|---|---|---|
+| Accountable Owner for the AIMS / internal control | CEO | VP Engineering | Yes — chaired 2026-Q1 governance review | Board appoints an interim within 5 business days |
+| Security control ownership | AI Security Lead | Senior security engineer (2nd, per §5) | Yes — ran the 2026-Q2 access review | Board Security & Privacy Committee appoints interim; break-glass re-keyed |
+| Incident Commander | Rotating roster | 6 certified ICs | Yes — 4 led an incident or a game day | Roster escalation, always ≥ 2 available |
+| Privacy / DPO | General Counsel | External privacy counsel (retained) | Yes — handled 2 DSRs during leave | Retained counsel acts on an interim basis; regulator notified where required |
+| Processing-integrity ownership | Chief AI Officer | Responsible AI Lead | Yes — approved 2 model changes | CEO assumes pending appointment |
+| Compliance / evidence ownership | Compliance Manager | Senior compliance analyst | Yes — ran the 2026-Q1 evidence cycle | General Counsel assumes |
+| Change approval | Engineering managers (pool of 4) | Any other approver in the pool | Continuous | Pool design means no single point |
+| Deployment pipeline ownership | Platform lead | Second platform engineer | Yes | Documented break-glass deploy procedure, two-person |
+| Board oversight roles | Committee chairs | Deputy chair named per committee | Yes — deputy chaired 1 meeting | Board appoints from the independent directors |
+
+**Contingency plans are tested.** Deputies operate the control at least annually — the "Deputy
+exercised?" column is the evidence, and an untested deputy is treated as an open gap. Two structural
+contingencies were added after the 2026 role-coverage analysis found single points of knowledge:
+detection engineering (second engineer trained) and incident command (four additional ICs). Emergency
+succession for the Board-level roles is a Board responsibility and is recorded in the Board's own
+minutes, since management cannot plan its own oversight.
+
+## 9. Review history
+
+| Version | Date | Change |
+|---|---|---|
+| 2.0 | 2024-11-05 | Established role profiles, screening standard and the training program |
+| 3.0 | 2025-09-11 | Extended screening, competency assessment and training explicitly to contractors, vendor employees and outsourced providers |
+| 3.1 | 2025-12-03 | Added re-screening cadences and the access-removal consequence on lapse |
+| 3.2 | 2026-02-19 | Added the 2026 competence review findings and the actions closing them; added the "deputy exercised" test to succession planning |

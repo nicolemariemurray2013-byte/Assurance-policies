@@ -1,0 +1,146 @@
+# AI Policy
+
+**Document ID:** AIMS-POL-001
+**Version:** 3.0
+**Owner:** Chief AI Officer (CAIO) — the management-approved role responsible for the development,
+review and evaluation of this policy
+**Approved by:** Executive Leadership Team, on the recommendation of the AI Governance Board (AIGB)
+**Approval date:** 2026-02-10
+**Review interval:** annually at planned intervals, and additionally on any material change
+**Next scheduled review:** 2026-12-31
+**Scope:** All AI systems developed, provided, operated or used by the organization, including the
+Amazon Bedrock agents and Bedrock AgentCore runtimes operated in AWS account 471885797689
+(us-west-2).
+
+---
+
+## 1. Purpose and direction for AI
+
+This is the organization's documented policy for the development and use of AI systems. It
+establishes the organization's overall direction for AI and is appropriate to the organization's
+purpose: we build and operate AI systems that automate compliance evaluation and decision support
+for regulated environments. Because our AI systems inform governance and audit outcomes, accuracy,
+traceability and human accountability are the qualities we optimize for ahead of speed or coverage.
+
+This policy provides the **framework for setting AI objectives**. Every AI objective in the AI
+Objectives Register (AIMS-REG-002) must trace to one of the guiding principles in section 3, must be
+measurable, and must name one accountable role from the AI Roles and Responsibilities Policy
+(AIMS-POL-003).
+
+## 2. Commitments
+
+The organization commits to:
+
+1. **Meeting applicable requirements** — all legal, regulatory, statutory and contractual
+   requirements applicable to our AI systems, including ISO/IEC 42001, applicable data-protection
+   law, and customer contractual terms governing automated processing.
+2. **Continual improvement of the AI management system (AIMS)** — the AIMS is measured against the
+   AI objectives, reviewed in management review, and improved through corrective action; nonconformities
+   are tracked to closure in the AIMS corrective-action log.
+3. **Human accountability** — no AI system operates without a named Accountable Owner, and no
+   consequential decision is made by an AI system without a defined human oversight point.
+
+## 3. Guiding principles
+
+| # | Principle | What it means in practice |
+|---|---|---|
+| P1 | Human oversight and accountability | Every AI system has a named Accountable Owner and a documented human review point for consequential outputs. |
+| P2 | Transparency and explainability | Intended use, limitations and valid domain of use are documented and disclosed to users. |
+| P3 | Fairness | Systems are evaluated for disparate performance across relevant demographic groups before release and on material change. |
+| P4 | Safety and robustness | Systems are threat-modelled, adversarially tested, and monitored for drift outside intended conditions. |
+| P5 | Privacy and data protection | Personal data used by AI systems is lawfully acquired, minimized, and governed under the Data Governance Policy. |
+| P6 | Security by design | AI systems inherit the organization's security controls and are subject to prompt-injection and access-control testing. |
+| P7 | Traceability | AI system operation produces event logs sufficient to reconstruct what the system did and on what basis. |
+
+## 4. Handling deviations and exceptions
+
+Deviations from this policy are permitted only as **documented, time-bound exceptions**:
+
+1. The requester raises an exception request naming the policy clause, the business justification,
+   the compensating control, and a proposed expiry date (maximum 12 months).
+2. The AI Risk Manager assesses the residual risk against the approved AI risk appetite.
+3. The **AIGB approves or rejects**; exceptions exceeding the risk appetite may be approved only by
+   the Executive Leadership Team.
+4. Approved exceptions are recorded in the AI Exceptions Register (AIMS-REG-003) with owner, expiry
+   and compensating control, and are reviewed at every AIGB meeting. An expired exception is a
+   nonconformity.
+
+Undocumented deviation is not permitted. There are no standing or open-ended exceptions.
+
+## 5. Business and risk context informing this policy
+
+This policy is informed by, and re-derived from, the organization's documented context:
+
+- **Business strategy.** Our strategy is to deliver automated assurance products to regulated
+  customers. This makes correctness and auditability of AI output a direct commercial requirement,
+  not only an ethical one — reflected in P2, P3 and P7.
+- **Organizational values.** Our stated values place customer trust ahead of growth; this is why P1
+  (human oversight) is non-negotiable and why fully autonomous consequential decisions are outside
+  our risk appetite.
+- **Risk appetite.** The AIGB has approved an appetite that is **low** for privacy, security and
+  fairness risk, **moderate** for availability risk, and **zero** for undisclosed automated
+  decision-making affecting an individual's rights.
+- **Identified AI-related risk.** The ten risks in the AI Risk Register (AIMS-REG-001), R-01 to R-10,
+  each map to a principle above and to an accountable role in AIMS-POL-003.
+- **Legal and contractual requirements.** ISO/IEC 42001; applicable data-protection law for personal
+  data processed by AI systems; customer contracts requiring disclosure of automated processing and
+  retention of decision records.
+- **Impacts to interested parties.** Assessed for customers, end users whose compliance posture is
+  evaluated, employees, regulators and auditors — recorded per system in the AI system impact
+  assessment (AIMS-PRO-005).
+
+## 6. Responsible AI topics — intersections with other organizational policies
+
+This policy identifies where other organizational policies apply to, or are affected by, our AI
+objectives and practices, and aligns AI governance with each domain. Where an intersection exists it
+has been addressed either by updating the affected policy or by incorporating the necessary
+provisions directly into this policy.
+
+| Policy domain | Instrument | Intersection with AI | How the intersection was addressed |
+|---|---|---|---|
+| Information security | Information Security Policy (SEC-POL-001) | AI systems are in-scope assets; prompt injection and model abuse are new threat classes | SEC-POL-001 updated (v6.2) to add AI systems as an asset class and require AI threat modelling |
+| Privacy | Privacy Policy (PRIV-POL-001) | Personal data in training, tuning, prompts and logs | PRIV-POL-001 updated (v4.1) to cover AI processing, inference-time personal data, and log minimization |
+| Safety | Product Safety Standard (SAF-STD-002) | Consequential AI output requires a human review point | Provision incorporated into this policy as P1 and referenced from SAF-STD-002 |
+| Quality | Quality Management Policy (QMS-POL-001) | AI evaluation and validation form part of release quality gates | QMS-POL-001 release checklist extended with AI verification and validation evidence |
+| Compliance / legal | Compliance Policy (CMP-POL-001) | Regulatory obligations for automated decision-making and disclosure | Referenced here in section 5; CMP-POL-001 register extended with ISO/IEC 42001 |
+| Human resources | HR Policy and Code of Conduct | Competence requirements and the duty to report AI concerns without reprisal | Code of Conduct updated to protect AI concern reporters; competences recorded in AIMS-REG-004 |
+| Procurement | Procurement Standard (PRC-STD-001) | Supplier-provided models and AI components carry inherited risk | PRC-STD-001 updated with AI supplier assessment gate; see AIMS-PRO-010 |
+| Data governance | Data Governance Policy (DG-POL-001) | Provenance, lineage, quality and retention of AI data | DG-POL-001 updated to add AI training-data provenance and lineage duties to the Data Steward role |
+
+No identified intersection is left unaddressed; the map above is reviewed with this policy.
+
+## 7. Communication and availability
+
+This policy is **communicated within the organization** by publication on the internal AIMS portal,
+mandatory acknowledgement during onboarding for all engineering, data and product personnel,
+annual refresher training, and an all-hands briefing on each major version. It is
+**made available to interested parties as appropriate**: a public Responsible AI Statement
+summarizes it for customers and the public, the full policy is provided to customers and auditors
+under NDA on request, and it is supplied to regulators on request.
+
+## 8. Review of this policy
+
+The CAIO — a management-approved role — is responsible for the **development, review and
+evaluation** of this policy. Review occurs **at planned annual intervals and additionally as
+needed**, and explicitly takes into account:
+
+- opportunities for improvement identified since the last review;
+- changes in the **organizational environment** (structure, AI system inventory, personnel);
+- changes in **business circumstances** (new products, new customer commitments, new markets);
+- changes in **legal conditions** (new or amended AI, privacy or sector regulation);
+- changes in the **technical environment** (new model providers, new agent architectures, newly
+  identified attack classes);
+- the **results of management reviews**, including AIMS performance against the AI objectives,
+  audit findings, nonconformities and the status of the AI Exceptions Register.
+
+Each review concludes with a documented determination of the policy's continuing **suitability,
+adequacy and effectiveness**, recorded below, and either reaffirms or amends the policy.
+
+## 9. Review history
+
+| Version | Date | Reviewer | Trigger | Outcome |
+|---|---|---|---|---|
+| 1.0 | 2024-03-04 | CAIO | Initial issue | Approved by AIGB |
+| 2.0 | 2025-02-14 | CAIO | Planned annual review | Added exceptions process (section 4); confirmed suitable, adequate and effective |
+| 2.1 | 2025-08-19 | CAIO | Ad hoc — new agent architecture deployed | Added P7 traceability; policy re-confirmed effective |
+| 3.0 | 2026-02-10 | CAIO | Planned annual review + management review output | Added the responsible-AI policy intersection map (section 6), refreshed risk appetite from AIGB, incorporated 2 audit findings. Determined **suitable, adequate and effective**; approved by AIGB and the Executive Leadership Team |

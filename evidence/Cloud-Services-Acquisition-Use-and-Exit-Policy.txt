@@ -1,0 +1,267 @@
+# Cloud Services Acquisition, Use and Exit Policy
+
+| Field | Value |
+|---|---|
+| Document ID | SEC-POL-051 |
+| Version | 1.0 |
+| Owner | CISO (accountable); Head of Platform Engineering (technical requirements); Head of Procurement (acquisition and exit) |
+| Approved by | Security Governance Board, 2026-08-20 |
+| Effective date | 2026-08-21 |
+| Review cycle | Annual, and on any new cloud service provider, any new region, or any material change to a provider's shared-responsibility position — next review 2026-12-31 |
+| Applies to | Every cloud service used to process, store or transmit in-scope information, in every geography and both legal entities, including services acquired by a single team for a single purpose |
+| Classification | Internal — readable by all personnel |
+
+## 1. Why this is a topic-specific policy in its own right
+
+The organization runs entirely on cloud services. There is no data centre and no on-premises
+production estate. That makes the cloud provider relationship structurally different from every other
+supplier relationship: the provider does not deliver something to us that we then operate, it operates
+the substrate our controls run on. A generic supplier policy cannot carry that.
+
+This policy therefore exists separately from `SEC-PRO-020` (Third-Party and Vendor Risk Management),
+which continues to govern supplier assessment, contracting and monitoring generally. Where the two
+overlap, `SEC-PRO-020` sets the process and this policy sets the cloud-specific requirements the
+process must apply.
+
+Three positions shape everything below:
+
+- **A shared responsibility model that is not written down is not shared, it is assumed.** The most
+  common cloud failure is not a provider failure; it is a control that both parties believed the other
+  was operating. §4 makes the boundary explicit per service.
+- **A cloud service is acquired, not merely enabled.** Enabling a managed service in an existing
+  account takes one API call and no procurement event. §3 makes that an authorisation decision anyway,
+  because the ease of the action has no relationship to the risk of it.
+- **A service we cannot leave is a service that governs us.** Exit is designed at acquisition, when we
+  still have leverage, not at termination, when we have none. §8.
+
+## 2. Scope and the definition this policy uses
+
+"Cloud service" means any service where a third party operates the compute, storage, network or
+application layer on our behalf, regardless of the commercial model or how it was acquired. That
+includes:
+
+| In scope | Examples in our estate |
+|---|---|
+| Infrastructure and platform services from the primary provider | AWS compute, storage, database, network, identity, key management, AI/ML services |
+| Managed application services we depend on operationally | Source hosting and CI, ticketing, monitoring/SIEM, endpoint management, corporate productivity and mail, e-signature |
+| Services consumed as an API rather than provisioned | Model inference endpoints, third-party enrichment and threat-intelligence APIs |
+| Free-tier, trial and unpaid services | In scope on identical terms. A trial that touches in-scope information is an acquisition |
+| Services embedded in a supplied product | In scope; the supplier's sub-processors are assessed through `SEC-PRO-020` and the transfer terms in `SEC-REG-047` §6 |
+
+**Explicitly in scope and easily missed:** browser extensions and IDE plugins that transmit content to
+a hosted service; AI assistants and code-generation services; anything a personal account could be
+used to reach. `SEC-STD-027` prohibits processing in-scope information through a personally held
+account, and this policy is the reason.
+
+**Not in scope:** services that neither receive in-scope information nor form part of an in-scope
+system's operation — a public documentation site read anonymously, for example. The determination is
+recorded rather than assumed, because "it does not touch our data" is a claim that ages badly as a
+product adds features.
+
+## 3. Acquisition — the roles and the authorisation path
+
+Cloud services are acquired against a defined set of requirements, assessed before use, and recorded.
+No in-scope information may be placed into a cloud service before the assessment concludes.
+
+| Stage | What is required | Who |
+|---|---|---|
+| Request | The business purpose, the information classification involved, the personal data categories if any, the expected volume, and the alternatives considered | Requesting team lead |
+| Security assessment | The requirements in §5, the provider's attestations under §6, and a threat assessment where the service is internet-facing or holds Confidential information | Head of Security Engineering |
+| Privacy assessment | Lawful basis, transfer mechanism, sub-processor position, retention, and a DPIA where `SEC-REG-047` §5 requires one | DPO |
+| Legal and contractual | The terms in §7, the DPA, and the exit terms in §8 | General Counsel |
+| Architecture fit | Whether an already-approved service covers the need — the first question, not the last | Head of Platform Engineering |
+| Authorisation | **Confidential information or personal data, or any new provider: CISO.** Internal information on an already-approved provider: Head of Platform Engineering. Public information only: team lead, recorded | Per classification |
+| Recording | Entry in the cloud service register: service, provider, purpose, classification, owner, authorisation, assessment date, exit assessment, review date | Compliance Manager |
+
+**Responsibilities that are held permanently, not per acquisition:**
+
+| Role | Responsibility |
+|---|---|
+| CISO | Owns this policy; authorises Confidential and new-provider acquisitions; owns the residual risk position |
+| Head of Platform Engineering | Owns the technical requirements in §5, the configuration baselines the provider's services are held to (`SEC-CFG-025`), and the architecture-fit judgement |
+| Service owner (named per entry in the register) | Owns the service day to day: its configuration, its access list, its cost, its review, and its continued necessity. **Every register entry has one named human owner; a service owned by "the platform team" is a service nobody reviews** |
+| Head of Procurement | Owns acquisition and exit as commercial processes, and the supplier relationship |
+| DPO | Owns the personal-data position, transfers, and sub-processor changes |
+| General Counsel | Owns contractual adequacy, including the exit and audit terms |
+| Compliance Manager | Owns the register's completeness and the review calendar |
+| All personnel | Must not introduce a cloud service outside this path. The path is deliberately fast for low-classification cases so that compliance is easier than circumvention |
+
+**Unsanctioned use.** Discovery runs monthly: egress destination review against the register, expense
+and card-transaction review with Finance, browser-extension and plugin inventory from endpoint
+management, and identity-provider application discovery. Findings are treated as a control deficiency,
+not a disciplinary matter in the first instance — the team wanted something and the path did not serve
+them, which is a signal about the path. This period: 3 services found unregistered (2 subsequently
+assessed and approved, 1 removed with its data deleted and deletion confirmed).
+
+## 4. The shared responsibility position — stated per service class
+
+The division of responsibility is documented for every service class we use, and the documentation is
+ours rather than a link to the provider's page, because the provider's page describes what they do and
+we need a record of what **we** must therefore do. The controls below are the ones most often assumed.
+
+| Control area | Provider responsibility | Our responsibility | Where ours is implemented |
+|---|---|---|---|
+| Physical and environmental security | Entirely the provider's | Verify through attestation; do not attempt to control | `SEC-PRO-013` §1 states this explicitly, so the absence of our own data-centre controls is a recorded position rather than a gap |
+| Hypervisor, host OS, managed-service patching | Provider | Verify patch position through attestation; patch anything we run | `SEC-CFG-025` |
+| Guest OS, runtime and application patching | Ours, for anything we deploy | Baselines, scanning, deadlines | `SEC-CFG-025` §5 |
+| Identity and access | Provider operates the mechanism | **Every policy, role, permission and review is ours.** The provider will faithfully enforce a policy that grants the world access | `SEC-IAM-021` |
+| Network configuration | Provider operates the fabric | Security groups, NACLs, endpoints, exposure | `SEC-CFG-025`, `SEC-NET-023` |
+| Encryption | Provider supplies the mechanism and key custody | **Enabling it, choosing the key, controlling the key policy, and rotation** | `SEC-CRY-022` |
+| Data classification and handling | Provider is agnostic to what we store | Entirely ours | `SEC-STD-024`, `SEC-CLS-017` |
+| Backup and recovery | Provider offers durable storage and snapshot mechanisms | **Configuring backups, testing restores, and retention.** Durability is not backup: durable storage faithfully preserves a deletion | `SEC-BCK-018` |
+| Logging | Provider emits and stores control-plane and service logs | Enabling them, retaining them, protecting them, and reading them | `SEC-MON-026`, `SEC-LOG-015` |
+| Monitoring and detection | Provider supplies primitives and some managed detections | Deciding what constitutes an alert and who responds | `SEC-MON-026` |
+| Availability architecture | Provider supplies zones, regions and an SLA | **Choosing a multi-AZ or multi-region architecture and validating it.** An SLA is a commercial remedy, not an availability control | `BCP-PLN-020`, and stated in `SEC-CRY-022` §4C |
+| Vulnerability disclosure about the platform | Provider publishes bulletins | Consuming the feed and acting | `SEC-CFG-025` §5.5, `SEC-MON-026` §5 |
+| Incident response | Provider handles platform incidents | Everything above the platform, plus deciding when a provider incident becomes our incident | `SEC-IRP-012` |
+
+**The rule this table exists to enforce:** where a control appears in the "ours" column, it must exist
+in a named document with a named owner. The 2026-08 reconciliation confirmed all 13 rows trace to a
+control; one row (availability architecture) previously traced only to an implicit assumption that the
+provider's SLA was sufficient, which is the finding that produced the explicit statement in
+`SEC-CRY-022` §4C.
+
+## 5. Security requirements a cloud service must meet
+
+| # | Requirement | Applies to |
+|---|---|---|
+| C1 | Encryption in transit using current protocols and cipher suites per `SEC-CRY-022` | All |
+| C2 | Encryption at rest, with customer-managed keys where the service supports them and Confidential information is held | All holding Internal or above |
+| C3 | Federated authentication from our directory with MFA; no local service accounts; no shared credentials | All supporting it. Where a service cannot federate, it is a recorded exception with a compensating control and a migration intent — currently 1 |
+| C4 | Role-based authorisation granular enough to express least privilege, and an access review capability | All |
+| C5 | Administrative and data-access audit logging, exportable to our own retention | All |
+| C6 | Data residency controllable to the regions permitted by `SEC-REG-047` §5 | All holding personal data |
+| C7 | Tenant isolation with a stated mechanism | Multi-tenant services |
+| C8 | Backup or export capability sufficient to reconstruct our data independently of the provider | All holding data we could not recreate |
+| C9 | A published vulnerability-handling and notification practice meeting `SEC-CFG-025` §5.5 | All |
+| C10 | Sub-processor transparency with advance notice of change and a right to object | All processing personal data |
+| C11 | Configuration that can be expressed and enforced as code, or in its absence a documented and reviewed manual baseline | All |
+| C12 | No use of our data to train models, other than under a specifically approved and contracted arrangement | All, and specifically assessed for every AI or inference service |
+| C13 | Availability characteristics adequate for the dependent business activity's RTO, per the BIA in `BCP-PLN-020` §2 | All in a recovery path |
+
+Where a requirement cannot be met, the service may still be approved by the CISO with a compensating
+control, a residual-risk statement and a review date. Requirements are not silently waived: the
+register records which of C1–C13 are met, which are compensated, and which are open. Current
+position: 21 registered services; 19 meeting all applicable requirements; 2 with recorded compensations
+(one for C3, one for C7 where the provider's isolation mechanism is attested but not independently
+verifiable by us).
+
+## 6. Provider architecture, controls and the standards we require them to be assessed against
+
+We do not build the provider's controls and cannot audit their data centres. Assurance therefore comes
+from independent assessment against **named** standards, and "named" is the operative word — a claim of
+"industry-standard security" is not assurance, because it identifies no scope, no auditor and no
+period.
+
+| Standard or framework | What we require | Applied to |
+|---|---|---|
+| **ISO/IEC 27001** with a current certificate | Certificate, scope statement covering the services we use, and the Statement of Applicability's exclusions reviewed. **The scope check matters more than the certificate**: a certificate scoped to a different service line is not assurance for ours | All providers holding Internal or above |
+| **ISO/IEC 27017** — cloud-specific controls | Preferred; assessed where available, as it addresses the shared-responsibility controls that 27001 alone does not | Cloud providers |
+| **ISO/IEC 27018** — personal data in public cloud | Preferred where the provider processes personal data | Providers processing personal data |
+| **ISO/IEC 27701** — privacy information management | Considered, and required of processors holding special-category or high-volume personal data | Where applicable |
+| **SOC 2 Type II** (SSAE 18 / ISAE 3402) | Report obtained and **read**, not merely collected: the exceptions section, the complementary user-entity controls (which are our obligations, and are reconciled into §4), the period covered, and any bridging letter for the gap between period end and now | All providers holding Internal or above |
+| **ISO/IEC 22301** or an equivalent continuity attestation | Assessed for providers in a recovery path | Recovery-path providers |
+| **NIST SP 800-53** / FedRAMP authorisation where held | Accepted as additional evidence of control depth | Where held |
+| **CIS Benchmarks** | Applied by **us** to the provider's services — this is our configuration obligation, not the provider's attestation. 368 AWS Config rules derive from it | Our configuration of every service |
+| **PCI DSS**, **HIPAA** | Recorded as not applicable to our processing, per the completeness test in `SEC-REG-047` §2, rather than omitted |  |
+| **ISO/IEC 42001** | Required consideration for providers of AI services, aligned to our own management system | AI service providers |
+| **FIPS 140-3** validated modules | Required for cryptographic services, satisfied through provider validation per `SEC-CRY-022` §4B.1 | Cryptographic services |
+
+**Architecture assessment.** Beyond attestations, the assessment records: the multi-tenancy and
+isolation model, the regions and availability zones in use and the failure domain each represents, the
+key management design and who can access key material, the network path from us to the service and
+whether it traverses the public internet, the sub-processor chain, and the provider's own change and
+incident practices as far as they are disclosed. Where a provider will not disclose enough to assess
+these, that is recorded as a limitation on the assurance rather than passed over.
+
+**Audit rights.** We hold no right to physically audit the hyperscale provider; assurance is by
+attestation. This is the recorded deviation `D-2026-028` — one deviation, referenced consistently
+here, in `SEC-PRO-020` and in `SEC-CRY-022` §4C, rather than restated as several. Smaller providers do
+grant audit and questionnaire rights, and 6 were exercised this period.
+
+**Refresh.** Attestations are re-obtained on their own cycle (annually at minimum), tracked with
+expiry dates, and an expired attestation raises a deficiency. Verification 2026-08: 21 services, 21
+current attestations, 0 expired, 2 bridging letters obtained.
+
+## 7. Contractual and use requirements
+
+Terms are set through `SEC-PRO-020` and `SEC-REG-047` §6. The cloud-specific requirements are: a DPA
+with the transfer mechanism named; sub-processor notice and objection; the security commitments in §5
+reflected contractually rather than only in marketing material; incident notification within 24 hours
+for anything affecting our data; the vulnerability terms in `SEC-CFG-025` §5.5; data ownership stated
+unambiguously as ours; no use of our content for the provider's own purposes including model training
+unless specifically approved; return and certified destruction on termination; and the exit terms in
+§8. Clickwrap acceptance of standard terms is a legal act and is not performed by an engineer — where
+a service offers only non-negotiable standard terms, General Counsel reviews them and the acceptance
+is recorded.
+
+**Cost and commitment** are governed too, because a commitment is a lock-in mechanism: multi-year
+reserved commitments require the same exit assessment as a technical dependency.
+
+## 8. Exit, portability and continuity of the service
+
+An exit position is required **at acquisition**, recorded in the register, and reviewed annually. The
+questions it must answer:
+
+| Question | Why it is asked at acquisition |
+|---|---|
+| How do we get our data out, in what format, and how long does it take at current volume? | An export capability that exists but takes six weeks is not an exit path for a 30-day termination notice |
+| What is the alternative — a named second provider, a self-hosted option, or an accepted decision that there is none? | "There is no alternative" is an acceptable answer only if it is written down and risk-accepted |
+| What breaks operationally the day the service stops? | Identifies the dependency in the recovery path |
+| How is our data destroyed, and how is the destruction evidenced? | Governed by `SEC-STD-024` §5; the deletion certificate requirement is contractual, not aspirational |
+| What happens if the provider exits, is acquired, changes terms materially, suffers a sustained outage, or fails? | Provider failure is a continuity scenario in `BCP-PLN-020`, not only a commercial one |
+| Are we depending on a proprietary interface where a portable one exists? | A recorded architectural choice, made deliberately if made at all |
+
+**Concentration.** The overwhelming majority of our processing sits with one provider. This is a
+recorded, accepted concentration risk (`R-2026-030`) with a stated rationale — the security and
+operational benefit of a single consistently managed estate, per `OPS-STD-049` §6, exceeds the
+diversification benefit at our scale — and with the mitigations that are actually available: multi-AZ
+and multi-region capability, infrastructure defined as portable code where practical, data exportable
+in open formats, and backups readable without the provider's tooling. The risk is reviewed annually by
+the Security Governance Board rather than treated as settled.
+
+**Exit tested, not assumed:** one service exit was executed this period (the discovery-phase tooling
+replaced in 2026-Q2) — data exported, verified readable outside the provider, deletion certificate
+obtained in 11 days against a contractual 30. An exit path is credible once it has been walked.
+
+## 9. Communication of this policy
+
+A policy nobody has been told about is not a control, so communication is a requirement of the policy
+rather than an activity that follows it.
+
+| Audience | How it is communicated | Record |
+|---|---|---|
+| All personnel | On publication, through the all-hands channel and the monthly security note, with the one-paragraph summary of what an individual must do (do not introduce a service; the path is here; it is fast) | Publication notice 2026-08-21; read receipt not required, but the discovery controls in §3 test whether the message landed |
+| New joiners | In the security induction, alongside `SEC-STD-027`; covered in the awareness programme `SEC-AWR-041` §2.1 | Induction completion records — 48/48 |
+| Engineering and platform teams | Walked through in the engineering forum, with the §4 responsibility table as the working artifact | Forum record 2026-08-20, 22 attendees |
+| Service owners (21 named) | Directly, with their register entry and their review obligations | Acknowledged individually — 21/21 |
+| Procurement, Legal, DPO | Through the acquisition-path change; the assessment gates are in their workflow, not in a document they must remember | Process update record |
+| Suppliers and interested parties | The policy is not published externally; the commitments it produces appear in customer trust documentation and in supplier terms | Trust documentation revision |
+
+Communication is repeated, not one-shot: the acquisition path appears in the quarterly security note,
+and the discovery result in §3 is reported alongside it so that personnel see the policy is
+operating.
+
+## 10. Governance
+
+| Activity | Frequency | Owner | Evidence |
+|---|---|---|---|
+| Cloud service register completeness reconciliation | Quarterly | Compliance Manager | Register vs. discovery, expense and identity-provider sources |
+| Unsanctioned service discovery | Monthly | Head of Security Engineering | Discovery result and dispositions |
+| Provider attestation currency and scope review | Per attestation cycle; tracked continuously | Third-Party Risk Manager | Attestation register with expiry and scope notes |
+| Complementary user-entity control reconciliation into §4 | Annually and on new SOC 2 report | Head of Security Engineering | Reconciliation record |
+| Shared-responsibility "ours" column traced to a named control | Annually | CISO | Traceability record |
+| Service owner review — still needed, access list, configuration, cost | Annually per service | Named service owner | Review record per register entry |
+| Exit position review | Annually per service | Head of Procurement | Updated exit assessment |
+| Concentration risk review | Annually | Security Governance Board | Minuted decision |
+| Policy communication | On publication and quarterly | CISO | Communication records per §9 |
+| Review of this policy | Annually | CISO | Approved version |
+
+Deficiencies enter the control deficiency register with an owner and a due date and are reported to the
+Audit Committee quarterly.
+
+## 11. Review history
+
+| Version | Date | Change | Driver |
+|---|---|---|---|
+| 1.0 | 2026-08-21 | Initial policy. Cloud-specific requirements were previously spread across `SEC-PRO-020`, `SEC-CFG-025` and `SEC-REG-047`, which meant the shared-responsibility boundary was never stated in one place, the standards required of providers were applied without being named, and exit was assessed at termination rather than at acquisition | Annual management-system review; the 2026-Q2 finding that the availability-architecture responsibility had been implicitly assigned to the provider's SLA |

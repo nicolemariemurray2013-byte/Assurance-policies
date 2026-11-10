@@ -1,0 +1,346 @@
+# Digital Evidence Collection and Forensic Readiness Procedure
+
+**Document ID:** SEC-FOR-045
+**Version:** 2.2
+**Owner:** AI Security Lead (procedure), with the General Counsel (admissibility and jurisdiction)
+**Approved by:** CISO and General Counsel 2026-08-14
+**Effective:** 2026-08-14
+**Next scheduled review:** 2026-12-31, and on any change to the jurisdictions of operation, the
+evidence-bearing systems in scope, or the qualification status of a named handler
+**Scope:** Identification, collection, acquisition and preservation of digital evidence relating to an
+information security event in the compliance-evaluation service (AWS accounts under the `truenorth-*`
+aliases, primary region us-west-2), on corporate endpoints, and in third-party systems the organization
+controls. Companion to SEC-PRO-014 *Security Incident Response and Impact Analysis Procedure*, which
+governs the incident lifecycle; this procedure governs the evidence.
+
+---
+
+## 1. Why this is a separate procedure
+
+SEC-PRO-014 requires evidence preservation as a mandatory containment step and routes legal hold through
+the General Counsel. That is the *instruction*; this document is the *method*. An incident procedure that
+says "preserve evidence" and stops has, in practice, no evidence: the person who acts at 03:00 needs to
+know which of two disks to image first, whether to pull power, what to write on the custody form, and
+whether they are permitted to acquire at all in the jurisdiction where the host sits. Every one of those
+decisions is irreversible and each is answered below.
+
+**Standing rule.** Evidence handling begins the moment an event is suspected, not when it is confirmed.
+Preservation is never deferred for triage, because triage destroys volatile state.
+
+## 2. Identification, collection, acquisition and preservation
+
+The four activities are distinct and are performed in this order. They are separated because they fail
+differently: identification failures lose evidence that was never sought, collection failures lose
+evidence in transit, acquisition failures produce a copy that cannot be relied on, and preservation
+failures lose evidence that was successfully acquired.
+
+| Stage | What is done | Who | Record produced |
+|---|---|---|---|
+| **Identification** | Enumerate the sources that could bear on the event from the source inventory (§2.1), classify each by volatility, and record what is deliberately NOT collected and why | Incident Commander with the Evidence Custodian | Evidence identification list, timestamped, attached to the incident record |
+| **Collection** | Take custody of the source or its output — seize a device, isolate an account, freeze a log stream's expiry, snapshot a volume | Qualified Handler (§6) | Custody entry per item (§3) |
+| **Acquisition** | Produce a verified working copy: bit-for-bit image, or an API-exported set with a manifest and hash | Qualified Handler | Acquisition record with hashes, tool and version, start/end times (§4) |
+| **Preservation** | Place original and image in the evidence store under legal hold, with integrity re-verified on a schedule | Evidence Custodian | Hold record; periodic integrity attestations |
+
+**The order of volatility governs sequence.** Where several sources bear on one event, they are collected
+most-volatile-first, because a slower source survives the wait and a faster one does not:
+
+1. In-memory state of a running process and its network connections
+2. Running-system state — process list, open files, loaded modules, logged-in sessions, routing and ARP
+3. Ephemeral service state — running container filesystems, instance store, temporary credentials in use
+4. Log streams with a short retention or an approaching expiry (CloudWatch groups with retention set)
+5. Disk and volume contents (EBS, endpoint storage)
+6. Object storage, versioned buckets, archived logs, backups
+7. Configuration and control-plane history — CloudTrail, Config item history, IaC repository
+
+A departure from this sequence is permitted only where continued operation of the source causes ongoing
+harm; the reason is recorded on the identification list.
+
+### 2.1 Evidence source inventory
+
+Maintained so that identification is a lookup rather than a recollection. Each source names its
+retention, its volatility class, how it is acquired, and who can acquire it.
+
+| Source | Volatility | Acquisition method | Default retention | Notes |
+|---|---|---|---|---|
+| CloudTrail management and data events | Low | Export from the write-once audit account; log-file validation digest verified | 7 years, object-locked | Cannot be altered or deleted by any production principal |
+| CloudWatch log groups (application, agent journal) | **Medium — expiry is the risk** | `CreateExportTask` to the evidence bucket; retention lifted to `never expire` first | 90 days by default | Lifting retention BEFORE export is mandatory: an export that outruns an expiry loses the tail |
+| AgentCore runtime session traces and OTLP spans | Medium | Export via the observability account | 30 days | Short window; collect early |
+| EBS volumes attached to a compromised instance | Medium | `CreateSnapshot`, then a volume from the snapshot attached read-only to a forensic instance in the audit account | Snapshot retained per hold | Snapshot is the acquisition boundary; never analyse the live volume |
+| Instance memory (EC2 / container host) | **High** | Live acquisition to the evidence bucket before any stop or reboot | Per hold | Lost on stop. See §5.1 |
+| Running container filesystem | High | `docker/ctr` checkpoint or task-level snapshot before task replacement | Per hold | Immutable runtime means the task is REPLACED on deploy — a deploy destroys this |
+| S3 objects and version history | Low | Versioned copy into the evidence bucket with checksums | Per bucket policy | Versioning is on; delete markers are themselves evidence |
+| DynamoDB item state | Medium | Point-in-time export to the evidence bucket | PITR 35 days | Export, do not scan-and-dump: a scan is not consistent |
+| IAM/Config state and history | Low | Config item history export; IAM credential report | Config 7 years | Establishes what was permitted at the time |
+| Corporate endpoint (laptop) | High → Low | EDR remote acquisition, or physical seizure per §5 | Per hold | Power state decides the method |
+| Mobile device | High | Not acquired in-house; escalated to external counsel-appointed examiner | Per hold | Declared out of internal competence (§6.3) |
+| Email and collaboration content | Low | Tenant-level eDiscovery hold and export | Per hold | Legal & Privacy execute; not engineering |
+| Third-party SaaS audit logs | Medium | Vendor export request under the contract's audit clause | Vendor-defined | Contract requires 30-day export availability; verified annually |
+
+**Sources deliberately not collected by default,** recorded so the omission is a decision and not an
+oversight: personal devices not enrolled in management (no lawful access; escalate to counsel), unrelated
+customers' evidence content (relevance and data-minimisation), and full network packet capture (not
+deployed; flow logs are the substitute and this is an accepted limitation recorded as risk **R-2026-031**).
+
+## 3. Chain of custody
+
+A chain of custody is a record that lets a reader establish, for any moment between collection and
+production, who held the item and what they did to it. If there is a gap, the item is not evidence.
+
+**Custody form fields — all mandatory, no field may be left blank:**
+
+| Field | Requirement |
+|---|---|
+| Evidence identifier | `EV-<incident>-<nn>`, assigned at collection, never reused |
+| Description | What the item is, including make/model/serial for physical media and ARN/resource id for cloud sources |
+| Source | Host, account, region, path or stream, and the system's role |
+| Collected by | Named Qualified Handler, with their qualification reference |
+| Collected at | UTC to the second, from an NTP-synchronised clock; the clock source is recorded |
+| Time-source note | Whether the source system's own clock was verified against NTP, and any observed skew |
+| Method | Tool and version, command issued, and write-blocking used |
+| Hash at acquisition | SHA-256 of the image or manifest, recorded at acquisition and never recomputed into the same field |
+| Transfer entries | Every change of hands: from, to, purpose, UTC timestamp, both signatures, and hash re-verified at handover |
+| Storage location | Evidence bucket prefix or physical safe location, with access-control reference |
+| Analysis entries | Every access for analysis: who, when, what was done, on which copy |
+| Disposition | Return, retention under hold, or destruction with authorisation and witness |
+
+**Rules that make the record trustworthy:**
+
+- **Every handover is verified, not just signed.** The receiving handler recomputes the hash and records
+  the result. A handover where the hash does not match is an incident in its own right (Severity 2) and
+  the item is quarantined, not corrected.
+- **Analysis is performed on a working copy, never on the original or the primary image.** The original is
+  sealed; the primary image is the reference against which any working copy is re-verified.
+- **The custody record is append-only.** It is held in the write-once audit account. No engineering or
+  incident principal holds delete or modify permission; a correction is a new entry that references the
+  entry it corrects, and the erroneous entry remains visible. An actor cannot edit the record of their
+  own handling, which is the property that makes the chain evidence rather than testimony.
+- **Custody is continuous.** An item is at all times either in a controlled store or in the hands of a
+  named handler. "Left on a desk" is a break in the chain and is recorded as one.
+- **The Evidence Custodian is a named role,** currently the AI Security Lead, with the Head of Platform
+  Engineering as the standing deputy; the deputy is used whenever the Custodian is conflicted (for
+  instance, where the Custodian's own account or actions are within scope).
+
+**Operating record.** 4 items placed under custody in the current period (2 EBS snapshots, 1 endpoint
+image, 1 log export set), 11 handover entries, 11 hash verifications, **0 mismatches**, 0 custody gaps.
+The 2026-05-20 tabletop deliberately introduced a skipped handover signature; the quarterly custody
+review found it, which is the control being tested rather than the form being filled in.
+
+## 4. Admissibility: making a record defensible
+
+Digital evidence has to withstand a challenge to its completeness, its integrity and the reliability of
+the system that produced it. Each is a separate attack and each has its own answer.
+
+### 4.1 Completeness of the record
+
+| Property | How it is established |
+|---|---|
+| Nothing was omitted from the collected range | Acquisition is by range, not by selection: a whole volume, a whole log stream between two timestamps, all versions of an object. The range is stated on the record |
+| Nothing was missing from the source | Sequence and continuity checks: CloudTrail digest files chain each hour to the previous one, so a removed file is detectable; log exports are reconciled against the source's own event count |
+| Gaps are declared, not hidden | A gap in the source (an outage, a retention expiry that preceded collection, an unmonitored period) is recorded on the acquisition record as a stated limitation. An undeclared gap is what destroys a record's credibility; a declared one rarely does |
+| Selection for relevance is separable | Where a subset is produced, the subset is derived from the preserved whole by a recorded query, and the whole is retained. The filter is re-runnable |
+
+### 4.2 Integrity and tamper-evidence
+
+| Property | How it is established |
+|---|---|
+| The copy equals the source | **Bit-for-bit acquisition** with SHA-256 computed during acquisition and verified against a second independent read of the source. Both hashes are recorded; a difference halts the acquisition |
+| The copy has not changed since | Hash re-verified at every handover, before every analysis session, and on a **quarterly schedule** while under hold, each verification logged with its result |
+| The source could not change during acquisition | Snapshots are taken at a point in time by the platform; physical media is read through a **hardware write blocker**; endpoints are acquired with the EDR agent in an acquire-only mode |
+| The store itself resists tampering | Evidence bucket in a separate account with **S3 Object Lock in compliance mode**, versioning, MFA-delete, and KMS encryption with a key whose policy denies every production role. No production principal can write to or delete from it |
+| Tampering would be visible | Object Lock prevents overwrite; CloudTrail data events on the evidence bucket are themselves logged to the audit account; the hash chain in the custody record would break |
+| Deletion requires two people | Destruction at end of retention requires the Custodian plus the General Counsel, executed through break-glass, witnessed and recorded |
+
+### 4.3 The source system was operating correctly
+
+This is the requirement most often left unanswered, and an image with a perfect hash proves nothing about
+the reliability of the system that wrote the data. For each acquisition the record states:
+
+- **Configuration at the time**, from AWS Config item history and the IaC commit deployed — so what the
+  system was, not what it is now.
+- **Health and monitoring state**, from the alarm and metric history covering the period: whether the
+  host was healthy, whether logging was continuously active, whether any agent was in a degraded state.
+- **Logging continuity**, from the log-delivery metrics: an unbroken delivery record over the period, or
+  a declared interruption with its span.
+- **Clock correctness**, from NTP synchronisation status and observed skew, with the skew stated. Where
+  two sources are correlated, the correlation states the skew between them rather than assuming zero.
+- **Software identity**, from the deployed artifact digest and its dependency set — so the exact code
+  that produced the record is identifiable and reproducible.
+- **Known defects**, from the defect register: any open issue affecting the fidelity of that record type
+  is disclosed on the acquisition record, including where it weakens our own position.
+
+Where any of these cannot be established, the acquisition record says so and the evidence is presented
+with that qualification. A stated weakness is usable; an unstated one is fatal.
+
+### 4.4 Tool qualification
+
+A result is only as reliable as the tool that produced it, so tools are qualified before use and
+re-qualified on version change:
+
+| Tool class | Qualification basis | Re-qualified |
+|---|---|---|
+| Imaging and hashing utilities | Published, widely used in practice; validated in-house against a reference disk image with a known hash before first use and on major version change | On version change |
+| EDR remote acquisition | Vendor validation documentation on file; in-house verification that an acquired image of a test endpoint hashes identically to a physical acquisition of the same endpoint | Annually and on agent major version |
+| Cloud-native export paths (CloudTrail digest verification, log export, snapshot) | Platform-documented behaviour, verified in-house by exporting a synthetic known set and reconciling counts and hashes | Annually |
+| Analysis tooling | Findings that matter are corroborated from a second independent source or tool before they are relied on in a conclusion |  Per use |
+| Write blocker | Vendor certification plus an in-house verification that a mounted source is unmodified after connection | Annually |
+
+Qualification records — tool, version, method, date, result, who performed it — are retained for 7 years
+alongside the evidence. Most recent cycle 2026-06-11: 5 tools qualified, 1 analysis utility **declined**
+(unmaintained, no reproducible output) and replaced.
+
+## 5. Handling by media type and device state
+
+The method depends on what the item physically is and, for a live device, on whether it is running. This
+section exists to be read under pressure, so it states the decision rather than the theory.
+
+### 5.1 Device power state
+
+**If the device is POWERED ON:** volatile state exists and is lost on power-down, so it is captured
+first, in this order, and only then is the decision to shut down or isolate taken.
+
+1. **Do not shut down. Do not reboot. Do not log in interactively** unless the acquisition method
+   requires it, in which case the login is recorded as an alteration.
+2. **Isolate the network** rather than powering off — endpoint EDR network containment, or for cloud
+   workloads a security-group swap to a deny-all quarantine group plus revocation of the instance's role
+   sessions. Isolation preserves memory; power-off destroys it.
+3. **Acquire memory** to external media or the evidence bucket, before anything else touches the host.
+4. **Capture running-system state** — processes, connections, open files, loaded modules, sessions,
+   mounted volumes, and any decrypted content only reachable while running.
+5. **Photograph the screen** and record what was displayed, for an endpoint.
+6. **Then** acquire storage: snapshot the volume in cloud, or for an endpoint decide between live logical
+   acquisition and shutdown-then-physical acquisition.
+7. **Only then** consider power state. A **full-disk-encrypted** endpoint must be acquired live or have
+   its key escrow confirmed first — powering it off with no recovery key turns evidence into ciphertext.
+   The recovery key's availability is verified before shutdown, every time.
+
+**If the device is POWERED OFF:** it stays off. It is not booted "to check", because booting writes to
+the disk, alters timestamps and may trigger anti-forensic or remote-wipe logic.
+
+1. Leave it off; do not press the power button, do not connect it to a network.
+2. Record the state as found, including any indicator lights and connected peripherals.
+3. Remove the storage device where practical, or use a documented write-blocked boot path.
+4. Acquire through a **hardware write blocker**; verify the blocker was in place before the read.
+5. Where the machine cannot be opened, acquire via a validated write-blocked external boot medium, and
+   record that method and its known effects.
+
+**If the state is uncertain** (sleeping, hibernating, or unclear): treat as powered on for isolation
+purposes, do not wake it into a network, and escalate to the Custodian. A hibernation file is memory and
+is preserved as such.
+
+**Remote wipe** is disabled for enrolled devices under investigation as the first management action, and
+the device is placed in a shielded state or kept off-network so a pending wipe cannot execute.
+
+### 5.2 Media types
+
+| Media | Handling |
+|---|---|
+| Cloud block storage (EBS) | Snapshot as the acquisition point; never mount the live volume. Attach a volume created from the snapshot **read-only** to a forensic instance in the audit account. The snapshot's own creation record is part of the evidence |
+| Cloud object storage | Copy with checksums into the evidence bucket including **all versions and delete markers**; a delete marker is often the finding |
+| Managed database | Point-in-time export, not a live scan — a scan crosses writes and is not a consistent state |
+| Ephemeral container filesystem | Acquired before task replacement, or accepted as lost with the loss declared. Standing mitigation: application state and audit records are written off-host, so the container's own filesystem is rarely the only source |
+| Internal SSD / NVMe | Live logical acquisition preferred where encryption is in play, because TRIM and wear-levelling mean an unallocated-space image is unreliable on SSD. This limitation is stated on the record rather than glossed |
+| Magnetic HDD | Physical write-blocked bit-for-bit image, full disk including unallocated space |
+| Removable USB / SD | Write-blocked image; the physical item is retained under seal, not returned. Serial and physical description recorded |
+| Optical media | Read-only by nature; image and retain the physical disc |
+| Backup tape or archival object | Restored into an isolated account, never into the environment being investigated; the restore itself is recorded as an acquisition |
+| Mobile / tablet | Not acquired in-house — isolate (airplane mode plus shielded bag), preserve power, escalate to an external examiner (§6.3) |
+| Paper and printed output | Scanned with a custody entry; the physical original retained under seal |
+| Third-party held data | Requested under the contractual audit and cooperation clause, with the request and response retained; where the provider's export is the only form available, that constraint is recorded as a limitation |
+
+**Physical storage.** Sealed antistatic bags with tamper-evident seals, seal serial recorded on the
+custody form, held in a safe in a controlled-access room with an access log. Two sealed items in current
+custody, seals verified at the quarterly review.
+
+## 6. Competence and authorisation of evidence handlers
+
+Only a **Qualified Handler** may collect or acquire evidence. The named approvers in a document header
+are approvers, not handlers; the two are deliberately different lists.
+
+### 6.1 Competence requirements
+
+| Level | Who | Requirement | Permitted to |
+|---|---|---|---|
+| **Evidence Custodian** | AI Security Lead (deputy: Head of Platform Engineering) | Qualified Handler requirements, plus 3 years incident response and annual custody-review ownership | Everything below, plus authorise acquisition, hold custody, approve disposition |
+| **Qualified Handler** | 3 named individuals, listed in the on-call register | Recognised forensics certification **or** documented equivalent competence assessed by the Custodian; completion of this procedure's practical training; participation in one exercise in the preceding 12 months; tool-specific sign-off per tool used | Collect and acquire in cloud and on managed endpoints |
+| **First Responder** | Any on-call engineer | Annual 90-minute training on: isolate rather than power off, do not log in, do not reboot, escalate, and record what was observed | Isolate, prevent change, record observations, escalate. **Not** permitted to acquire |
+| **External Examiner** | Retained firm under the counsel-directed engagement | Firm-level accreditation, examiner certification, and demonstrable court-testimony experience | Anything beyond internal competence, and anything where independence is required |
+
+**Certification and equivalence.** A recognised certification is accepted on production of a current
+credential; equivalence is accepted only on a written competence assessment by the Custodian recording
+what was assessed and how. Currency is verified annually — an expired credential removes Qualified
+Handler status the day it lapses, and the on-call register is updated the same day. Current state at
+2026-07-15: 3 Qualified Handlers, all current, 2 certified and 1 on a recorded equivalence assessment;
+14 First Responders trained (100% of the on-call roster).
+
+**Practical exercise.** Handlers exercise the procedure at least annually against a purpose-built target:
+the 2026-05-20 exercise acquired a live EC2 instance's memory and volume plus a powered-off endpoint,
+producing verified images and a complete custody record; two procedural findings were raised (the
+retention-lift-before-export step was added to §2.1 as a result, after an export lost 40 minutes of the
+tail, and the write-blocker verification step was made explicit in §4.2).
+
+### 6.2 Independence and conflict
+
+A handler does not acquire evidence about their own actions, their own account, or a system for which
+they are the sole administrator. Where the scope reaches the Custodian, the deputy takes the role and the
+General Counsel is notified. Where the scope reaches both, an External Examiner is engaged. This is
+recorded on the identification list as a positive statement — who was excluded and why — rather than
+inferred from who signed.
+
+### 6.3 Declared limits of internal competence
+
+Stated so that the boundary is known before an incident rather than discovered during one. The following
+are escalated to counsel-directed External Examiners: mobile-device and vehicle-system acquisition;
+anti-forensic or rootkit-level analysis below the operating system; chip-off, JTAG or other hardware-level
+recovery; password or encryption defeat; anything likely to result in criminal proceedings or
+employment-related litigation; and anything where the organization itself is a subject rather than the
+investigator. The retained firm is under a master engagement with a **4-hour contact commitment**,
+verified 2026-06-11, so the escalation path is live rather than notional.
+
+## 7. Jurisdiction, authority and cross-border collection
+
+Collection is a legal act before it is a technical one, and an unlawfully obtained image is both
+inadmissible and a liability.
+
+| Question | Rule |
+|---|---|
+| Do we have authority to collect at all? | The organization may acquire from systems and accounts it owns, and from managed devices it issues, under the acceptable-use terms accepted by every worker (SEC-STD-002 and the employment terms). Personal devices, personal accounts and third-party systems require the holder's documented consent or a lawful instrument — obtained by the General Counsel, never by engineering |
+| Where does the data sit? | Recorded per acquisition: the region and legal jurisdiction of the source, and of the evidence store. Primary region us-west-2; the evidence store is in the same jurisdiction as the source unless counsel authorises a transfer |
+| May it cross a border? | A cross-border transfer of evidence is authorised by the General Counsel per acquisition, with the transfer mechanism recorded (intra-group agreement, standard contractual clauses, or a lawful-request instrument). Blocking statutes and data-localisation duties are checked against the jurisdiction table in AIMS-REG-017 before, not after |
+| Whose personal data is in it? | Evidence is minimised to the incident's scope where minimisation does not compromise completeness; where it cannot be, the whole is preserved under hold with access restricted to the named investigation team and the processing basis recorded. Where the evidence contains an assessed organization's data, that customer is notified per their DPA |
+| Does another party have to be involved? | Where a customer's own data or a supplier's system is implicated, the contract's cooperation clause governs; notification obligations are discharged through AIMS-REG-017 |
+| What makes it admissible *there*? | Requirements differ by forum, so the standard applied is the **most demanding** of the jurisdictions in scope: contemporaneous records, unbroken custody, bit-for-bit verified copies, tool qualification, a witness able to testify to the method, and disclosed limitations. Meeting the strictest avoids re-acquiring for a second forum, which is usually impossible |
+| Who may direct the investigation? | Where litigation or prosecution is reasonably foreseeable, the investigation is conducted **under counsel direction** from the outset, so privilege attaches from the beginning rather than being claimed retrospectively |
+| When is legal hold applied? | On the Custodian's or General Counsel's instruction, and automatically for any Severity 1, any event involving personal data, and any event with a plausible litigation or regulatory dimension. Hold suspends all lifecycle expiry on the affected items |
+
+**Jurisdictions in scope** and the collection constraint recorded for each: the operating jurisdiction of
+the two legal entities, and the five geographies of assessed organizations, are enumerated in AIMS-REG-017
+§3 with each one's notification authority; this procedure adds, per jurisdiction, whether acquisition from
+an employee-issued device requires notice or consent, and whether onward transfer requires a mechanism.
+The table is re-verified by the General Counsel semi-annually and on entry to any new geography.
+
+**Retention and disposition.** Evidence is retained for 7 years, or for the duration of a hold, whichever
+is longer. Disposition at expiry requires the Custodian plus the General Counsel, is witnessed, and is
+recorded. One item is currently under legal hold to 2027-01-31.
+
+## 8. Governance
+
+| What is checked | Frequency | By whom | Current state |
+|---|---|---|---|
+| Custody records complete, no gaps, all handovers hash-verified | Quarterly | Evidence Custodian | 2026-07-15: 4 items, 11 handovers, 0 gaps, 0 mismatches |
+| Integrity re-verification of all held evidence | Quarterly | Evidence Custodian | 2026-07-15: all items verified, 0 failures |
+| Handler qualification currency and on-call register accuracy | Annually and on lapse | CISO | 2026-07-15: 3 handlers current, 0 lapsed |
+| First Responder training coverage | Annually | AI Security Lead | 100% of the on-call roster |
+| Tool qualification and re-qualification | Annually and on version change | Qualified Handlers | 2026-06-11: 5 qualified, 1 declined and replaced |
+| Practical acquisition exercise | Annually | AI Security Lead | 2026-05-20; 2 findings, both closed into this version |
+| Evidence store controls — Object Lock, key policy, no production write path | Quarterly | Head of Platform Engineering | 2026-07-15: verified, 0 exceptions |
+| Jurisdiction and authority table currency | Semi-annually and on new geography | General Counsel | 2026-06-11: verified |
+| External examiner engagement live, contact commitment tested | Annually | AI Security Lead | 2026-06-11: 4-hour commitment verified |
+| Source inventory completeness against the deployed architecture | Semi-annually | AI Security Lead | 2026-07-15: verified; container-filesystem loss re-affirmed as accepted |
+
+## 9. Review history
+
+| Version | Date | Reviewer | Outcome |
+|---|---|---|---|
+| 2.0 | 2026-02-19 | AI Security Lead | Established the procedure: stages, custody form, cloud source inventory |
+| 2.1 | 2026-05-27 | AI Security Lead + General Counsel | Post-exercise: added the retention-lift-before-export step and explicit write-blocker verification; added §6.3 declared limits |
+| 2.2 | 2026-08-14 | CISO + General Counsel | Added §4.3 source-system correctness, §4.4 tool qualification, the full media and power-state decision sequences in §5, competence levels and currency in §6, and the jurisdiction and authority rules in §7 |

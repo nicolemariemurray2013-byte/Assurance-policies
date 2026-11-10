@@ -1,0 +1,408 @@
+# Storage Media, Off-Premises Assets and Secure Disposal Standard
+
+**Document ID:** SEC-MED-046
+**Version:** 2.0 — **effective 2026-03-09**, superseding v1.0 of 2025-05-06
+**Owner:** Director, IT Operations
+**Approved by:** CISO 2026-03-04, per the approval authority in GOV-POL-040 §3
+**Next scheduled review:** 2026-12-31 (Annually, and on any change to the removable-media position, the endpoint fleet, the)
+disposal supplier, the office footprint, or a lease approaching its end
+**Scope:** All storage media in any form — fixed media inside entity equipment, removable media, cloud-held
+volumes and snapshots, and paper as a storage medium where it carries classified information — across their full
+life cycle of acquisition, use, transportation, reuse and disposal. All assets used or held outside the
+entity's premises. All equipment disposal and re-use, and the end-of-lease removal of security controls.
+
+**Related:** SEC-END-043 (endpoint devices and remote working), SEC-PHY-044 (physical threats and secure
+areas), OPS-EQP-045 (equipment siting, utilities, cabling and maintenance), SEC-PRO-013 (physical access),
+SEC-AST-020 (asset inventory and classification), SEC-AST-041 (asset return and IPR), GOV-CLS-018
+(classification scheme and handling), SEC-CRY-024 (cryptography and key management), SEC-DLP-027 (information
+transfer and monitoring), TPR-PRO-016 (supplier risk).
+
+---
+
+## 1. The media inventory, and what "storage media" means here
+
+| Media class | Where it exists | Classification it may hold | Life-cycle owner |
+|---|---|---|---|
+| **Endpoint fixed media** — 52 laptop SSDs, 12 mobile devices | With individuals, five geographies | Up to **Internal**; Confidential only transiently in a brokered session; **Restricted never at rest** | IT Operations |
+| **Network equipment flash** — firewall, switch, controller, access points, UPS management card | HQ closet, EU alcove | Configuration only (Internal), including credentials material | Platform Engineering |
+| **Printer storage** — 2 multi-function devices with internal drives | HQ, EU suite | Up to Internal (spool) | IT Operations |
+| **Cloud block and object storage, snapshots, backups** | AWS us-west-2 | Up to **Restricted** | Platform Engineering |
+| **Removable media** | **None permitted, none held** — see §3 | — | — |
+| **Paper** | Two keyed records cabinets; printed output | Up to Confidential; Restricted printing blocked | Facilities lead / record owner |
+| **Backup media** | AWS only; **no tape, no removable backup media anywhere** | Up to Restricted | Platform Engineering |
+
+**The material fact that shapes this standard:** the entity holds **no removable storage media at all**, and
+production data lives in cloud storage the entity manages logically but does not physically hold. That makes
+most of this standard's removable-media requirements a matter of *enforced prohibition plus a controlled
+exception path*, rather than of handling procedures for media in circulation — and it makes the disposal
+requirements bite on endpoints, network equipment and printers rather than on a media library. Every requirement
+below is answered in those terms rather than by describing a media library the entity does not have.
+
+---
+
+## 2. Storage media through the life cycle, per the classification scheme (7.10-R1)
+
+Media are managed at every life-cycle stage against the handling rules in GOV-CLS-018, and the stage-by-stage
+position is recorded so that a gap in one stage is visible rather than hidden by strength in another:
+
+| Stage | Control | Evidence |
+|---|---|---|
+| **Acquisition** | Endpoints and network equipment are bought only from the approved supplier list under IT Operations' specification, which requires **hardware full-disk-encryption support and a firmware-level secure-erase capability** — a procurement requirement precisely so that disposal is possible later. Devices are **enrolled and registered in the asset register before issue**, with the storage serial captured; an unregistered device cannot obtain a device certificate and therefore cannot reach entity systems. Removable media is **not purchasable** — the category is blocked on the corporate card policy and there is no approved supplier | Asset register; procurement specification; purchase records |
+| **Use** | Encryption enforced at rest on every endpoint (§6.2); classification-based handling rules per GOV-CLS-018; Restricted material rendered through a brokered session and never written locally, the **no-local-copy control from case D-2026-004**; printer spool cleared on job completion; cloud volumes and snapshots encrypted with entity-managed keys | MDM encryption compliance report (52/52); brokered-session configuration; key inventory |
+| **Transportation** | Endpoints in transit are hand-carried, never in checked baggage, never left in a vehicle (§4.2); equipment moved for repair or disposal travels **wiped, by tracked courier, under a chain-of-custody record** (§4.3, §5.5); **no media is ever posted** | Chain-of-custody log; courier records |
+| **Storage** | §4 for off-premises; **§5** for on-premises storage conditions | Inspection records |
+| **Reuse** | §6.3 — cryptographic erase plus re-image from the golden baseline before any reissue | Reissue records |
+| **Disposal** | §6 — verified media identification, destruction or erasure appropriate to the classification, certificate retained, register updated only after the certificate arrives | Certificates of destruction; asset register |
+
+### 2.1 Topic-specific policy on removable storage media (7.10-R2)
+
+A **topic-specific policy on the management of removable storage media** is established as part of GOV-POL-040's
+register and is stated here in full, because the whole of it fits and paraphrase would obscure it:
+
+| Rule | Detail | Enforced by |
+|---|---|---|
+| **Removable mass storage is prohibited** | No USB flash drive, external HDD/SSD, SD or microSD card, optical disc, or tape may be connected to any entity endpoint or server, whether entity-owned or personal | **MDM device-control policy blocking the USB mass-storage class and SD card slots on all 52 laptops**; not a request, a block |
+| Non-storage USB is permitted | Keyboards, mice, headsets, docks, displays, hardware security keys and wired network adapters are allowed by device class | Same policy, class allowlist |
+| **Hardware security keys are an intentional exception** | FIDO2 keys are removable devices but hold no information storage in the sense of this policy; they are issued, registered to an individual, and reported lost like any asset | Identity provider registration; asset register |
+| **Exception path exists and is narrow** | Where a genuine business need arises — the only credible case being a customer or regulator who can accept evidence no other way — an exception requires **CISO approval**, is **time-bound to a single transfer**, uses an **entity-issued hardware-encrypted device**, and the transfer is **logged and monitored**. **Zero exceptions have been requested or granted since v1.0**, which is recorded rather than presented as a policy with no demand | Exception register (empty, and audited as empty) |
+| Personal media is prohibited | A personally owned drive may not be connected even to a personal device holding the entity's mobile work profile; the work profile cannot write to external storage | MDM work-profile policy |
+| Cloud storage is the sanctioned alternative | Approved services with entity identity and DLP inspection; the policy names them so the prohibition comes with a route rather than only a wall | SEC-DLP-027 |
+| Found media is never connected | Any media found in an office or received unsolicited is handed to IT Operations and destroyed, **never inserted** — including to "see what's on it" | Awareness module; destruction log (3 items this period, 2 unsolicited vendor drives and 1 found in the HQ lift lobby) |
+| Communication | The policy is issued to **all personnel and to the 11 named vendor individuals** at onboarding and annually, acknowledged in the awareness platform, and is stated in the vendor requirements annex so it binds people who are not employees | Acknowledgement records: **48/48 personnel, 11/11 vendor individuals** |
+
+The policy is **communicated to anyone who uses or handles removable storage media** — which, given the block, is
+nobody in normal operation; it is nonetheless communicated to everyone, because the population that needs the
+rule is the population that might otherwise try, and because the found-media rule applies to people who handle
+media they did not obtain.
+
+---
+
+## 3. The removable-media position, and how it is verified rather than assumed
+
+A prohibition believed to be in force but never checked is the most dangerous kind of control, so the position
+is verified on three independent paths:
+
+1. **Configuration** — the MDM device-control policy is in the version-controlled baseline; drift is reported
+   daily, and a device out of compliance is quarantined from entity access by the posture check (SEC-END-043 §2).
+2. **Behaviour** — endpoint telemetry alerts on any mass-storage device *attempt*, whether or not it succeeds,
+   because an attempt is a signal about intent or ignorance. **7 attempts this period**, all blocked, all
+   followed up: 5 were personal phones being charged (benign, and the reason the policy explicitly permits
+   charge-only), 1 was a personal drive at a home location (coaching, no data moved), 1 was a conference-supplied
+   drive (destroyed, and cited in the awareness module).
+3. **Physical** — the quarterly closet and office inspections check for unauthorised attached devices, and the
+   device store is reconciled against the asset register (OPS-EQP-045 §4.4, §2.3).
+
+**Servers:** production instances are cloud instances with no physical port to populate; block-device
+attachment is an API action governed by IAM and change control, logged in CloudTrail and alarmed on
+out-of-change attachment — which is the cloud-native equivalent of a port control and is claimed as such rather
+than by analogy to a USB block.
+
+---
+
+## 4. Security of assets off-premises (7.9)
+
+The entity is **remote-first — 42 of 48 personnel work primarily outside an entity office** — so off-premises is
+the normal condition, not the exception. This section is therefore written as the primary control set, not as an
+addendum to an office regime.
+
+### 4.1 Management authorization for off-premises use, including BYOD (7.9-R1)
+
+- **Standing authorization** for off-premises use of an entity-issued laptop and mobile device is granted by
+  the individual's manager as part of the issue record at onboarding, and re-affirmed at each **annual access
+  review** — so authorization is a live record with a date, not a permission granted once in 2023 and never
+  revisited.
+- The authorization is **specific**: it names the device (asset tag and storage serial), the individual, the
+  approved work locations (home, an approved co-working location, entity offices, and travel), and the maximum
+  classification permitted at that location. It is recorded in the asset register against the device and in the
+  HR record against the person.
+- **BYOD** is authorized only in the single form permitted by SEC-END-043 §2.4 — a **managed mobile work
+  profile on a personal phone**, with **zero personal laptops authorized** and none present in the fleet.
+  Authorization is per-device, requires acceptance of the selective-wipe terms, and is recorded in the MDM
+  enrolment record. The count is reported at each access review (**31 personal phones enrolled with a work
+  profile; 0 personal laptops**), so an unauthorized category would show up as a number rather than as a
+  narrative.
+- **Vendor personnel** are not authorized to hold entity assets off-premises at all, except for the 3 named
+  individuals issued entity laptops under their individual undertakings (HR-PRO-042 §4.3); the other 8 access
+  entity systems only from their employer's managed devices via the brokered session, which is authorization by
+  architecture — nothing to leave unattended because nothing is held.
+- Authorization is **withdrawn** on the terminate-or-change triggers in HR-PRO-042 §5, and withdrawal is
+  enforced by device wipe and certificate revocation rather than by an expectation that the device stops being
+  used.
+
+### 4.2 Unattended devices, manufacturers' instructions, and shoulder surfing (7.9-R2)
+
+| Requirement element | Rule and its enforcement |
+|---|---|
+| **Not left unattended in public or unsecured places** | Absolute rule: a device is either **on the person, locked in a room the individual controls, or in a locked container**. Specifically prohibited — left on a co-working desk while away, in an unattended vehicle (including a locked boot), in checked baggage, in a hotel room without the safe or a cable lock, or at a conference cloakroom. At **co-working locations nothing is left overnight at all**, which is why **D-2026-011** (unconfirmed removal of a co-working locker) was raised as a deficiency rather than tolerated: the control depends on the absence being verified |
+| **Manufacturers' instructions observed** | The issue pack states the manufacturer's environmental limits and the practical consequences: no charging or storing in a vehicle in heat or freezing conditions; not left in direct sun; **no charging on soft furnishings** (a fire condition, and an insurer point per OPS-EQP-045 §5.6); kept dry, and a liquid event reported immediately rather than dried out and used; kept out of dusty environments; **no exposure to strong electromagnetic fields** — which in practice means devices are not placed on or beside magnetic-field sources, and is stated because the requirement names it. Lithium-battery handling and the designated charging bench at HQ apply on premises |
+| **Shoulder surfing in public** | **Privacy filters standard-issue on all 52 laptops and mandatory in any public setting** — transit, aircraft, co-working, cafés, conferences; **5-minute automatic screen lock** and manual lock on stepping away, both MDM-enforced; a rule against working on Confidential material in a public setting at all (the brokered session for Restricted makes it technically impossible to hold, and policy forbids the display); **no speaker use** for calls in public and no dictation of classified content; positioning guidance to sit with the screen away from through-routes, reinforced in the awareness module with the location self-assessment asking whether the screen is visible from outside a home workspace |
+| Verification | The location self-assessment (annual, and on any move) covers all of the above; **48 of 48 completed this period**, generating 6 privacy-filter issues and 2 desk-repositioning recommendations. **4 off-premises security events** were reported this period — 2 near-miss unattended-device reports, 1 attempted shoulder-surf at an airport lounge reported by the individual, 1 device left in a taxi and recovered within 40 minutes with no unlock attempt in the logs — all recorded, all with the reporting treated as the desired behaviour |
+
+### 4.3 Chain of custody on transfer between individuals or parties (7.9-R3)
+
+When off-premises equipment is transferred among different individuals or interested parties, a **chain-of-custody
+log** is maintained, holding **at minimum the names and organizations of those responsible**:
+
+| Field | Captured |
+|---|---|
+| Asset tag, model, storage serial | Yes, from the asset register |
+| **Releasing individual and their organization** | Yes — name and organization, including "the entity" where internal |
+| **Receiving individual and their organization** | Yes — for a courier, the carrier's organization and the consignment number stand as the responsible party for the transit leg |
+| Date, time and reason for transfer | Yes |
+| Classification of information the device held before transfer | Yes |
+| **Secure-deletion action performed before transfer, and its verification** | Yes — and this is a required field, not optional |
+| Condition on release and on receipt | Yes, with photographs for damaged items |
+| Authorization reference | Yes (§4.4) |
+
+**Information that does not need to be transferred with the asset is securely deleted before transfer.** In
+practice this means the default is that *nothing* transfers with the asset: a device leaving an individual's
+custody is **remote-wiped and the wipe confirmed before despatch**, so the receiving party — internal
+reallocation, warranty repair, or disposal — receives a device with no entity information on it. The only
+exception is an internal transfer where the device stays enrolled and moves directly between two authorized
+individuals, and there the enrolment, not the wipe, is the control, and the log records that choice explicitly.
+
+**Transfers this period: 17** — 9 refresh reallocations (all wiped and re-imaged), 3 warranty repairs (all wiped
+and confirmed; one required disk retention and destruction per OPS-EQP-045 §5.5), 4 disposals (§6), 1
+recovered-from-taxi device (returned to the individual after a posture check and a log review). Every one has a
+complete custody record; the completeness of the *secure-deletion* field is sampled at internal assessment
+because it is the field most likely to be left blank when someone is in a hurry.
+
+### 4.4 Authorization and record for removal from the premises (7.9-R4, and 7.10-R4)
+
+Both controls raise the same requirement — authorization plus an auditable record of removals — and the entity
+answers it once, honestly, in terms of what "removal from the premises" means for a remote-first entity:
+
+- **Endpoints are issued for off-premises use by design**, so a per-occasion removal permit would be a form
+  nobody would complete truthfully. The authorization is therefore the **standing, device-specific,
+  annually-reviewed issue authorization** in §4.1, and the record of "removals" is the **asset register's
+  custody state**: every device has a named custodian, a location class and an authorization date, reconciled
+  against the HR roster quarterly. This is a stronger audit trail than a sign-out sheet, because it is complete
+  by construction rather than dependent on someone remembering to sign.
+- **Removal of anything that is *not* routinely off-premises requires explicit, recorded authorization**, and
+  this is where the per-occasion control lives:
+
+| Item removed | Authorization | Record |
+|---|---|---|
+| **Network equipment from the HQ closet** (including a spare or a failed unit) | Director IT Operations, under a change record | Change record + custody log + asset register state |
+| **Any storage media** | **CISO** (and there is none to remove — the register would show it) | Exception register |
+| **Paper records above Internal** | Record owner, and only for a stated purpose with a return date | Records-cabinet removal log |
+| A printer or its drive | Director IT Operations; the drive is treated as data-bearing | Custody log + service record |
+| A device going to disposal | Director IT Operations | Custody log + certificate of destruction |
+| Loaner device issued temporarily | IT Operations, with a return date | Loaner log; **4 of 4 loaners currently reconciled** |
+
+- The records are retained 3 years and are sampled at internal assessment. The quarterly reconciliation is what
+  makes the trail real: it found one unreturned loaner in 2025 (recovered) and is the mechanism that would
+  surface a silent removal.
+
+### 4.5 Location tracking and remote wiping (7.9-R5)
+
+| Capability | Coverage | State and verification |
+|---|---|---|
+| **Remote wipe / remote disable** | **52/52 laptops, 12/12 entity mobiles, 31/31 personal phones (work profile — selective wipe of the profile only)** | MDM-enforced; **tested quarterly on a loaner device**, 4 of 4 successful this period, with the median time-to-wipe recorded. Exercised for real once (the taxi case, cancelled on recovery within the same hour) |
+| **Location tracking** | Entity-owned laptops and entity mobiles: **enabled**. Personal phones: **not enabled** | This split is deliberate and is stated rather than glossed: enabling location tracking on a personally owned device is not proportionate and, in **two of the entity's five jurisdictions, employee-privacy law makes it legally problematic**. The compensating position is that a personal device holds only a work profile whose content is a rendered view, and the profile is selectively wipeable. The reasoning, the legal basis and the compensating control are recorded here because a bare "location tracking is implemented" would be false for a third of the fleet |
+| **Purpose limitation, disclosed** | Both capabilities | Location and telemetry data are used **only** for loss, theft and security-incident investigation, are not used for performance or attendance monitoring, are access-restricted to IT Operations and the CISO, are retained 90 days, and this purpose limitation is **disclosed to personnel in the endpoint standard and the acceptable-use acknowledgement** — which is what makes the monitoring lawful in the relevant jurisdictions as well as trusted |
+| Remote lockout and passcode reset | Full fleet | MDM; used 3 times this period on lock-screen lockouts |
+| Trigger | — | The loss/theft procedure (SEC-END-043 §2.3) makes wipe the default within 4 hours of a confirmed loss, without waiting for certainty, on the reasoning that a recoverable device re-images cheaply and an unwiped lost device does not |
+
+### 4.6 Permanently installed off-premises equipment (7.9-R6)
+
+The entity has **no permanently installed equipment outside its premises** — no antenna, mast, kiosk, ATM,
+sensor, camera, digital signage, or unattended appliance at any third-party site. This is a stated fact
+verified against the asset register at each annual assessment, not an omission. The three provider-operated
+co-working locations hold **no entity equipment whatsoever**, which is why they appear in this standard only as
+locations where devices are used and never left, and why **D-2026-011** matters: the one thing that could have
+become de-facto permanently installed equipment was a storage locker, and the control is that it was removed.
+
+Were such equipment ever installed, the pre-installation assessment in SEC-PHY-044 §3.1 would be the gate, and
+this section would need to specify the measures 7.9-R6 names — monitoring, physical and environmental threat
+protection, physical access control and tamper-proofing, and logical access control. Recording the trigger is
+the honest way to hold a requirement that is currently not applicable, because "not applicable" without a
+trigger becomes wrong the day the facts change.
+
+---
+
+## 5. On-premises storage conditions and media handling (7.10-R3)
+
+Storage media are stored in a **safe, secure environment according to classification and protected against
+environmental threats, in accordance with manufacturers' specifications**:
+
+| Media | Storage environment | Environmental protection | Manufacturer's specification |
+|---|---|---|---|
+| Spare and loaner laptops (4) | **Keyed device store** inside the badge-controlled suite, not on open shelving | Within the office's monitored range; not adjacent to plant or a water-bearing service | Stored charged to 50–80 % and rotated, per the battery manufacturer's storage guidance — a real specification that is easy to ignore and is therefore in the quarterly checklist |
+| Failed devices awaiting destruction | **Locked cabinet in the closet, segregated and labelled "awaiting destruction"** so they cannot be mistaken for stock and reissued | Closet environmental monitoring (OPS-EQP-045 §2.5) | Not applicable beyond containment |
+| Retained disks pending destruction | Same locked cabinet, in tamper-evident bags, itemised on the pending-destruction list | As above | As above |
+| Network equipment flash | Inside equipment in the locked closet | Temperature, humidity, water, dust and vibration controls per OPS-EQP-045 §2.3 | Ambient limits monitored and alarmed |
+| **Paper at Confidential** | Two keyed records cabinets in the internal corridor, not reception | Cabinets are not beneath a water-bearing service — re-verified after the 2026-01 pipe reroute (**D-2026-015**); fire detection in the suite | Not applicable |
+| Cloud volumes, snapshots, backups | AWS us-west-2, multi-AZ, encrypted | **Inherited** facility environmentals; the entity's own control is multi-AZ placement and **quarterly restore testing**, which is the condition on which the Board accepted **R-022** | Provider specification |
+| **Removable media** | **None held**; the pending-destruction cabinet is the only place media ever sits detached, and only briefly | — | — |
+
+The pending-destruction cabinet is deliberately a *locked, labelled, itemised* holding place with a target of
+**no item held longer than 30 days**: the failure mode this prevents is a box of dead disks accumulating in a
+corner for two years, which is how organisations end up unable to say what they destroyed. Current contents: **1
+item (a failed access point), held 11 days**; longest hold this period, 26 days.
+
+---
+
+## 6. Secure reuse and disposal (7.10-R7, 7.10-R8, 7.14)
+
+### 6.1 Identification of items requiring secure disposal (7.14-R1, and 7.10-R7's identification element)
+
+**Every item is verified for the presence of storage media before disposal or re-use**, and the verification is
+a recorded step performed against a **standing media-bearing determination held on the asset type**, so the
+question is answered from a specification rather than from an engineer's guess in the moment:
+
+| Asset type | Media-bearing? | Verified how |
+|---|---|---|
+| Laptop | Yes — SSD | Asset record holds the storage serial; physically confirmed at teardown |
+| Mobile device | Yes — internal flash | Asset record |
+| **Multi-function printer** | **Yes — internal drive, and this is the one people forget**; it is flagged in bold on the asset record and in the disposal checklist | Asset record; service contract requires drive return on replacement |
+| Firewall, switch, wireless controller, access point | Yes — configuration flash holding credentials material | Asset record |
+| UPS management card | Yes — configuration flash | Asset record |
+| Environmental sensor, leak detector | Yes — trivial config flash; treated as media-bearing anyway | Asset record |
+| Monitor, dock, keyboard, mouse, cable, AV display | **No** — determination recorded so the checklist is not padded | Asset record |
+| Hardware security key | Holds key material, not information storage; destroyed as a credential | Identity provider deregistration + destruction |
+
+Where a determination cannot be made confidently, the item is **treated as media-bearing and physically
+destroyed** — the asymmetry is deliberate, because the cost of shredding a monitor is trivial next to the cost
+of releasing a drive.
+
+### 6.2 Erasure and destruction methods, proportional to sensitivity (7.10-R7, 7.14-R2)
+
+Sensitive data and licensed software are removed or **securely overwritten using techniques that render the
+original information non-retrievable — never the standard delete function, and never a filesystem format
+alone**:
+
+| Classification held | Destination | Method | Why this method |
+|---|---|---|---|
+| Up to Internal | **Internal reuse** | **Cryptographic erase** — destroy the full-disk-encryption key in the device's secure element — followed by re-provisioning and a re-image from the golden baseline | The data was never stored unencrypted, so key destruction makes it non-retrievable; the re-image removes configuration and licensed software |
+| Up to Internal | External disposal, resale or donation | **Cryptographic erase plus firmware secure-erase (ATA Sanitize / NVMe Format with secure-erase setting), verified**, then physical destruction by the certified vendor | Belt and braces where the entity loses custody |
+| **Confidential or Restricted held at any time**, or classification uncertain, or the device failed | External disposal | **Physical destruction — shredding to the vendor's stated particle size — with a serialised certificate**; no erase-and-resell | Verification of an erase on a failed device is not possible, so destruction is the only defensible method |
+| Network equipment | Any | **Configuration wiped to factory default, then credentials rotated on the assumption the flash may be recoverable**, then physical destruction of the flash where the device leaves entity custody | Configuration flash recovery is plausible and the contents are credentials material; rotating rather than trusting the wipe is the control |
+| **Printer** | Any | Drive removed and **physically destroyed**; the chassis is disposed of separately | The drive is the risk, not the chassis |
+| **Paper** | — | **Cross-cut shredding on site** for Internal; **Confidential shredded on site by the record owner**, never placed in a confidential-waste sack for later collection | On-site destruction removes the custody gap that a waste sack creates |
+| **Cloud storage** | Decommission | **Cryptographic erasure by KMS key deletion** for the data set, plus deletion of volumes, snapshots and their copies, verified by an inventory query that the snapshot count is zero; the provider's media sanitisation is **inherited** and evidenced by its audit reports | The entity cannot shred a provider's disk; key destruction is the control it genuinely holds, and saying so is more accurate than claiming a sanitisation it does not perform |
+| Licensed software | All routes | Licences deactivated and reclaimed before erasure, and the reclaim recorded — because an unreclaimed licence is both a cost and a residual identifier | Licence register |
+
+**Logging of disposals to maintain an audit trail (7.10-R7):** every disposal produces a record holding asset
+tag, storage serial, highest classification ever held, method, date, performer or vendor, the **serialised
+certificate of destruction**, and the licence-reclaim reference. The asset register is moved to `DISPOSED`
+**only after the certificate is received** — a sequence chosen because a register entry closed in anticipation
+is how disposals become unevidenced. **4 disposals this period, 4 certificates on file**, reconciled at the
+quarterly asset review.
+
+### 6.3 Secure deletion or formatting before reuse (7.10-R7's reuse element)
+
+Reuse is the common path — 9 devices were reallocated at this period's refresh — and it is controlled as
+tightly as disposal: cryptographic erase, **re-image from the golden baseline rather than a cleanup of the
+outgoing user's profile**, a new device certificate, re-enrolment in MDM, and a posture check that must pass
+before access is granted. The outgoing user's profile is never merely deleted, and the device is never handed
+directly from one individual to another without passing through IT Operations — because a device that has not
+been through the pipeline cannot be asserted to be clean. Devices returned from external repair are treated as
+**untrusted and re-imaged** on the same reasoning (OPS-EQP-045 §5.7).
+
+### 6.4 Risk assessment on damaged devices holding sensitive data (7.10-R8)
+
+A **risk assessment is performed on any damaged device containing sensitive data to decide whether it must be
+physically destroyed rather than repaired or discarded.** The assessment is a short recorded determination, made
+by IT Operations with CISO sign-off where the answer is not obvious, weighing:
+
+1. the **highest classification the device ever held** (from the asset record, not from recollection);
+2. whether an **erase can be executed and verified** — a device that will not power on cannot be verifiably
+   erased, which alone usually decides it;
+3. whether **repair requires the storage to leave entity custody**;
+4. whether the vendor will accept the unit **without** its original disk;
+5. the **replacement cost** against the repair cost, so the answer is not distorted by an attempt to save a
+   trivial sum.
+
+**Default: if an erase cannot be verified, the device is physically destroyed.** Applied this period: 2 laptops
+were destroyed rather than repaired (one spill case that would not power on, one with SSD failure), and of the 3
+warranty repairs, **1 proceeded only because the vendor accepted the unit with the original disk retained and
+destroyed** — the determination is on file for each, including the reasoning, because the value of this control
+is in the cases where destroying the asset was the more expensive choice and was made anyway.
+
+### 6.5 Removal of labels and markings (7.14-R3)
+
+Before any equipment leaves entity custody — **including resale and donation to charity, which the requirement
+names and which is exactly where this step gets skipped** — the following are removed and the removal is a
+signed-off checklist line:
+
+- entity asset tags, barcodes and inventory labels;
+- **classification labels and handling markings**;
+- owner, system, hostname, network and rack-position labels, including handwritten port and patch labels
+  (OPS-EQP-045 §4.5's labelling scheme is informative to an attacker: it names devices and topology);
+- entity branding, stickers and engraved marks;
+- configuration-embedded identifiers — hostname, network names, certificates, saved wireless profiles,
+  management addresses, and the entity's own name in device descriptions;
+- support-contract and warranty labels naming the entity to a third party.
+
+The entity's current practice is **destruction rather than resale or donation for all data-bearing equipment**,
+so in most cases the labels are destroyed with the asset; the checklist exists nonetheless because non-data-bearing
+items (monitors, docks) **are** donated, and a donated monitor with an asset tag and a classification sticker
+still discloses the entity's inventory scheme. **2 monitors and 3 docks were donated this period**, all
+de-labelled and signed off.
+
+### 6.6 Equipment leaving for maintenance (cross-reference)
+
+Devices leaving for maintenance are handled under §4.3's chain of custody and OPS-EQP-045 §5.5: wiped and
+verified before despatch, tracked courier, custody record naming the responsible individuals and organisations,
+disk retained and destroyed where the repair requires disk replacement, and **re-imaged and re-enrolled on
+return rather than trusted**. This section exists so that OPS-EQP-045's cross-reference resolves to a stated
+rule rather than to an implication.
+
+### 6.7 Removal of security controls at end of lease or on vacating premises (7.14-R4)
+
+The entity **considers the removal of security controls such as access controls and surveillance equipment at
+the end of a lease or on moving out**, and the consideration is documented with its three named inputs:
+
+| Input the requirement names | The entity's position |
+|---|---|
+| **Lease agreements** | Both leases are reviewed for reinstatement and removal obligations, and the review is recorded against the lease. The HQ lease requires reinstatement of alterations, which **includes the server closet's entity-fitted lock, the badge reader, the containment and the sensors**; the EU lease requires the wall enclosure's removal and making good. Knowing this before the notice period is what makes an orderly removal possible |
+| **Risk of leaving systems holding sensitive information for the next tenant** | The itemised list of entity-fitted controls that hold information is maintained now, not written at exit: the **badge reader and its access-control head-end (holding names, badge IDs and 12 months of entry logs)**, the **prop-open alarm**, the **environmental sensors and leak detector** (holding readings and the on-call webhook), the **network equipment** (holding configuration and credentials), the **printers** (spool), and the **as-built cabling drawing and labels** (topology). Each is on the vacating checklist with a required action: export the retained record, then **wipe and destroy or remove**. The badge system is the sharpest case — leaving it behind would hand the next tenant the entity's personnel roster and movement history — so it is marked **remove-and-destroy, never leave, never transfer to the landlord** |
+| **Ability to reuse the controls at the next facility** | Assessed per item: the badge reader head-end and the environmental sensors are **reusable after a factory reset and credential rotation** and are earmarked for reuse; the cabling, containment and the closet lock are **not economically reusable** and are treated as reinstatement waste; the network equipment moves with the entity, wiped and reconfigured in transit under §4.4 authorization |
+
+**Trigger and state:** neither lease is within its notice period (HQ break option 2028-06, EU 2027-11), so the
+checklist is a prepared control rather than an executed one. It is **reviewed annually alongside this standard**
+and becomes an owned project at notice service. The co-working locations have no entity-fitted control to remove
+— **D-2026-011** was precisely the case of a fitted item at such a location, and its removal is the small-scale
+rehearsal of this control.
+
+---
+
+## 7. Roles, evidence and independent testing
+
+| Role | Responsibility |
+|---|---|
+| Director IT Operations | Owns this standard, the media inventory, the disposal pipeline, the disposal vendor relationship, and the chain-of-custody records |
+| Head of Platform Engineering | Cloud storage encryption, key destruction on decommission, snapshot inventory verification, network equipment credential rotation |
+| Facilities lead | Pending-destruction cabinet, records cabinets, on-site paper shredding, quarterly inspections and reconciliations |
+| CISO | Approves the standard, the removable-media policy and every media exception; owns the damaged-device determination sign-off, the deficiency register and the vacating checklist |
+| Third-Party Risk Manager | Assesses the disposal vendor, including its certification, its sub-contracting and its certificate integrity |
+| General Counsel | Lease reinstatement obligations; jurisdictional constraints on location tracking; retention periods that bear on deletion |
+| People Operations | Off-premises authorization at onboarding and at each access review; acknowledgement records |
+| Internal assessment | Annually, and specifically: samples chain-of-custody records for the **secure-deletion field**; reconciles the asset register's `DISPOSED` entries against certificates of destruction **in both directions**; verifies the pending-destruction cabinet contents against the pending list; verifies the removable-media block on a live device rather than in the console; tests that the quarterly remote-wipe test records exist; samples damaged-device determinations; confirms the vacating checklist has been reviewed within 12 months; and audits the media exception register as empty |
+
+| Evidence | Where it is held |
+|---|---|
+| Asset register with storage serials, custodian, location class, authorization date, disposition | IT asset register |
+| Removable-media policy, acknowledgements (48/48, 11/11), and the empty exception register | Awareness platform; CISO file |
+| MDM device-control policy baseline and daily drift report | Configuration repository; MDM |
+| Blocked mass-storage attempt telemetry and follow-up records | SIEM; IT Operations |
+| Encryption compliance report (52/52) | MDM |
+| Off-premises authorization records; location self-assessments (48/48) | HR records; asset register |
+| Chain-of-custody logs (17 transfers) | IT Operations |
+| Quarterly remote-wipe test records (4/4) and the location-tracking coverage split with its legal basis | MDM; General Counsel file |
+| Removal-authorization records: change records, loaner log, records-cabinet log | IT Operations; Facilities |
+| Pending-destruction list with hold durations | IT Operations |
+| Serialised certificates of destruction (4/4) and licence-reclaim records | IT asset register |
+| Damaged-device risk determinations | IT Operations; CISO sign-offs |
+| De-labelling sign-offs for donated items | Facilities |
+| Cloud key-deletion and snapshot-zero verification records | Platform Engineering |
+| Vacating checklist with its per-item actions and annual review date | Facilities; CISO file |
+| Deficiencies D-2026-011, D-2026-015 and their closure evidence | Deficiency register |
+
+## 8. Review history
+
+| Version | Date | Change |
+|---|---|---|
+| 1.0 | 2025-05-06 | Established the media inventory, the removable-media prohibition, the disposal pipeline and the off-premises authorization model |
+| 2.0 | 2026-03-09 | Annual review. Removable-media prohibition verification split onto three independent paths (configuration, behaviour, physical) after the position had been asserted from the console alone; blocked-attempt telemetry added and this period's 7 attempts recorded; secure-deletion made a **required** field on the chain-of-custody record; pending-destruction holding formalised with a 30-day target and current contents stated; damaged-device determination given an explicit default to destroy where an erase cannot be verified; **location-tracking coverage corrected from an implied fleet-wide claim to the actual split, with the jurisdictional reasoning and compensating control recorded**; printer internal drives flagged explicitly in the media-bearing determination; cloud disposal restated as cryptographic erasure by key deletion plus inherited provider sanitisation rather than as sanitisation the entity performs; end-of-lease control-removal checklist itemised with per-item reuse/destroy decisions and tied to the two leases' break dates |

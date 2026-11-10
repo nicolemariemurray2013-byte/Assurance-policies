@@ -1,0 +1,228 @@
+# Employment Terms and Information Security Conditions Standard
+
+**Document ID:** HR-STD-046
+**Version:** 2.3
+**Owner:** Head of People, jointly with the CISO (security content) and the General Counsel (enforceability)
+**Approved by:** CEO 2026-08-14; General Counsel 2026-08-12
+**Effective:** 2026-08-14
+**Next scheduled review:** 2026-12-31, and immediately on any change to applicable law, to an
+information security policy the terms incorporate, or to the categories of personnel engaged
+**Scope:** The contractual information security terms in every engagement under which a person may access
+the organization's information or information processing facilities — employees, fixed-term staff,
+contractors and temporary workers, interns, and the named personnel of supplier organizations. Includes
+the model clauses (§3), the tiering by access (§4), the pre-engagement communication (§5), the
+post-engagement obligations (§6) and the maintenance process (§7).
+
+---
+
+## 1. What the contract has to do
+
+An acknowledgement of a standard proves the person was told. A **contract** creates an obligation that
+survives disagreement, outlives the policy version in force when it was signed, and is enforceable. The
+Code of Conduct and Ethics Standard (GOV-STD-001) and the security awareness programme establish
+communication and acknowledgement; this standard establishes the contractual commitment itself, and the
+two are not substitutes for one another.
+
+The terms in §3 are incorporated into every engagement agreement — as clauses in the employment contract
+for employees, and as the countersigned **Information Security Annex** for contractors, temporary workers
+and supplier personnel. No access is provisioned before the applicable instrument is executed (§5).
+
+## 2. The commitment is bilateral
+
+The agreement states the responsibilities of **both** parties. A one-sided instrument that lists only the
+worker's duties invites the reasonable objection that security is something done to staff rather than
+something the organization is itself bound to, and it leaves the organization's own obligations —
+providing the training, the tools, and a route to report a problem — as discretionary. They are not.
+
+| The personnel undertake | The organization undertakes |
+|---|---|
+| To comply with the information security policies and standards in force, as incorporated by reference and as notified when changed | To make those policies available continuously, in the working language, without needing to ask, and to notify changes that alter what is required of the individual |
+| To use information and facilities only for authorised purposes and only to the extent their role requires | To provide access sufficient for the role and no more, and to grant it promptly so that no one is driven to work around a control to do their job |
+| To protect the confidentiality, integrity and availability of information they handle, applying the handling rules for its classification | To classify information and label it so the applicable rules are knowable, and to supply the means to comply — managed devices, encryption, an approved password manager, sanctioned collaboration tools |
+| To complete required security training within the stated period | To provide that training during working hours, at no cost, and to keep it current and relevant to the role |
+| To report suspected incidents, weaknesses and policy breaches promptly, including their own errors | To operate a reporting channel that is available at all times, to acknowledge every report, and to **apply no detriment to a person who reports in good faith**, including where they caused the issue. This protection is a contractual term, not a policy aspiration |
+| To protect authentication credentials and not to share them | To provide the credential and MFA tooling, and to make credential recovery available so sharing is never the practical option |
+| To return all assets and information on request and at the end of the engagement | To give clear return instructions, the means to return, and written confirmation of what was returned and of what remains outstanding |
+| To cooperate with investigations, audits and evidence collection | To conduct investigations fairly and proportionately, to tell the person what is alleged where doing so does not defeat the investigation, and to preserve their right to representation |
+| To raise a concern rather than act on an unlawful or unethical instruction | Not to require any act that breaches this standard or applicable law, and to protect anyone who declines such an instruction |
+| To observe the obligations that continue after the engagement ends (§6) | To state those obligations, and their duration, **before** the engagement begins rather than at the exit interview |
+
+Both columns are executed by both parties. The organization's undertakings are signed by an authorised
+signatory, so the instrument is mutual on its face.
+
+## 3. Required contractual terms
+
+Every instrument contains all of the following. The wording is the model wording held by the General
+Counsel; deviation requires the General Counsel's written approval and is recorded.
+
+### 3.1 Confidentiality and intellectual property
+
+| Term | Content |
+|---|---|
+| **Confidentiality** | Definition of confidential information covering the organization's, its customers', its suppliers' and third parties' information; the obligation not to disclose or use outside the engagement; the permitted-disclosure carve-outs (compelled by law with prompt notice where lawful; protected disclosures to a regulator, which are expressly **not** restricted). Duration per §6 |
+| **Assignment of work product** | Present assignment of all intellectual property created in the course of the engagement, with the statutory moral-rights position stated |
+| **Third-party and prior-employer IP** | Undertaking not to introduce another party's confidential information or code into the organization's systems, and not to breach a prior obligation. This protects the organization from inheriting a claim |
+
+### 3.2 Copyright, licensing and legislative compliance
+
+Named explicitly because a general "comply with the law" clause does not put anyone on notice of the
+specific duties that arise daily in this organization.
+
+| Term | Content |
+|---|---|
+| **Copyright and software licensing** | Undertaking to use software only under a valid licence and within its terms; not to install unlicensed software; not to copy or redistribute licensed material outside the licence; to observe **open-source licence obligations** including attribution and copyleft consequences, and to introduce third-party code only through the approved acquisition and review route. The reciprocal duty: the organization provides licensed tooling and a curated repository so that compliance is possible without asking permission each time |
+| **Data protection legislation** | Undertaking to process personal data only on instruction and for the stated purpose; to observe data-minimisation, purpose-limitation and confidentiality duties under GDPR and equivalent regimes; not to re-identify de-identified data; not to transfer personal data across a border outside an approved mechanism; to report a suspected personal-data breach **without delay** and in any case within 24 hours of becoming aware. The clause records that a breach of statutory data-protection duty is a matter of law as well as of contract |
+| **Computer misuse and unauthorised access** | Undertaking not to access any system, account or data without authorisation, including where a technical means to do so exists, and to report any access obtained inadvertently rather than to explore it |
+| **AI-specific duties** | Undertaking to observe the AI management system's requirements applying to the role — not to submit customer or personal data to unapproved AI services; not to represent an automated output as a human judgement; to observe the recorded limitations on the system's valid domain of use |
+| **Records, evidence and audit** | Undertaking not to alter or delete a record that constitutes evidence, and to observe legal holds when notified |
+| **Export control and sanctions** | Undertaking to observe cryptography and technology export restrictions and sanctions duties applicable to the jurisdictions in which they work, per SEC-REG-047 §5 |
+| **Sector and customer duties** | Where a customer contract imposes a specific duty on named personnel (a clearance, a residency, a background check, a training requirement), that duty is flowed down into the individual's instrument by a named schedule rather than assumed |
+
+### 3.3 Asset classification and handling responsibilities
+
+| Term | Content |
+|---|---|
+| **Acceptance of classification duties** | Undertaking to determine and apply the classification of information the person creates or receives, per the classification scheme, and to apply the handling rules for that classification — storage location, encryption, permitted sharing, permitted devices, retention and disposal |
+| **Named ownership** | Where the role is an information or asset owner, the instrument names that ownership and its duties: reviewing access, approving disclosure, and re-verifying classification on change. Ownership is contractual, not merely on an org chart |
+| **Asset custody** | Undertaking to safeguard issued assets — endpoint, credentials, tokens, removable media, physical access devices — to keep them enrolled and managed, not to circumvent management, and to report loss immediately |
+| **Acceptable use** | Incorporation of the acceptable-use terms, including the extent of permitted personal use and the **monitoring notice**: what is logged, why, on what basis, and how long it is kept. The notice appears in the instrument itself, because monitoring that has not been notified is neither fair nor lawful, and it is also what makes evidence acquisition from an issued device authorised (SEC-FOR-045 §7) |
+| **Clear desk and clear screen; remote working** | Incorporation of the endpoint and remote-working standard, including the location and network conditions under which the role may be performed |
+
+### 3.4 Consequences and enforcement
+
+| Term | Content |
+|---|---|
+| **Disciplinary consequence** | Statement that breach may result in disciplinary action up to termination, and for a contractor in immediate termination of engagement, with the process stated by reference to the disciplinary procedure so consequence and fairness are both on the face of the instrument |
+| **Proportionality** | Statement that the response takes into account whether the breach was deliberate or inadvertent, whether it was self-reported, whether it was a first occurrence, its actual and potential impact, and whether the person had been trained and equipped. Recorded here so that the same-treatment-regardless outcome cannot be justified by the contract |
+| **Liability and recovery** | The organization's position on recovery of loss, and the express statement that no term operates to discourage a good-faith report |
+| **Survival** | The terms that continue after the engagement, by reference to §6 |
+
+## 4. Terms are tailored to the nature and extent of access
+
+Uniform onboarding is correct for the baseline; uniform *contractual terms* are not, because the extent of
+a person's access determines what they can cause and therefore what they must be bound to. Every
+engagement is assigned an access tier at offer stage by the hiring manager with the CISO's concurrence for
+Tier 3 and above, recorded in the personnel record, and re-assessed on any role change.
+
+| Tier | Access | Additional contractual terms beyond the baseline |
+|---|---|---|
+| **Tier 0 — No access** | No access to organizational information systems (e.g. an external board member without a mailbox) | Confidentiality and IP only |
+| **Tier 1 — General** | Corporate systems, internal information, no customer evidence content, no production | Baseline of §3 in full |
+| **Tier 2 — Customer data** | Access to assessed organizations' evidence content or personal data | Named data-protection schedule; the specific customer duties flowed down (§3.2); prohibition on export outside the reviewed extraction path; extended confidentiality period per §6 |
+| **Tier 3 — Privileged / production** | Standing or break-glass access to production, to the audit account, to credentials, or to the CI/CD path | Acknowledgement that all privileged actions are logged and reviewed; break-glass usage terms including the post-use justification duty; **no unilateral change** term (author is not approver); prohibition on holding or creating a standing credential outside the approved mechanism; enhanced screening as a continuing condition of the role, re-verified per HR-POL-004 |
+| **Tier 4 — Security and governance authority** | CISO, DPO, Evidence Custodian, Internal Audit, and the named Qualified Handlers | Independence and conflict-of-interest declaration, annually renewed; evidence-handling duties per SEC-FOR-045; the duty to escalate to the Board where an instruction conflicts with this standard; the express statement that this duty **overrides line-management direction** |
+| **Supplier personnel** | Any of the above, via a supplier | The Information Security Annex, countersigned by the individual **and** by the supplier; the tier's additional terms; the supplier's own flow-down obligation; identification of the individual by name in the supplier's schedule so access is attributable to a person, not to a company |
+
+**Extent as well as nature.** Two people in the same tier may differ in extent — a Tier 2 engagement
+touching one customer's data differs from one touching all of them — so where a customer or a dataset
+imposes specific duties, those attach through the named schedule rather than being averaged into the
+baseline. Where a role's access is temporary (a time-boxed project, a covering assignment), the
+instrument states the period and the terms lapse with it, with the access removal verified against the
+instrument's expiry date rather than against a reminder.
+
+**Operating record at 2026-07-15:** 23 active engagements — Tier 1: 9, Tier 2: 6, Tier 3: 5, Tier 4: 3;
+4 supplier personnel under countersigned annexes. **0 engagements without an executed instrument**;
+0 tier assignments unrecorded; 2 tiers raised on role change during the period, both with the instrument
+re-executed before the new access was granted, not after.
+
+## 5. Communication before access
+
+The obligations are communicated and accepted **before** access is granted, not during induction after it.
+
+| Category | Point of communication | Gate |
+|---|---|---|
+| Employees | Terms provided with the written offer, before acceptance, so the person can read them while they still have a choice; signed on or before the first day | Account provisioning is blocked until the signed contract is recorded; onboarding security training completes within 5 business days |
+| Contractors and temporary workers | Information Security Annex issued with the engagement documents | **No credential is issued until the annex is countersigned** — verified by the provisioning workflow, which requires the recorded annex reference as an input |
+| Supplier personnel | Annex plus the supplier's flow-down, before named-individual access is requested | Access request rejected without the individual's countersigned annex reference |
+| Interns and short engagements | Same as contractors, with the terms explained in a briefing as well as issued in writing | Same gate |
+| Existing personnel on tier change | New or amended instrument issued and executed before the elevated access is granted | Elevation blocked pending execution |
+
+**Comprehension, not just signature.** The terms are written in plain language, provided in the working
+language, and the security elements are walked through in the onboarding session with time for questions;
+a signature obtained without opportunity to understand is weak evidence of obligation and worse practice.
+Where a person's role requires it, the walk-through is role-specific rather than generic.
+
+## 6. Obligations that continue after the engagement ends
+
+Stated in the instrument at the outset, and re-confirmed in writing at exit as a reminder of an existing
+obligation rather than as the creation of a new one. HR-PRO-042 *Termination, Change of Employment and
+Confidentiality Agreements Procedure* operates the exit process; this section states what the contract
+binds beyond it.
+
+| Obligation | Duration | Basis |
+|---|---|---|
+| **Confidentiality of the organization's confidential information** | **Indefinitely**, for as long as the information remains confidential; the duty ends only when the information lawfully enters the public domain through no act of the individual | Contract |
+| **Confidentiality of customer and third-party information** | Indefinitely, and never shorter than the duration the organization itself owes that customer under its contract — the flow-down cannot expire before the head obligation | Contract; customer DPA |
+| **Personal data** | Statutory duties continue independently of the contract and cannot be released by it | GDPR and equivalents |
+| **Trade secrets** | For as long as the information retains that character | Statute and contract |
+| **Return of assets and information** | Immediate at termination, with a signed inventory; the duty to return or destroy anything found later **continues indefinitely** and is expressly stated, because material surfaces months afterwards | Contract |
+| **Deletion attestation** | Written attestation within 5 business days that no organizational or customer information is retained on any personal device, personal account or personal storage — including chat exports, screenshots and local clones | Contract |
+| **Non-use of work product and IP** | Indefinitely; the assignment does not lapse | Contract |
+| **Assistance and cooperation** | Reasonable cooperation with an investigation, audit, regulatory enquiry or proceeding concerning the period of engagement, for **6 years**, with reasonable expenses met by the organization | Contract |
+| **Prohibition on re-access** | Absolute and indefinite: no attempt to access any system or account after the engagement ends, including with a credential that was not revoked. A working credential is not authorisation, and this is stated so the point cannot be argued | Contract |
+| **Non-disparagement and public statements about security** | Balanced with the express preservation of protected disclosures to a regulator, which are never restricted | Contract |
+| **Post-termination restrictions** (where lawful and applied) | Per the individual instrument and only where enforceable in the jurisdiction; the security-relevant element is the confidentiality duty above, which does not depend on any restraint being enforceable | Contract, subject to local law |
+
+**What the organization owes after the end:** written confirmation of what was returned and what remains
+outstanding; a reference process that does not disclose more than is lawful; retention of the personnel
+record only for the stated period; the continuing protection against detriment for anyone who made a
+good-faith report while engaged; and a point of contact for questions about the continuing obligations, so
+compliance does not depend on the individual guessing.
+
+**Exit verification.** At every exit, HR and the CISO jointly confirm: all access revoked (verified
+against the access register, not self-reported), assets returned against the issued inventory, the
+deletion attestation received, the continuing-obligations letter issued and acknowledged, and any customer
+notification the contract requires. Current period: 3 exits, all 5 steps complete on all 3, mean access
+revocation **41 minutes** from effective time, longest 2h10m — one contractor exit where the annex-derived
+expiry had already removed access before the manual step ran.
+
+## 7. Reviewing and updating the terms
+
+The terms are not static, and the failure mode is silent divergence: a policy is updated, the contract
+still references the old duty, and the incorporated obligation no longer matches the operating one.
+
+| Trigger | Action | Owner | Timeframe |
+|---|---|---|---|
+| **Change of law or regulation** affecting security, data protection, employment, copyright, export control or AI | General Counsel assesses effect on the model clauses; where a term must change, model clauses updated and the affected population re-papered | General Counsel | Assessment within 30 days of the change taking effect; re-papering within 90 days, or before the law's effective date if earlier |
+| **Change to an incorporated policy or standard** that alters what is required of an individual | Model clauses reviewed for consistency; where the change increases an obligation, affected personnel notified in writing and acknowledgement recorded | CISO with Head of People | Within 30 days of the policy version taking effect |
+| **New customer duty** flowed down to named personnel | Named schedule issued to the affected individuals and executed before the duty takes effect | Head of People with Legal | Before the customer's requirement is effective |
+| **New category of personnel or new engagement model** | Instrument designed for the category before the first engagement | Head of People | Before first engagement |
+| **Tier or role change** | Instrument re-issued and executed before access changes | Hiring manager with HR | Before access change |
+| **Incident or audit finding** implicating a contractual gap | Term added or clarified; recorded as a finding closure | CISO | Within the finding's due date |
+| **Scheduled review** | Full review of every model clause against current law, current policy versions, and the current engagement population — including a check that every incorporated document reference resolves to a document that still exists at the version cited | General Counsel, CISO, Head of People | Annually |
+
+**Consistency check.** Each scheduled review reconciles, in both directions: every information security
+policy that imposes an individual duty is incorporated by at least one clause, and every clause's
+incorporated reference resolves to a current document. The 2026-08-12 reconciliation covered 14 policies
+and standards and found **2 divergences** — the classification scheme had been revised without the
+handling clause being updated (closed in this version, §3.3), and the malware standard's new suspension
+authorisation duty was not reflected in the Tier 3 terms (closed in this version, §4). Both were the
+predicted failure mode, which is why the reconciliation is a standing step rather than a one-off.
+
+**Re-papering record.** 2026-08-14: all 23 active engagements re-papered to v2.3 terms — 19 by
+acknowledgement of an incorporated-policy update, 4 by fresh execution where an obligation increased.
+0 outstanding.
+
+## 8. Governance
+
+| What is checked | Frequency | By whom | Current state |
+|---|---|---|---|
+| Every person with access has an executed instrument at the correct tier | Monthly, reconciled against the access register | Head of People with CISO | 2026-08-01: 23/23, 0 exceptions |
+| No credential issued before execution | Continuous (provisioning gate) plus monthly sample | Head of Platform Engineering | 0 bypasses in the period |
+| Tier assignment recorded and current for every engagement | Quarterly and on role change | Hiring manager with CISO | 2026-07-15: 23/23 recorded |
+| Model clauses current against law and incorporated policies | Annually and on trigger | General Counsel | 2026-08-12: 14 documents reconciled, 2 divergences closed |
+| Supplier personnel annexes countersigned by individual and supplier | Quarterly | Procurement with CISO | 4/4 current |
+| Exit steps complete on every departure | Per exit, sampled quarterly | Head of People with CISO | 3/3 complete |
+| Deletion attestations received | Per exit | Head of People | 3/3 received |
+| Continuing-obligations letters issued and acknowledged | Per exit | Head of People | 3/3 |
+| Tier 4 independence declarations renewed | Annually | CEO | 3/3 current |
+| Enhanced screening currency for Tier 3 and above | Per HR-POL-004 cadence | Head of People | 8/8 current |
+
+## 9. Review history
+
+| Version | Date | Reviewer | Outcome |
+|---|---|---|---|
+| 2.0 | 2025-11-20 | Head of People + General Counsel | Established the standard: baseline clauses, contractor annex, pre-access gate |
+| 2.1 | 2026-02-19 | General Counsel | Added the copyright, licensing and data-protection legislation clauses as named terms |
+| 2.2 | 2026-05-14 | Head of People + CISO | Added the access tiers and the supplier named-individual requirement |
+| 2.3 | 2026-08-14 | CEO, General Counsel, CISO, Head of People | Made the commitment explicitly bilateral (§2); added asset-classification and monitoring-notice terms (§3.3), Tier 4 and extent-of-access tailoring (§4), the full post-engagement obligation set with durations (§6), and the review-and-update triggers with the two-way consistency check (§7). Closed the 2 divergences found by the 2026-08-12 reconciliation |

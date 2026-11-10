@@ -1,0 +1,184 @@
+# Reporting of Adverse Impacts and AI Incident Communication Plan
+
+**Document ID:** AIMS-PLAN-016
+**Version:** 3.2
+**Owner:** AI Operations Lead; external-communication content jointly with Legal & Privacy
+**Approved by:** AI Governance Board
+**Approval date:** 2026-03-06
+**Next scheduled review:** 2026-12-31, and after every Severity 1 or 2 incident
+**Scope:** The compliance-evaluation AI system in AWS account 471885797689 (us-west-2), and all
+communication with interested parties about its adverse impacts and incidents.
+
+---
+
+## Part A — Capability for interested parties to report adverse impacts
+
+### A.1 The capability
+
+The organization **provides the capability for interested parties, including users of the AI system and
+third parties external to the organization, to report adverse impacts** of the system. Reporting is
+possible without an account, without a support contract, and without identifying oneself.
+
+| # | Channel | Open to | Identification | Acknowledged within | Route |
+|---|---|---|---|---|---|
+| R-1 | **In-product "report a concern" on any result** | Users (analysts, assessed-organization staff) | Authenticated but may be submitted anonymously to the reviewer | 1 business day | Support queue, tagged `ai-adverse-impact` |
+| R-2 | **Public reporting form and published mailbox** (`ai-concerns@`) | **Anyone, including third parties external to the organization** — no account, no contract, no relationship required | Optional; anonymous reports accepted and investigated | 2 business days | Same queue, same triage |
+| R-3 | Contest / appeal a specific finding | Assessed organizations and their staff | Authenticated | 1 business day, substantive response 5 business days | Support queue + compliance analyst review |
+| R-4 | Internal reporting and speak-up line (incl. anonymous) | Personnel, contractors | Optional | 1 business day | AIMS-PRO-004 (AI Reporting of Concerns), same register |
+| R-5 | Data-subject rights and privacy contact | Individuals whose personal data may appear in evidence | As required to act | Statutory timeline | Legal & Privacy, then the same register |
+| R-6 | Supplier and partner channel | Suppliers, partners, downstream integrators | Identified | 2 business days | Account team, then the same register |
+| R-7 | Security vulnerability disclosure | Researchers, anyone | Optional | 1 business day | AI Security Lead |
+
+**No channel is dead-ended.** Every channel above writes into the **one** concerns register, so a report
+cannot be lost by arriving in the "wrong" place, and a pattern spanning channels is visible.
+
+### A.2 What may be reported
+
+Any adverse impact, not only defects: an incorrect or unjustified verdict; a verdict that appears
+unfair or systematically disadvantaging; a rationale that does not follow from the cited evidence;
+misuse of the system's output against an individual; privacy or data-handling concerns; inaccessible
+output; misleading claims made about the system; environmental or societal concerns; and any impact the
+reporter cannot categorize. The form deliberately accepts free-form reports — requiring a reporter to
+classify the harm correctly would suppress reports.
+
+### A.3 Monitoring and handling — alongside other reported issues and failures
+
+Reported adverse impacts are **monitored and handled together with other reported issues and system
+failures**, in the same register, on the same severity scale, in the same review forums. They are not
+tracked in a parallel "ethics" backlog that nobody prioritizes.
+
+| Stage | What happens | Owner | Timeline |
+|---|---|---|---|
+| Intake | Recorded in the concerns register with source channel, date, reporter category (or anonymous), description | AI Operations Lead | On receipt |
+| Acknowledge | Reporter acknowledged where identified | Support | Per §A.1 |
+| Triage | Severity assigned on the **same scale used for operational failures** (§B.2). An adverse-impact report is not automatically low severity — a fairness pattern is a Severity 2 by default | AI Operations Lead + Responsible AI Lead | 1 business day |
+| Investigate | Reproduced against the assessment id, journal and cited evidence; the specific verdict re-examined by a qualified analyst | AI Development Lead / analyst | Per severity |
+| Contain | Where the impact is live: correct or withdraw the affected result, disable the affected path, or suspend the system | AI Operations Lead | Per severity |
+| Respond to the reporter | Outcome communicated where the reporter is identifiable, including when we disagree and why | Support / Responsible AI Lead | 5 business days for substantive response |
+| Remediate | Fix, rubric change, documentation change, or a control change — tracked to closure with a named owner and date | Named owner | Per severity |
+| Aggregate review | **All** reports, defects and failures reviewed together for pattern and trend | AI Operations Lead → Responsible AI Lead | Monthly |
+| Governance review | Trends, unresolved concerns, and reports we declined, with reasons | AI Governance Board | Quarterly |
+| Feed back into the AIMS | Confirmed impacts update the impact assessment (AIMS-REC-005), the risk register, the evaluation corpus (as a permanent regression case) and, where relevant, user information (AIMS-STD-015) | Responsible AI Lead | With the fix |
+
+**Monitoring measures reported.** Report volume by channel and category; time to acknowledge and to
+substantive response; open reports past target; proportion of reports resulting in a change; repeat
+reports on the same cause; and the **anonymous-report rate**, which is watched as a signal about whether
+people feel able to report openly.
+
+**Non-retaliation.** No adverse consequence follows from a good-faith report, internal or external.
+Reporters may remain anonymous. Confirmed retaliation is itself a Severity 1 governance matter.
+
+**Reports we decline are recorded too**, with the reason and the reviewer, and are visible to the AIGB —
+a register that only contains accepted reports cannot be audited.
+
+---
+
+## Part B — Documented incident communication plan
+
+### B.1 Purpose and integration
+
+This plan governs **communication** about incidents. It is a section of, and is invoked by, the
+organization's overall incident management process — the same on-call, the same ticket, the same severity
+scale, the same post-incident review — so AI incidents are not handled in an isolated process by people
+unfamiliar with the system. This plan adds what general incident management does not cover: the
+**AI-specific incident types**, and the obligation to notify parties who are affected by a wrong
+*judgement* rather than by an outage.
+
+### B.2 Severity scale (shared with operational failures and adverse-impact reports)
+
+| Severity | Definition | Response start | Internal notification | External notification decision |
+|---|---|---|---|---|
+| **1 — Critical** | Wrong published verdicts at scale; confirmed data leakage across tenants; confirmed personal-data breach; systematic fairness failure; loss of the audit record; system used outside its intended purpose with material consequence | Immediate, 24×7 | AI Operations Lead, AI System Accountable Owner, Chief AI Officer, AI Security Lead, Legal & Privacy — immediately | **Within 4 hours** of confirmation, by the Chief AI Officer with Legal |
+| **2 — High** | Incorrect verdicts on a specific control or framework; scan coverage silently degraded; evidence mis-attribution; a credible fairness pattern; an unresolved adverse-impact report with live effect | 1 hour, business hours | Owner + Responsible AI Lead, same business day | Within 1 business day |
+| **3 — Moderate** | Localized inaccuracy, degraded performance, partial coverage loss with correct unable-to-assess reporting | 1 business day | Owner | Only if a customer result is affected |
+| **4 — Low** | Cosmetic or documentation defect, no verdict effect | Next planned work | Backlog | No |
+
+### B.3 Types of incidents covered, and who is notified for each
+
+Both **AI-specific** incidents and **security and privacy** incidents are addressed.
+
+| # | Incident type | Category | Typical severity | Parties notified | Detail included |
+|---|---|---|---|---|---|
+| I-1 | **Incorrect or unjustified verdicts published** | AI-specific | 1–2 | Affected assessed organizations; their analysts; internally the AIGB | Which assessments, which controls, the direction of error, whether the result is withdrawn or re-issued, what to do meanwhile |
+| I-2 | **Systematic bias or fairness failure** | AI-specific | 1–2 | Affected organizations; AIGB; regulator where a duty applies | The disparity found, the affected population, scope in time, remediation and re-assessment offer |
+| I-3 | **Evidence mis-attribution** — a read failure reported as customer non-compliance | AI-specific | 2 | Affected organizations | Which requirements were mis-stated, corrected status, corrected result |
+| I-4 | **Silent scan-coverage degradation** | AI-specific | 2 | Affected organizations; internally Operations | Period affected, resources not read, which results are unreliable |
+| I-5 | **Prompt injection or evidence manipulation succeeding** | AI-specific + security | 1–2 | Affected organizations; AI Security Lead; AIGB | What was manipulated, what verdicts are suspect, containment |
+| I-6 | **Model behaviour change / supplier-side drift causing verdict change** | AI-specific | 2 | Affected organizations if published results shifted; internally Operations | Model identifier before and after, measured effect, re-baseline plan |
+| I-7 | **Use outside intended purpose** (e.g. output used to evaluate an individual) | AI-specific | 1–2 | The organization using it; affected individuals via that organization; AIGB | The prohibited use, why it is prohibited, required cessation |
+| I-8 | **Loss of traceability or the audit record** | AI-specific | 1 | Affected organizations; external auditors relying on the record; AIGB | Period affected, what can no longer be substantiated |
+| I-9 | **Autonomous action beyond scope** (e.g. an attempted write in a customer account) | AI-specific + security | 1 | Affected account owner immediately; AI Security Lead | What was attempted, what succeeded, containment, evidence from the customer's own CloudTrail |
+| I-10 | **Personal-data breach** | Privacy | 1 | Data subjects and supervisory authority per statute; the customer as controller **without undue delay** | Nature, categories and approximate number of records and subjects, likely consequences, measures taken, DPO contact |
+| I-11 | **Cross-tenant data exposure** | Security | 1 | All affected customers | What was exposed, to whom, duration, containment, remediation |
+| I-12 | **Credential compromise / unauthorized access** | Security | 1 | Affected account owners; AWS as needed | Scope of access, actions taken under the credentials, revocation and rotation |
+| I-13 | **Availability incident** | Operational | 2–3 | Users via status communication | Impact, workaround, ETA |
+
+### B.4 Notification timelines
+
+| Party | Trigger | Timeline |
+|---|---|---|
+| Internal incident commander and system owner | Any Severity 1 or 2 | Immediately on detection |
+| Chief AI Officer / AI Governance Board | Severity 1 | Immediately; written summary within 24 hours |
+| **Affected customers / assessed organizations** | Confirmed incident with material effect on their results or data | **Severity 1: within 4 hours of confirmation. Severity 2: within 1 business day** |
+| Users, where their reliance on a result is affected | Confirmed I-1, I-3, I-4, I-6, I-8 | With the customer notification, and marked on the affected result itself |
+| **Data subjects** | Personal-data breach likely to result in high risk | Without undue delay, per statute and via the controller |
+| **Supervisory / data-protection authority** | Notifiable personal-data breach | **Within 72 hours** of becoming aware, per GDPR Art. 33 and equivalents; the clock is treated as starting at awareness, not at full understanding |
+| **Sectoral or AI regulator** | Serious incident under an applicable AI regime | Per that regime's stated deadline; Legal maintains the current deadline per jurisdiction in AIMS-REG-017 |
+| Model / cloud supplier | Incident implicating a supplier component | Within 1 business day, via the supplier's channel |
+| Downstream integrators and partners | Incident affecting data or results they consume | With the customer notification |
+| External auditors / certification bodies | Incident affecting evidence they have relied on | Within 5 business days, or sooner if a report is imminent |
+| Insurer, where a claim may arise | Per policy | Per policy |
+| Public statement | Broad impact or already public | Only via Corporate Communications with Legal approval |
+
+**Authorities to notify are identified in advance, not during the incident:** the named supervisory
+authority per jurisdiction of processing, the applicable AI-regime authority, the sectoral regulator
+where the assessed organization is regulated, and law enforcement where criminal activity is suspected.
+The current list with contacts and deadlines is maintained by Legal & Privacy in the reporting
+obligations register (**AIMS-REG-017**) and reviewed semi-annually.
+
+### B.5 Required details in a notification
+
+Every external incident notification contains: what happened, in plain language; **when** it started,
+was detected and was contained; **who and what is affected** — which assessments, controls, accounts,
+data categories and approximate volumes; **the effect on reliance** — whether affected results are
+withdrawn, corrected, or still usable, stated explicitly, because an ambiguous notification is worse
+than none; the **cause** to the extent known, with unknowns labelled as unknown rather than smoothed
+over; **what we have done and will do**, with dates; **what the recipient should do**; **a named contact**;
+and the incident reference for correlation. Follow-up communications are issued as understanding
+changes, and a final notice records the post-incident review outcome.
+
+**Rules:** never state a cause not yet established; never minimize; never delay a required regulatory
+notification while waiting for complete understanding; a **preliminary notification with clearly labelled
+unknowns is required** rather than a late complete one; and a wrong verdict that has already been relied
+on is disclosed even where no contract or statute compels it.
+
+### B.6 Roles
+
+| Role | Responsibility |
+|---|---|
+| Incident Commander (on-call) | Runs the response; declares severity; starts the communication plan |
+| AI Operations Lead | Technical containment; internal notification; register upkeep |
+| AI System Accountable Owner | Decides withdrawal, correction or re-issue of results |
+| Responsible AI Lead | Assesses impact on affected individuals and groups; owns fairness and adverse-impact aspects |
+| Legal & Privacy | Determine regulatory obligations, authorities and deadlines; approve external wording |
+| Chief AI Officer | Approves Severity 1 external communication; notifies the AIGB |
+| Corporate Communications | Any public statement |
+| Support | Reporter and customer correspondence; ensures every reporter is answered |
+
+### B.7 Testing, and evidence that the plan works
+
+The plan is exercised at least **semi-annually** as a tabletop, always including at least one
+AI-specific scenario rather than only an outage. Exercised so far: cross-tenant exposure (2025-11-13),
+systematic wrong verdicts requiring withdrawal of published results (2026-01-22), personal-data breach
+with a 72-hour clock (2026-02-19). Each exercise produced actions; the 2026-01-22 exercise is why §B.5
+now requires the effect-on-reliance statement, and why an early notification with labelled unknowns is
+mandatory. Contact lists and regulatory deadlines are verified at each exercise.
+
+## C. Review history
+
+| Version | Date | Reviewer | Outcome |
+|---|---|---|---|
+| 2.0 | 2025-10-15 | AI Operations Lead | Established the plan, severity scale and timelines |
+| 3.0 | 2026-01-08 | AI Operations Lead + Legal & Privacy | Added AI-specific incident types I-1…I-9 and the authority list; integrated with the general incident process |
+| 3.1 | 2026-02-19 | AI Operations Lead | Added the 72-hour clock handling and the preliminary-notification rule after the breach tabletop |
+| 3.2 | 2026-03-06 | AI Operations Lead + Responsible AI Lead, approved by AIGB | Merged adverse-impact reporting (Part A) into the same register and severity scale as operational failures; added the anonymous-report-rate and declined-report monitoring |

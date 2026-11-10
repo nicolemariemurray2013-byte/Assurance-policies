@@ -1,0 +1,739 @@
+# Secure Development, Architecture, Coding and Testing Standard
+
+**Document ID:** ENG-SDL-048
+**Version:** 3.1 — **effective 2026-08-20**, superseding v3.0 of 2026-03-23 and v2.0 of 2025-06-03
+
+**Revision note.** Version 3.1 adds §7A.1 (protection of the development infrastructure itself —
+repository and pipeline encryption at rest and in transit, federated authentication with no local
+accounts or long-lived tokens, enumerated pipeline administrators, branch and history protection with
+force-push blocked, separation of build from deploy from approve, artifact integrity, and an audit
+trail administrators cannot alter for their own actions) and §7A.2 (licensing obligations: the
+licence policy by category enforced as a hard build gate, obligation tracking rather than only
+permission, licence re-evaluation on upgrade, commercial entitlement reconciliation, concentration
+risk from a single controlling licensor, and the cost-effectiveness comparison of licensing
+alternatives with the two decisions that went against the cheaper option). Both were previously
+practised and unwritten, which meant neither could be audited.
+**Owner:** Head of Platform Engineering
+**Approved by:** CISO 2026-03-18, per the approval authority in GOV-POL-040 §3
+**Next scheduled review:** 2026-12-31 (Annually, and on any change to the technology stack, the outsourced-development)
+arrangement, the deployment pipeline, or the introduction of a new class of system (including any new use of
+machine learning in a decision path)
+**Scope:** All information system development and acquisition — the entity's own service (a TypeScript/Node
+platform and its infrastructure as code, deployed to AWS us-west-2), the internal tooling that supports
+assessment operations, the infrastructure-as-code that defines the environment, the outsourced development
+performed by the 11 named vendor individuals, and every acquired application or component the entity builds on.
+Covers security requirements, architecture and engineering principles, coding, testing and acceptance, and the
+selection, protection and disposal of test information.
+
+**Related:** SEC-NET-047 (network security and segregation), SEC-CFG-025 (secure configuration and
+vulnerability management), SEC-IAM-021 (identity and access), SEC-CRY-024 (cryptography and key management),
+SEC-MON-026 (logging and monitoring), OPS-CHG-028 (change management), SEC-INC-032 (incident management),
+GOV-RSK-005 (risk assessment), GOV-CLS-018 (classification and handling), TPR-PRO-016 (supplier risk),
+HR-PRO-042 (confidentiality undertakings), SEC-MED-046 (secure deletion), GOV-PRI-035 (privacy).
+
+---
+
+## 1. What is developed here, and by whom
+
+| Development activity | Who performs it | Highest classification handled | Governing gate |
+|---|---|---|---|
+| Platform service — API, assessment engine, evidence handling | 9 entity engineers | **Restricted** | Full life cycle in this standard |
+| Infrastructure as code — VPC, IAM, data stores, pipelines | 4 entity engineers (Platform) | Restricted (defines the controls) | Same, plus a stricter review rule (§4.6) |
+| Internal operations tooling | 3 entity engineers | Internal, occasionally Confidential | Same standard, proportionate test depth |
+| **Outsourced development** — 2 feature workstreams | **11 named vendor individuals** at one supplier | Restricted, via brokered session only | This standard is **contractually binding** on them (§2.3); their code passes the same gates |
+| **Acquired applications and SaaS** | Selected by function owners | Up to Restricted | Acquisition security requirements (§3.6) and supplier assessment |
+| **Acquired components** — open-source and commercial libraries | Any engineer, within policy | — | Component policy (§5.7) |
+| **Machine-learning components** | Currently: a third-party foundation model consumed as a service in the assessment path | Restricted (inputs) | Requirements in §3.5 and the AI-specific controls in the entity's ISO 42001 management system |
+
+**Scale shapes the honest answer to several requirements.** With 16 people writing code, the entity has no
+separate application-security team, no dedicated QA function and no independent internal test team. Where a
+requirement assumes such a function, this standard says what is done instead, and whether the substitution is
+genuinely equivalent or a compensated gap — the second case is recorded under §4.6's acknowledgement mechanism
+rather than glossed over.
+
+---
+
+## 2. Governance of secure development
+
+### 2.1 Organization-wide processes providing governance for secure coding (8.28-R1)
+
+| Governance element | Instrument | Applies to |
+|---|---|---|
+| **Minimum secure baseline for software development** | The secure development baseline: mandatory static analysis, dependency scanning, secret scanning, IaC scanning, peer review, branch protection, signed commits, no direct push to the default branch, pipeline-only deployment | **Every repository without exception**, including internal tooling and IaC — enforced by organisation-level policy, not per-repository opt-in, because per-repository configuration is how baselines decay |
+| **Extension to third-party and open-source components** | The component policy (§5.7): inventory, provenance, vetting, licence review, patch SLA, and the same scanning applied to transitive dependencies | All acquired code, which is the majority of the bytes shipped |
+| Coding standards | Language-specific standards (§5.4), enforced by linter and formatter in CI |
+| Secure design | Threat modelling requirement and its trigger (§4.5) |
+| Testing | Test gates and their proportionality (§6) |
+| Exceptions | Any deviation is a recorded, time-bound, CISO-approved exception; **3 open, each with an owner and an expiry** |
+| Ownership and review | Head of Platform Engineering owns; reviewed annually and on stack change (§4.8) |
+
+Baseline compliance is **measured, not declared**: a weekly report states, per repository, whether each baseline
+control is enforced. **Current state: 14 of 14 repositories fully enforced**; two internal-tooling repositories
+were the last to reach it, and the fact that they lagged is why the report exists.
+
+### 2.2 Monitoring real-world threats and vulnerability advice to improve the principles (8.28-R2)
+
+Secure coding principles are improved from evidence rather than revised on a calendar:
+
+- **Inputs monitored continuously:** the language ecosystem's advisory database and the dependency scanner's
+  feed; provider security bulletins; CISA/national advisories and the KEV catalogue; the OWASP Top 10 and the
+  CWE Top 25 as periodic recalibration; the entity's own findings — every static-analysis finding, review
+  comment class, penetration-test finding and production defect with a security dimension.
+- **The entity's own defects are the most valuable input and are treated as such:** each security-relevant
+  defect gets a short **written retrospective asking whether a coding standard, a lint rule, a test, or a
+  design principle would have prevented it** — and the answer becomes a change. Three examples this period:
+  an authorization check placed in a controller rather than in the data-access layer produced a **mandatory
+  rule that tenant scoping is enforced at the query layer** plus a lint rule; a log line that included a
+  request body produced a **structured-logging redaction helper and a rule banning raw-object logging**; and a
+  cache response served without an identity dimension in the cache key produced the **explicit cache-keying
+  requirement** now in §3.3 and SEC-NET-047 §7.4.
+- **Cadence:** advisories triaged daily by the on-call engineer; the coding standards and the threat-model
+  library reviewed **quarterly** against what has actually been seen; the principles reviewed annually (§4.8).
+- Engineers receive the resulting changes as **tooling and rules first, guidance second**, because a rule
+  enforced in CI outlives a memo.
+
+### 2.3 Outsourced development (8.27-R5, 8.29-R5)
+
+The engineering principles and procedures in this standard are applied to outsourced development **through
+contracts and binding agreements that ensure the supplier's practices align with the entity's needs**:
+
+| Obligation | How it binds |
+|---|---|
+| This standard applies in full to the supplier's work | Named and incorporated by reference in the master services agreement's security annex |
+| Named individuals only, each under an **individual confidentiality undertaking** | HR-PRO-042 §4.3; 11 of 11 current, and one lapse (**D-2026-014**) is on the deficiency register rather than hidden |
+| Development occurs **in the entity's environment, on the entity's pipeline, through the brokered session** — the supplier does not hold a copy of the codebase on its own infrastructure | Contract plus architecture; 8 of the 11 have no entity device at all (SEC-MED-046 §4.1) |
+| Same gates, no exemption: review by an entity engineer, static analysis, dependency and secret scanning, test coverage, threat model where triggered | Pipeline enforcement — the supplier's merge cannot bypass a gate that is enforced for everyone |
+| Secure coding expectations stated explicitly rather than assumed | The security annex names the coding standards, the prohibition on hard-coded secrets and unapproved code samples, and the component policy |
+| Right to review the supplier's own practices; screening attestation for each named individual | Contract; verified at onboarding and annually by the Third-Party Risk Manager |
+| Vulnerability handling and notification obligations, including a **24-hour notice** of any incident touching entity information | Contract (HR-PRO-042 §4.2) |
+| Source code and IPR ownership; **return and deletion on exit** | Contract; SEC-AST-041 |
+| Offboarding | Terminate-then-initiate via the identity system, badge and certificate revocation, access-log review (HR-PRO-042 §5) |
+
+**The honest limitation:** the entity relies on contract and pipeline enforcement, not on an audit of the
+supplier's internal engineering practices, which it has the right but not the capacity to perform in depth. That
+reliance is recorded under §4.6 with the compensating control that **no supplier code reaches production without
+an entity engineer's review and the full gate set**.
+
+---
+
+## 3. Application security requirements (8.26)
+
+### 3.1 Identification and specification of requirements, supported by risk assessment and specialist input (8.26-R1)
+
+- Security requirements are identified at the **start** of any new application, any material change to an
+  existing one, and any acquisition — the trigger is written into the intake template so it cannot be a
+  late-stage addition.
+- **Supported by a risk assessment:** the intake includes a risk assessment against GOV-RSK-005 — assets and
+  classifications touched, threat scenarios, impact, existing controls, and the requirements the gap implies.
+  For anything touching Restricted information or a trust boundary this is a full assessment; for lower-impact
+  work it is a short recorded determination, and the proportionality rule is stated so that "proportionate" is
+  not read as "skipped".
+- **Supported by information security specialists:** the CISO and the two most senior platform engineers act as
+  the specialist function; **the CISO's involvement is mandatory** for anything touching authentication,
+  authorization, cryptography, tenant isolation, personal data, or an external interface. Where the entity's
+  in-house depth is insufficient — the two cases this period were the cryptographic key-hierarchy design and the
+  foundation-model data-handling review — **external specialist input was retained**, and that is the recorded
+  answer to a requirement a 48-person entity cannot always meet from inside.
+- Requirements are written as **testable statements** with an acceptance criterion, because a requirement that
+  cannot be tested cannot be verified at acceptance (§6.2).
+
+### 3.2 Formal approval of requirements (8.26-R2)
+
+Security requirements are **formally approved** before development or acquisition proceeds: the requirement set
+is recorded in the design record, approved by the **Head of Platform Engineering and, where §3.1's triggers
+apply, the CISO**, with the approval dated and attributable. The approval is a **pipeline-visible gate** — a
+change flagged as security-relevant cannot merge without the approval reference on the design record. Changes to
+an approved requirement set require re-approval, so a requirement cannot be quietly dropped during
+implementation, which is the failure mode this gate exists for. **Approvals this period: 12 requirement sets, 4
+requiring CISO approval, 1 sent back for insufficient tenant-isolation specification before approval.**
+
+### 3.3 Requirements that must be addressed where applicable (8.26-R3)
+
+| Element the requirement names | The entity's standing requirement |
+|---|---|
+| **Level of trust in entity identity (authentication)** | Human access: **SSO with MFA**, through the identity-aware proxy, with session binding and re-authentication for sensitive actions; no local application accounts. Service-to-service: **mutual TLS or SigV4 with IAM roles**, no shared secrets, no long-lived keys. Customer-facing identity assurance is specified per interface, and the assurance level is stated explicitly rather than inherited by accident |
+| **Identification of information types and classification levels** | Every data element the application handles is classified in the design record against GOV-CLS-018, with its storage, retention and permitted-transit rules; an unclassified element is a review blocker. This is what makes the handling requirements below concrete |
+| **Segregation of access and access levels to data and functions** | **Tenant scoping enforced at the data-access layer, not in a controller** — the mandatory rule that came out of a real defect (§2.2); role- and attribute-based authorization checked on every request at the proxy and again in the application (defence in depth); function-level authorization tested explicitly; **identity included in every cache key** so a cached response cannot cross a tenant boundary; least-privilege IAM roles per component, with no component holding a permission it does not exercise |
+| **Resilience against malicious attacks and unintentional disruption — e.g. buffer overflow, SQL injection** | Memory-safe language for application code (no manual memory management, which removes the buffer-overflow class rather than testing for it); **parameterised queries only, with string-concatenated SQL blocked by lint and by static analysis**; output encoding and a strict Content Security Policy against injection into the browser; SSRF protection with an egress allowlist; deserialisation restricted to expected types; rate limiting and request-size limits; timeouts, retries with jitter, circuit breakers and bulkheads against unintentional disruption; resource quotas so one tenant cannot exhaust another's capacity |
+| **Input controls: integrity checks and input validation** | **Validate at the boundary against a positive schema** (allowlist, typed, with bounds), not by rejecting known-bad patterns; canonicalise before validating; validate on the server regardless of client validation; integrity checks on anything received from outside — checksum or signature verification on uploaded evidence, signature verification on webhooks, content-type and size enforcement, and **treating scan output and model output as untrusted input rather than as trusted internal data**, which is a specific and easily-missed case in this platform |
+
+### 3.4 Further requirements that must be addressed where applicable (8.26-R4)
+
+| Element the requirement names | The entity's standing requirement |
+|---|---|
+| **Legal, statutory and regulatory requirements in relevant jurisdictions** | The design record names the applicable regimes across the entity's **five jurisdictions** — data protection, sectoral obligations, breach-notification timelines and records-retention law — and the requirements they impose (lawful basis, data-subject rights, data-residency, retention and deletion). General Counsel reviews the design where a new jurisdiction, a new personal-data category or a new cross-border flow is introduced |
+| **Privacy needs of all parties involved** | Privacy by design under GOV-PRI-035: data minimisation as a design constraint; purpose limitation stated per data element; a **DPIA triggered** by new personal-data processing, profiling or a new cross-border transfer; retention and deletion designed in rather than retrofitted; and the privacy interests of **personnel** as well as customers considered — which is why endpoint location tracking, TLS inspection and behaviour analytics carry disclosed purpose limitations (SEC-MED-046 §4.5, SEC-NET-047 §9.1) |
+| **Protection of confidential information** | Classification-driven handling; **Restricted material is rendered through a brokered session and never written to an endpoint**; field-level protection for the most sensitive attributes; redaction in logs and in error messages by a shared helper rather than by per-site diligence; least-privilege data access with access logged |
+| **Protection of data while being processed, in transit, and at rest** | **In transit:** TLS 1.2+ externally and internally, mutual TLS between services. **At rest:** encryption with entity-managed keys, separate keys per data domain, rotation and access logging (SEC-CRY-024). **In processing:** the hardest of the three and stated concretely — memory-safe language; secrets held only in a secrets manager and injected at runtime, never in an image, an environment file in source, or a log; short-lived credentials; no plaintext persistence of Restricted values outside the intended store; temporary files avoided and, where unavoidable, written to encrypted ephemeral storage and deleted deterministically; and no Restricted content in crash dumps or telemetry |
+| **Secure encryption of communications** | Specified parameters, not defaults: minimum TLS version, cipher suite policy, PFS, certificate types and lifetimes, HSTS, and certificate transparency monitoring (SEC-NET-047 §7.4) |
+| **Requirements derived from business processes — transaction logging, monitoring, non-repudiation** | An **immutable audit trail** of assessment and evidence actions: who, what, when, from where, with the before-and-after state; append-only storage with object lock so the trail cannot be edited by the application or by an administrator; **non-repudiation** via authenticated identity on every action, signed commits and pipeline attestation on every deployment, and a signed record of every published assessment result; time from an authenticated source so ordering is defensible |
+| **Requirements mandated by other security controls — interfaces to logging, monitoring, data-leakage detection** | Applications **must** emit structured logs to the central SIEM in the agreed schema (a design-review checklist item, not an afterthought), expose health and security metrics, integrate with the alerting path, and route outbound transfers through the sanctioned services that DLP inspects. An application that cannot be monitored is not accepted |
+
+### 3.5 Transactional and ordering/payment requirements (8.26-R5, 8.26-R6)
+
+Both requirements are conditional on the entity offering such services, and the position is stated precisely
+rather than dismissed:
+
+| Requirement | Position |
+|---|---|
+| **Applications offering transactional services between the organization and a partner — additional requirements, including mutual trust in claimed identity (8.26-R5)** | **Applicable, and met.** The platform exchanges assessment and evidence transactions with customer and partner systems across a trust boundary, so the additional requirements are specified: **mutual trust in claimed identity** established by **mutual TLS with pinned or CA-constrained client certificates, or by OAuth 2.0 client-credentials with per-partner credentials** — never by a shared API key in a header, and never by IP allowlist alone; per-partner identity, so one partner cannot act as another; **authorization of the transaction** separately from authentication of the party; **integrity and origin authentication of the message** (signed payloads or authenticated transport), with replay protection by nonce and timestamp window; **idempotency keys** so a retried transaction cannot double-apply; **non-repudiation** through the immutable, signed audit trail on both request and outcome; **confidentiality** in transit and at rest per classification; **agreed error and dispute handling**, so a failed transaction has a defined state rather than an ambiguous one; and **contractual agreement of these mechanisms with each partner**, recorded in the integration record. Each integration's mechanism set is documented and reviewed annually — **3 partner integrations, 3 records current** |
+| **Applications involving electronic ordering and payment — additional requirements, including confidentiality and integrity of order information (8.26-R6)** | **The entity operates no electronic ordering or payment application: it does not accept card payments, stores no cardholder data, is not in PCI DSS scope, and has no e-commerce or ordering interface.** Contracting and invoicing are performed offline through General Counsel and Finance, with payment by bank transfer initiated in the bank's own portal under dual authorisation — a **financial** control that lives in the finance procedures, not an entity-developed application. The requirement is therefore **not applicable**, and the trigger is recorded: were an ordering or payment capability introduced, the intake in §3.1 would require the additional requirements 8.26-R6 names — confidentiality and integrity of order information, verification of the payment instrument, non-repudiation of the order, PCI DSS scoping, tokenisation so cardholder data never enters entity systems, and a separate risk assessment before build. Recording the trigger is what keeps a "not applicable" from becoming silently wrong |
+
+### 3.6 Acquired applications and services
+
+Acquisition follows the same requirement set, applied as **selection criteria and contract terms rather than as
+build specifications**: security requirements are specified and approved *before* selection; candidates are
+**evaluated against those criteria before acquisition** (8.29-R5) using the vendor's attestation, its
+documentation, its CUECs, a security questionnaire and — for anything handling Confidential or above — hands-on
+evaluation in the non-production environment; the requirements that survive become contract terms (encryption,
+SSO/SCIM, audit-log export, breach notification, sub-processor control, deletion on exit, right to audit); and
+the supplier assessment under TPR-PRO-016 runs in parallel. **6 acquisitions evaluated this period; 1 rejected**
+on the absence of audit-log export and enforced SSO, with the rejection recorded because a documented rejection
+is the best evidence that the criteria are real.
+
+---
+
+## 4. Secure system architecture and engineering principles (8.27)
+
+### 4.1 Established, documented and maintained principles covering the full control range (8.27-R1)
+
+The entity's secure engineering principles are documented in this section and maintained under §4.8. They cover
+the **full range of controls needed against identified threats**, and — as the requirement specifically demands —
+they include **analysis of control capability, control placement, and how individual controls combine into an
+integrated set**:
+
+| Principle | What it requires in practice |
+|---|---|
+| **Security by design** | Security requirements precede implementation (§3); threat modelling at design time (§4.5) |
+| **Defence in depth** | No single control carries a boundary alone: WAF *and* input validation; proxy authorization *and* application authorization *and* query-layer tenant scoping; encryption in transit *and* at rest; EDR *and* filtering *and* posture gating |
+| **Security by default / secure defaults** | New components start closed: private subnet, no public address, default-deny security group, no permissions, logging on, encryption on. Opening anything is an explicit, reviewed change |
+| **Default deny** | Authorization, network policy, egress and web filtering all default to deny; allowances are enumerated and justified |
+| **Fail securely** | An error denies rather than permits: a failed authorization check denies, a failed posture check denies, an unreachable policy service denies, a timeout does not fall back to an unauthenticated path. **Fail-closed behaviour is explicitly tested**, because it is the behaviour least likely to be exercised accidentally |
+| **Least privilege** | Per-component IAM roles; no standing admin; short-lived credentials; permissions reviewed against actual use, with unused permissions removed |
+| **Least functionality** | Minimal base images, no shell in production containers where avoidable, unused features and endpoints removed rather than left dormant, no debug endpoint in production |
+| **Complete mediation** | Every request is authorised at the point of access; there is no path that bypasses the check |
+| **Separation of duties** | Author ≠ approver; deploy is pipeline-only, so no engineer both writes and unilaterally releases |
+| **Minimise attack surface** | One ingress; no bastion; no SSH; every exposed interface enumerated and justified |
+| **Assume compromise** | §4.4 |
+
+**Control capability, placement and integration** is a required, recorded part of every design review, not a
+principle recited: the design record states, for each threat in the threat model, **which control addresses it,
+where that control sits (edge, proxy, application, data layer, infrastructure), what its capability and known
+limits are, and which other control covers it if it fails**. This is what turns a list of controls into an
+integrated set, and it is the section of the design record most often sent back for rework — twice this period.
+
+### 4.2 Security designed into all architecture layers; new technology analysed; designs reviewed against known attack patterns (8.27-R2)
+
+| Layer | Security designed in |
+|---|---|
+| **Business** | Which processes may exist at all: assessment publication requires an authenticated actor and produces an immutable record; the deliberate **absence** of a payment process (§3.5) is itself a business-layer decision that removes a whole risk domain |
+| **Data** | Classification per element; retention and deletion; minimisation; tenant partitioning; key separation per domain; the immutable audit store |
+| **Application** | Authentication, authorization at every layer, input validation, output encoding, secrets handling, structured logging with redaction, error handling that reveals nothing |
+| **Technology** | Network segregation (SEC-NET-047), hardened images, IaC-defined boundaries, pipeline attestation, runtime detection |
+
+- **New technology is analysed for security risk before adoption**: a new language, framework, datastore,
+  managed service, or third-party component class requires a recorded evaluation — its security model, its
+  vulnerability history and maintenance posture, its default configuration, the operational expertise required,
+  and whether the entity can monitor and patch it. Adoption of the foundation-model service in the assessment
+  path went through this analysis and produced specific requirements (prompt-injection treatment of untrusted
+  input, no training on entity data, data-residency and retention terms, and output treated as untrusted input
+  per §3.3).
+- **Designs are reviewed against known attack patterns** using a maintained pattern library — OWASP Top 10 and
+  API Top 10, the CWE Top 25, ATT&CK techniques relevant to a cloud SaaS, and the entity's **own** history: the
+  three defects in §2.2 are now standing questions in every design review, which is the most useful attack
+  pattern library an organisation can have.
+
+### 4.3 Recognized principles, design reviews, documented shortfalls, and hardening (8.27-R3)
+
+The requirement bundles four things, and each is answered: the **recognized principles** are enumerated in §4.1;
+**security-oriented design reviews** are described in §4.5; **formal documentation and acknowledgement of
+controls that do not fully meet requirements** is §4.6; and **system hardening** is SEC-CFG-025 plus SEC-NET-047
+§4.4, applied to base images, containers, runtime configuration and network devices, verified by benchmark
+scanning with recorded, justified deviations rather than an unqualified compliance claim.
+
+### 4.4 Zero trust principles (8.27-R4)
+
+Zero trust principles are **considered and, where appropriate, applied** — and here they are largely applied,
+because a remote-first entity with no trusted corporate network has little alternative. Each element the
+requirement names:
+
+| Element | Applied? | How |
+|---|---|---|
+| **Assume the information system may already be breached** | **Yes** | Detection and response designed for post-compromise, not only prevention: EDR, flow-log and DNS detections, log-source silence alerting, blast-radius limits per component role, credentials short-lived so a stolen one expires, and **quarterly incident simulations that begin from an assumed foothold** rather than from an external probe |
+| **Never trust, always verify** | **Yes** | No access from network position; every request authenticated and authorised at the proxy and again in the application; device posture verified at every session; service-to-service calls authenticated even inside the VPC |
+| **Encrypt requests end-to-end** | **Yes** | TLS externally and **mutual TLS internally**, so a request is protected across every hop rather than only at the edge |
+| **Verify each request as if it originated from an open external network** | **Yes** | The design decision in SEC-NET-047 §1: **the office network has no path to production**, so an internal request is treated identically to an external one. This is the element most organisations claim and few implement, and here it is implemented by the absence of the path rather than by policy |
+| **Least privilege and dynamic access control with strong authentication** | **Yes, with a stated limit** | Per-component least-privilege roles; no standing human admin; time-bound elevation; MFA everywhere; **dynamic** control through posture-gated access and re-authentication for sensitive actions. The limit: authorization decisions are **not** yet fully continuous within a session — re-evaluation happens at session establishment, on sensitive actions and on posture change, but not per-request for every action. Recorded under §4.6 with continuous-evaluation improvement on the roadmap, rather than claimed |
+| Micro-segmentation | Yes | Group-referencing default-deny security groups per component; account boundary for non-production |
+
+### 4.5 Security-oriented design reviews and threat modelling (8.27-R3, 8.28-R3)
+
+- **Threat modelling is mandatory** for: a new service or component; any change to a trust boundary,
+  authentication or authorization; any new external interface or integration; any new data classification
+  handled; and any new technology class. It uses a **written method** (STRIDE against a data-flow diagram) with
+  a shared library of prior models, so each model starts from the last rather than from a blank page.
+- The **design review** is a scheduled session, not an asynchronous comment thread, attended by the designing
+  engineer, a second senior engineer and — on §3.1's triggers — the CISO. Its output is recorded in the design
+  record: the model, the control mapping with placement and integration (§4.1), the residual risks, the
+  acknowledged shortfalls (§4.6), and the **testable security acceptance criteria** that §6 will verify.
+- **This period: 12 design reviews, 9 threat models, 2 designs sent back for rework** (one for insufficient
+  tenant-isolation specification, one for an incomplete control-integration analysis). Recording the rework is
+  what distinguishes a review from a rubber stamp.
+
+### 4.6 Formal documentation and acknowledgement of controls that do not fully meet requirements (8.27-R3)
+
+Controls that **do not fully meet requirements are formally documented and acknowledged** rather than left as
+silent gaps. The mechanism is a **register of acknowledged control shortfalls**, each entry holding the
+requirement, the shortfall, the reason, the compensating controls, the residual risk, the accepting authority
+and the review date. It is reviewed quarterly by the CISO and annually by the Board's risk committee. **Current
+entries relevant to this standard:**
+
+| ID | Shortfall | Compensating controls | Accepted by | Review |
+|---|---|---|---|---|
+| **R-014** | Network and system privilege concentrated in one team; no separate network-operations function | IaC-only changes with mandatory second-engineer review; console mutation denied; daily drift detection; CloudTrail alarms; quarterly access review | CISO | Annual |
+| **R-022** | Single-region deployment | Multi-AZ; infrastructure as code enabling regional rebuild; **quarterly restore test** as the accepted condition | Board | Annual |
+| **R-031** | No separate application-security or QA function; author-adjacent review | Mandatory second-engineer review; automated gates that are not discretionary; **annual external penetration test as the independent check**; external specialist input retained for cryptography and model-handling design | CISO | Annual |
+| **R-032** | Authorization is not continuously re-evaluated per request within a session (§4.4) | Short sessions; re-authentication on sensitive actions; posture-change revocation; immutable audit trail | CISO | Annual, with continuous evaluation on the roadmap |
+| **R-033** | Reliance on contract and pipeline enforcement for the outsourced supplier's internal engineering practices, without a deep practice audit | All supplier code passes the full gate set and an entity engineer's review; brokered-session-only access; individual undertakings; annual attestation | CISO | Annual |
+
+Naming these is the point: a shortfall on a register with a compensating control and an owner is a managed risk,
+whereas the same shortfall omitted from a standard that reads as complete is a misrepresentation.
+
+### 4.7 Applying the principles to all development activities (8.27-R5)
+
+The principles apply to **every** development activity, with no exemption for small changes, internal tooling,
+infrastructure code or supplier work. Enforcement is structural rather than cultural: the gates are
+organisation-level (§2.1), the pipeline is the only deployment path, and the design-record requirement is part
+of the intake template. Internal tooling is the case where exemption is most tempting and is explicitly refused
+— the operations tooling reads customer evidence, so a shortcut there would be a shortcut around Restricted
+data. Proportionality is expressed in the **depth** of the artefacts (a short determination rather than a full
+assessment for low-impact work), never in whether the gate applies.
+
+### 4.8 Regular review of the principles and procedures (8.27-R6)
+
+The principles and the engineering procedures are **reviewed regularly to confirm they enhance security, remain
+current against new threats, and remain applicable to the technologies in use**:
+
+- **Annual review** by the Head of Platform Engineering and the CISO, with three explicit questions: has each
+  principle actually prevented or caught something (evidenced from findings and review comments); has a new
+  threat or technique emerged that no principle addresses; and is any principle now inapplicable or
+  counterproductive given the current stack?
+- **Quarterly** lighter review of the coding standards, lint rules and threat-model library against the period's
+  findings (§2.2).
+- **Event-driven review** on: adoption of a new technology class, a security incident with a design cause, a
+  penetration-test finding indicating a design rather than an implementation defect, and any material change to
+  the outsourcing arrangement.
+- **This year's review produced four changes**, recorded in §9: fail-closed behaviour became an explicitly
+  tested property after a simulation found one code path that failed open; the control **placement and
+  integration** analysis became a required design-record section after two reviews produced control lists with
+  no integration reasoning; **model output was reclassified as untrusted input** following the foundation-model
+  adoption analysis; and R-032 was added rather than allowing the zero-trust claim to stand unqualified.
+
+---
+
+## 5. Secure coding (8.28)
+
+### 5.1 Planning and prerequisites before coding (8.28-R3)
+
+| Element the requirement names | How it is satisfied |
+|---|---|
+| **Organization-specific expectations for in-house and outsourced development** | The secure development baseline (§2.1) and the coding standards (§5.4), stated in the engineering handbook and **incorporated into the supplier's contract** (§2.3) so the expectation is identical for both populations |
+| **Awareness of common and historical coding defects** | Annual secure-coding training for all 16 engineers (**16/16 complete**), language-specific and hands-on rather than generic; the entity's own defect retrospectives circulated (§2.2); OWASP/CWE material in the design-review pattern library; new engineers walk through the three real defects during onboarding |
+| **Configuration and maintenance of development tools** | Toolchain versions pinned and managed; IDE security plugins and pre-commit hooks distributed as a managed configuration; **CI runner images built by the entity from a minimal base and patched on the same SLA as production**; the build system's own dependencies scanned, because the pipeline is a production system and a compromised runner is a supply-chain compromise |
+| **Developer qualification in writing secure code** | Secure-coding training as a prerequisite to commit access; **review authority is a named permission**, granted on demonstrated competence rather than by tenure; the two senior engineers act as the specialist reviewers for cryptography, authentication and authorization changes |
+| **Secure design and architecture, including threat modelling** | §4.5 |
+| **Secure coding standards** | §5.4 |
+| **Use of controlled development environments** | §7.1 — non-production in a separate AWS account, IaC-provisioned, no operational data, access-controlled, with development on entity-managed or brokered-session devices only |
+
+### 5.2 Practices applied during coding (8.28-R4)
+
+| Element | Practice |
+|---|---|
+| **Practices specific to the languages and techniques used** | TypeScript/Node standards: `strict` mode with **no `any`**; validated parsing at every boundary (schema-first, not cast-first); no `eval` or dynamic `require`; safe JSON handling with prototype-pollution protection; explicit `await` and no floating promises; timing-safe comparison for secrets; the platform's crypto primitives rather than hand-rolled ones. IaC standards: no wildcard IAM actions or principals; no `0.0.0.0/0` ingress; encryption and logging mandatory; no plaintext secret in a template — each enforced by an IaC scanning rule |
+| **Secure programming techniques** | Parameterised queries; output encoding at the point of rendering; positive-schema input validation; authorization at the data-access layer; secrets from the secrets manager only; deny-by-default branching; safe error handling that logs internally and reveals nothing externally; redaction helper for all logging |
+| **Structured programming techniques** | Small, single-responsibility functions; explicit return types on exports; no deep nesting or duplicated control flow; complexity limits enforced by lint, on the reasoning that unreviewable code is unverifiable code |
+| **Documentation of code, and removal of programming defects** | Public interfaces documented; security-relevant decisions commented **with their reason** so a later change does not remove a control it does not recognise; defects removed rather than suppressed — a suppression of a static-analysis finding requires a justification comment and appears in a report the CISO reviews, so suppression cannot become the default remedy; **dead code and unused feature flags deleted**, because dormant code is unreviewed attack surface |
+| **Prohibition of insecure design techniques — hard-coded passwords, unapproved code samples** | **Hard-coded secrets are blocked** by pre-commit and CI secret scanning plus repository-wide push protection, and any historical exposure triggers **rotation, not just removal** — removing a committed secret from the tip does not un-leak it. **Unapproved code samples** are prohibited: copied snippets, whether from the web or from an AI assistant, must be understood, reviewed and licence-checked; **AI-assisted code is subject to the same review and scanning as any other code and to a stated rule that the committing engineer is accountable for it**, which is the current form of this long-standing prohibition. Also prohibited: disabled certificate validation, custom cryptography, permissive CORS wildcards, and debug or backdoor access paths |
+
+### 5.3 Evaluation before software is made operational (8.28-R5)
+
+Testing is conducted **during and after development** (§6), and before software is made operational a
+**pre-operational evaluation** is performed and recorded, covering the three things 8.28-R5 names:
+
+1. **Attack surface** — every interface the change exposes or alters is enumerated: routes, parameters, events,
+   permissions, egress destinations, and third-party calls. A change that widens the surface must say so and
+   justify it.
+2. **Least privilege** — the component's permissions are compared against what it actually exercises, and
+   unused permissions are removed before release rather than left for a later review.
+3. **Analysis of the most common programming errors, with documentation that they have been mitigated** — a
+   recorded checklist against the OWASP Top 10 and the CWE Top 25 items applicable to the change, each marked
+   mitigated (with the mechanism) or not applicable (with the reason). This is a **documented artefact attached
+   to the release**, which is precisely what the requirement asks for and what an automated scan alone does not
+   provide. **12 of 12 releases this period carry a completed evaluation.**
+
+### 5.4 Coding standards
+
+Language-specific standards are maintained for TypeScript/Node and for the IaC language, versioned in the
+engineering handbook, and **enforced mechanically wherever enforcement is possible** — linter, formatter, type
+checker, static analysis and IaC scanning, all as blocking CI gates rather than advisory reports. Rules that
+cannot be mechanised are on the review checklist. Standards are updated quarterly from findings (§2.2), and each
+new rule is introduced with the defect that motivated it, so engineers understand rules rather than merely obey
+them.
+
+### 5.5 After code is made operational (8.28-R6)
+
+| Element | Practice |
+|---|---|
+| **Updates securely packaged and deployed** | Build only in CI from a reviewed commit; **signed commits and signed artefacts** with provenance attestation; immutable, digest-pinned images in a private registry, scanned before promotion; **the same artefact promoted through environments** rather than rebuilt per environment; deployment only by the pipeline using a short-lived role — no engineer can deploy from a workstation; progressive rollout with automatic rollback on health-check or error-rate regression; the deployment recorded in the immutable audit trail |
+| **Reported vulnerabilities handled** | A published **security contact and a disclosure policy** for external reporters; internal reports through the security channel; triage within 1 business day; remediation SLAs by severity under SEC-CFG-025 (**Critical 7 days, High 30, Medium 90**), tracked to closure with exceptions requiring CISO approval; the incident path invoked where exploitation is suspected (SEC-INC-032). **This period: 41 vulnerabilities remediated across the platform and its dependencies; 2 external disclosure reports received, both acknowledged within 1 day, 1 valid and fixed in 4 days** |
+| **Errors and suspected attacks logged, logs reviewed regularly, and the code adjusted as necessary** | Application errors, authorization denials, validation failures, rate-limit trips and anomalous input patterns are logged to the SIEM with detections on them; the **monthly review** (SEC-NET-047 §8) covers them, and — the element that closes the loop — **findings feed back into the code**: this period a cluster of validation failures on one endpoint revealed a schema that was stricter than its documented contract (fixed), and a rise in authorization denials on one route revealed a UI presenting an action the user could not perform (fixed) |
+| **Source code protected against unauthorized access and tampering** | Private repositories with SSO and MFA; access on least privilege with a **quarterly access review**; **branch protection on the default branch with no direct push and no force push**, requiring review and passing checks; **signed commits required**; administrative and history-rewriting actions restricted and alarmed; repository audit logs exported to the SIEM; **no copy of the codebase on supplier infrastructure** (§2.3); secret scanning with push protection; and backup of the repository and the pipeline configuration, restore-tested annually |
+
+### 5.6 Monitoring threats to improve the principles (8.28-R2)
+
+Covered at §2.2, which is where the governance loop lives; it is cross-referenced rather than duplicated so the
+two cannot drift apart.
+
+### 5.7 External tools and libraries (8.28-R7)
+
+| Element the requirement names | Practice |
+|---|---|
+| **Inventory maintained and regularly updated** | A **generated SBOM per build**, including transitive dependencies, retained per release so the entity can answer "are we affected?" from a record rather than from a search. Dependency scanning runs on every build and daily against the released inventory, so a newly disclosed vulnerability in an unchanged dependency is still found |
+| **Well-vetted components selected and authorized** | A new dependency requires review at pull-request time against the component policy; a **small allowlist governs the highest-risk categories** (cryptography, authentication, serialisation, parsing) where only named libraries may be used, because these are the categories where a plausible-looking package does the most harm |
+| **Licence, security and history considered** | Licence checked automatically against the approved list (copyleft incompatible with the entity's distribution model is blocked, and General Counsel rules on anything ambiguous); security history reviewed — past CVEs and how the maintainer handled them; **maintenance signals** assessed: release recency, maintainer count, issue responsiveness, and whether the package is a single-maintainer dependency in a critical path. Typosquat and dependency-confusion protection through a scoped private registry and pinned resolution |
+| **Software is maintainable, tracked, and from reputable sources** | Dependencies pinned by version and integrity hash with a committed lockfile; installs resolve only through the entity's proxy registry; **updates applied on a schedule** (weekly automated minor/patch with tests, monthly review of majors) so the fleet does not fall behind and then face an unshippable upgrade; a dependency that becomes unmaintained triggers a **recorded replacement decision** rather than indefinite drift — 2 such decisions this period |
+| **Long-term availability of development resources and artefacts** | Source, IaC, pipeline definitions, SBOMs, release artefacts and build provenance are retained in entity-controlled storage with **backup and an annually restore-tested recovery**; the proxy registry **caches every dependency the entity depends on**, so an upstream package being withdrawn or a registry outage cannot prevent a rebuild — the risk that made this control necessary is real and has occurred industry-wide; toolchain versions pinned and archived; **key-person dependency addressed by documented build procedures and by the two-engineer review rule** |
+
+### 5.8 Modification of software packages (8.28-R8)
+
+Where a software package needs to be modified, the following are **considered and recorded** before proceeding —
+and the entity's default is emphatically not to modify:
+
+| Consideration the requirement names | Position |
+|---|---|
+| **Risk of built-in controls being compromised** | Assessed explicitly: a patch to a third-party library's parsing, authentication or crypto path is presumed to risk its own controls, and such modifications are **refused** |
+| **Whether to obtain the vendor's consent** | For commercial software, consent is obtained or the modification is not made; for open source, the licence is checked and the change offered **upstream** as the preferred route |
+| **Possibility of obtaining the change as a standard vendor update** | The **first option pursued in every case** — an upstream issue or pull request, so the change arrives as a maintained release rather than as an entity-maintained divergence |
+| **Impact of becoming responsible for future maintenance** | Stated as the decisive factor: a fork is a permanent commitment for a 16-engineer team, so a fork requires **Head of Platform Engineering and CISO approval**, a named owner, and a documented plan to return to upstream |
+| **Compatibility with other software in use** | Assessed in the non-production environment against the full stack before adoption |
+| **Actual state** | **No third-party package is currently modified or forked.** Two upstream contributions were made this period instead — the preferred route, and the evidence that the policy is followed rather than merely written. Where a vulnerable dependency has no upstream fix, the entity's sequence is: mitigate by configuration or by isolating the call path, then replace the dependency, then — only if neither works — patch under the approval above |
+
+---
+
+## 6. Security testing in development and acceptance (8.29)
+
+### 6.1 Defined and implemented testing processes in the life cycle (8.29-R1)
+
+Security testing is embedded at every stage, so that new systems, upgrades and new versions are **thoroughly
+tested and verified during development** rather than assessed once at the end:
+
+| Stage | Security testing | Blocking? |
+|---|---|---|
+| Design | Threat model and design review; testable acceptance criteria defined (§4.5) | Yes |
+| Pre-commit | Secret scanning, lint, type check | Yes |
+| Pull request | **SAST**, dependency and licence scanning, **IaC scanning**, secret scanning, unit and integration tests including **security-specific tests**, coverage threshold, peer review | **Yes — all gates blocking** |
+| Build | SBOM generation, container image scanning, artefact signing and provenance attestation | Yes |
+| Pre-deployment | **DAST** against the non-production deployment; authentication, authorization and tenant-isolation test suite; configuration-baseline check; the §5.3 pre-operational evaluation | Yes |
+| Deployment | Progressive rollout with automatic rollback; post-deploy smoke tests including a security assertion set | Yes |
+| Continuous | Daily dependency re-scan against released inventory; **quarterly internal and external vulnerability scans**; **annual external penetration test**; quarterly incident simulation | Findings tracked to SLA |
+
+### 6.2 Testing against a set of requirements, covering security functions, coding and configuration (8.29-R2)
+
+Testing is conducted **against a stated set of requirements** — the approved security requirements from §3 and
+the acceptance criteria from the design review, so tests trace to requirements rather than to a generic
+checklist. Coverage spans the three areas the requirement names:
+
+| Area | Tests |
+|---|---|
+| **Security functions** | **User authentication**: valid and invalid credentials, MFA enforcement, session establishment, expiry, revocation on posture change, and fixation resistance. **Access restriction**: role- and attribute-based authorization per route and per function; **tenant-isolation tests that assert cross-tenant access fails** — including the cache-key dimension, which is now a standing test because it was once a real defect; vertical and horizontal privilege-escalation attempts; **fail-closed assertions** where a dependency is unavailable. **Cryptography**: TLS version and cipher negotiation verified externally; encryption-at-rest verified; key rotation exercised; certificate validation asserted to be enabled (a test that exists because disabling it is a classic shortcut) |
+| **Secure coding** | SAST on every pull request with security rules blocking; **security unit tests for input validation, output encoding, injection resistance and error handling**; fuzzing of the evidence-parsing and scan-output paths, chosen because those parse untrusted input; peer review against the checklist |
+| **Secure configurations** | **IaC scanning** for public exposure, wildcard IAM, missing encryption and missing logging; **benchmark scanning of operating systems, containers and managed services** against the hardened baseline, with deviations recorded and justified; **firewall and security-group rule assertions in code** — the intended reachability is expressed as a test, so a rule change that opens an unintended path fails the build; TLS and header configuration verified by external scan; **reachability tested from each network domain** rather than inferred (SEC-NET-047 §5.3) |
+
+### 6.3 Test plans proportionate to importance, nature and impact (8.29-R3)
+
+Test plans are determined on **criteria proportionate to the importance and nature of the system and the
+potential impact of the change**, and each plan contains the four elements the requirement names:
+
+| Change class | Criteria | Plan depth |
+|---|---|---|
+| **Class A** — trust boundary, authentication, authorization, cryptography, tenant isolation, or a new external interface | Highest impact | Threat model; full security test suite; **DAST**; manual security review by a senior engineer; **CISO acceptance**; consideration of a targeted external test — one such test was commissioned this period for the evidence-sharing interface |
+| **Class B** — new feature touching Restricted data, a new dependency in a critical path, an IaC change to a boundary | Material | Threat model where triggered; targeted security tests; full automated gate set; senior review |
+| **Class C** — routine feature or fix with no boundary or classification change | Routine | Full automated gate set; peer review; regression suite |
+| **Class D** — documentation, comment or non-functional change | Minimal | Automated gates only |
+
+Each plan states: a **detailed schedule of activities and tests**; **inputs and expected outputs under a range of
+conditions** — explicitly including invalid, malformed, boundary, oversized, empty, duplicate, out-of-order and
+hostile inputs, and **not only the happy path**, which is the whole point of the phrase; **criteria for
+evaluating results** (which failures block, which are accepted with a recorded justification, and the coverage
+and severity thresholds); and **decisions for further action** — block release, release with a tracked finding
+under SLA, or release with a CISO-approved exception. The classification of each change is recorded in the change
+record, and **misclassification is itself a review finding** — one change was reclassified from C to A at review
+this period, which is the control working.
+
+### 6.4 Independent acceptance testing beyond the development team (8.29-R4)
+
+**Independent acceptance testing is undertaken beyond the development team's own testing**, and each of the three
+activities the requirement names is performed. This is also where the entity's scale limit is honest:
+
+| Activity | How it is performed | Independence |
+|---|---|---|
+| **Code review for security flaws, including unanticipated inputs and conditions** | Mandatory review by an engineer who did not write the change, against a security checklist that explicitly asks about unanticipated inputs, boundary conditions, error and timeout paths, and concurrency; **authentication, authorization, cryptography and tenant-isolation changes require a named senior security reviewer**, not any peer | **Within the team** — a real limitation, recorded as **R-031** |
+| **Vulnerability scanning for insecure configurations and system vulnerabilities** | **Quarterly internal and external scans by an external provider**, plus continuous automated scanning of dependencies, images, IaC and hosts; findings tracked to the SEC-CFG-025 SLAs | **Externally performed** — genuinely independent |
+| **Penetration testing for insecure code and design** | **Annual external penetration test** by an independent firm — authenticated and unauthenticated, application and infrastructure, with explicit objectives for **tenant isolation, privilege escalation, and network segregation bypass from the guest network**; a **targeted external test** additionally commissioned for any Class A change to a critical interface | **Externally performed** |
+| Acceptance | The **business owner and the CISO accept** Class A changes against the approved requirements; acceptance is recorded with the test evidence, so acceptance is a decision by someone other than the author | Separated by role |
+
+**This period:** annual penetration test completed — **1 High, 3 Medium, 5 Low**; the High (an authorization gap
+on an administrative endpoint reachable only by an authenticated internal user) was fixed in **6 days** and a
+**regression test added**; all Mediums closed within SLA; the segregation-bypass objective was **not achieved**;
+retest confirmed closure. R-031 stands as the acknowledged limit: independent *code* review is unavailable
+in-house, and the external test regime plus non-discretionary automated gates are the compensating controls.
+
+### 6.5 Acquisition process for outsourced development and purchased components (8.29-R5)
+
+Covered at §2.3 (outsourced development bound by contract to this standard, with the same gates) and §3.6
+(security requirements as pre-acquisition evaluation criteria and then as contract terms, with **6 evaluations
+and 1 rejection** this period). Purchased components additionally pass the component policy in §5.7 before
+authorization.
+
+### 6.6 A test environment matching production as closely as possible (8.29-R6)
+
+- The non-production environment is **provisioned from the same infrastructure-as-code** as production, in a
+  **separate AWS account**, with the same operating-system and container images, the same managed-service
+  versions, the same network topology and security-group model, the same authentication and authorization
+  configuration, and the same monitoring — so a test result there is meaningful for production.
+- **The differences are deliberate, enumerated and reviewed**, because an undocumented difference is where an
+  untested vulnerability hides: smaller instance sizes and lower capacity (so load testing is performed against
+  a temporary production-scale environment rather than against the standing one); **synthetic data instead of
+  operational data** (§7); test credentials from a separate key hierarchy; relaxed alert routing to avoid
+  paging on test traffic; and no customer-facing DNS. The list is reviewed at each annual review and when the
+  architecture changes.
+- Because the environment is disposable and code-defined, it is **rebuilt from scratch quarterly**, which both
+  proves the code can build the environment (the same property R-022's recovery position depends on) and
+  prevents the slow configuration drift that makes a long-lived test environment stop resembling production.
+  **4 of 4 rebuilds succeeded this period.**
+
+---
+
+## 7. Test information (8.33)
+
+### 7.1 Selection of test information for reliability and confidentiality (8.33-R1)
+
+Test information is selected so that results are **reliable** and the confidentiality of operational information
+is **preserved**, and the entity's default resolves the tension between those two goals rather than trading one
+away:
+
+- **The default is synthetic data, and it is engineered to be realistic**: generated to the same schemas,
+  volumes, cardinalities, distributions and edge-case shapes as production, including the awkward cases that
+  break naive code — empty and maximal values, unicode and right-to-left text, very large evidence documents,
+  malformed scan output, duplicate and out-of-order events, and multi-tenant fixtures for isolation testing.
+  Realism is treated as a **requirement of the fixtures**, because unrealistic test data is the usual excuse for
+  copying production data.
+- **Preserved regression fixtures** derived from real defects — with all operational content replaced — are held
+  so that each historical defect has a permanent test.
+- **Operational data is not used unless synthetic data genuinely cannot produce a reliable result**, and the case
+  must be made in writing. **Zero copies of operational data have been made to a test environment this period**,
+  which is the outcome the synthetic-fixture investment was made to achieve, and it is stated as a measured
+  number rather than as an intention.
+- Where a **production issue** must be reproduced, the sequence is: reproduce from synthetic data shaped like the
+  reported case; failing that, investigate in production **under read-only, logged, brokered access with no
+  data extraction**; and only failing that, invoke §7.3's authorised-copy path.
+
+### 7.2 Operational access controls applied to test environments holding operational copies (8.33-R2)
+
+Where a test environment contains a copy of operational information, it is **treated as production for control
+purposes** — the same access-control procedures apply, and the environment is not "just test":
+
+- the same authentication and authorization model, the same MFA, and access granted to the **same restricted
+  population** that could see the data in production — no broadening on the grounds that it is test;
+- classification of the environment raised to the classification of the copied data, with the handling rules
+  that follow (GOV-CLS-018);
+- the same encryption at rest and in transit, the same logging to the SIEM with the same retention, and the same
+  monitoring and alerting;
+- **no supplier or vendor-individual access** to an environment holding operational data — a hard rule, since
+  their normal access is a brokered session against production, not a copy;
+- the account boundary between non-production and production remains, so a copy does not create a network path.
+
+### 7.3 Separate authorization for each copy (8.33-R3)
+
+**A separate authorization is obtained each time operational information is copied to a test environment.** There
+is no standing authorization, no "approved for the duration of the project", and no role that may copy at will:
+
+| Element | Requirement |
+|---|---|
+| Requester | The engineer, in writing, with the technical reason synthetic data cannot serve |
+| **Approver** | **CISO**, plus the data owner; **plus General Counsel where personal data is involved** |
+| Scope | The minimum data set — specific records, specific fields, a stated volume; never a full copy of a data store |
+| Masking specification | The masking or removal to be applied (§7.5), specified in the authorization rather than left to the engineer |
+| **Expiry** | A **stated deletion date, maximum 14 days**, with deletion verified (§7.6) |
+| Destination | The named environment, with §7.2's controls confirmed in place **before** the copy |
+| Record | A numbered entry in the **operational-data copy register** |
+| Current state | **The register holds zero entries for this period**, and its emptiness is audited rather than assumed |
+
+### 7.4 Logging the copying and use of operational information (8.33-R4)
+
+Copying and use are **logged to provide an audit trail**: the authorization record itself (who requested, who
+approved, scope, masking, expiry); the **technical execution** of the copy — the export or snapshot API calls in
+CloudTrail, the masking job's own log with the record count processed, and the load into the target; **access to
+the copy** while it exists, logged in the SIEM at the same fidelity as production access; and the **deletion**
+with its verification. Retention is 3 years, and the register is reconciled against CloudTrail export events at
+internal assessment **in both directions** — an authorised copy with no technical record, and a technical export
+with no authorisation, are both findings, and the second is the one that would matter most.
+
+### 7.5 Removal or masking of sensitive information, including PII (8.33-R5)
+
+**Sensitive information, including personally identifiable information, is protected by removal or masking when
+used for testing, and is not copied into development or test environments without such protection**:
+
+- The **default is removal**: fields not needed for the test are dropped rather than transformed, because a
+  removed field cannot be re-identified.
+- Where a field must be retained for the test to be meaningful, it is **masked in a way that preserves shape but
+  not meaning** — format-preserving substitution, deterministic pseudonymisation with a key held only in
+  production (so referential integrity survives while re-identification does not), generalisation of dates and
+  locations, and range-bucketing of numerics. **Reversible encryption is not accepted as masking**, since the
+  data remains present.
+- Masking is applied **before the data lands in the test environment** — it runs in a controlled step between
+  export and load, never as a post-load cleanup, because a post-load cleanup means the unmasked data existed in
+  the lower environment.
+- Masking is **verified, not trusted**: an automated check asserts that no field matching a sensitive pattern
+  survives unmasked, and the check's result is attached to the copy record. A failed check aborts the load.
+- **Direct-identifier fields — names, email addresses, credentials, tokens, keys and customer-identifying
+  references — are never copied at all**, masked or otherwise.
+- This is cross-referenced to the masking control (8.11) and to GOV-PRI-035, and the DPIA trigger applies where
+  personal data would be involved.
+
+### 7.6 Deletion immediately after testing (8.33-R6)
+
+Operational information is **properly deleted from the test environment immediately after testing is complete**:
+
+- Deletion is the **default at the authorization's expiry**, executed by an automated job rather than depending
+  on someone remembering — the expiry is set at authorization time and the job acts on it.
+- Deletion means **deletion, verified**: records removed, **snapshots and automated backups of the test data
+  store deleted, log and telemetry copies purged, any local extract on an engineer's device removed**, and the
+  encryption key for the copy destroyed where the copy had its own key. The verification step queries for
+  residual records and for snapshot counts, and its result is attached to the copy record — the same
+  verified-erasure discipline as SEC-MED-046 §6.2, applied to data rather than to hardware.
+- Because non-production is **rebuilt from scratch quarterly** (§6.6), there is a structural backstop: even a
+  missed deletion cannot survive a rebuild, which is a control that does not depend on diligence.
+- Deletion is **logged** and reconciled against the copy register at internal assessment.
+
+### 7.7 Secure storage, tamper prevention, and use only for testing (8.33-R7)
+
+- **Test information is securely stored:** fixtures and any authorised copy live in access-controlled,
+  encrypted storage inside the non-production account; fixtures are **version-controlled**, so a change to them
+  is reviewed and attributable, which is what prevents tampering — a quietly altered fixture is a quietly
+  weakened test, and it would otherwise be one of the least-noticed ways to defeat a test gate.
+- **Tamper prevention and detection:** fixtures are protected by the same branch protection, review and signed
+  commits as code; a change to a **security-relevant fixture** (an authorization matrix, a tenant-isolation
+  fixture, a cryptographic test vector) requires the senior security reviewer, not any peer; and CI verifies
+  fixture integrity against the committed hashes.
+- **Used only for testing:** test data is not used for demonstrations to prospects, for training material, for
+  analytics or for any operational purpose; the non-production environment is not customer-facing and has no
+  public DNS; and test credentials come from a **separate key hierarchy** so a test credential cannot function
+  against production — which is the technical form of "only for testing".
+- Conversely, **production is never used as a test environment**: performance and security testing run against
+  a production-scale copy of the *environment*, not against the production deployment, and any testing activity
+  against production requires the same authorization path as a data copy.
+
+---
+
+## 7A. Security of the development infrastructure itself
+
+The source repositories, the pipeline and the artifact stores are the highest-value systems in the
+estate that are not production. Whoever controls the pipeline controls production without needing
+production credentials, and whoever can rewrite history in a repository can make a malicious change
+invisible to review. This section states the protection of that infrastructure as a control in its
+own right, rather than leaving it implied by the general access standard.
+
+### 7A.1 Source code repositories and the pipeline
+
+| Property | Control | Verified how |
+|---|---|---|
+| **Encryption at rest** | All repository content, build artifacts, build logs, caches and container images encrypted at rest with provider-managed or KMS keys per `SEC-CRY-022`. No unencrypted store holds source | Configuration rules; quarterly encryption verification |
+| **Encryption in transit** | TLS 1.2+ for every clone, push, fetch, API call and artifact pull. Plain-`git`, unencrypted HTTP and SSH with legacy ciphers are disabled | Endpoint configuration; connection logging |
+| **Authentication** | Federated identity through the corporate directory with MFA enforced. **No local repository accounts, no shared accounts, and no long-lived personal access tokens** — machine access uses short-lived, workload-scoped credentials | Identity provider report; quarterly token audit (0 long-lived tokens present) |
+| **Authorization** | Least privilege per repository, by group not by individual. Write access is granted by role, and the set of principals able to modify pipeline definitions or repository settings is separately enumerated and reviewed — currently 4 people | Quarterly access review; the enumerated administrator list |
+| **Branch and history protection** | Protected default branch: no direct push, mandatory review by someone other than the author, **force-push and history rewrite prohibited and technically blocked**, branch deletion restricted, required status checks cannot be bypassed by the author. Signed commits required for release branches | Weekly per-repository baseline enforcement report (14/14) |
+| **Separation of duties in the pipeline** | The identity that builds is not the identity that deploys, and neither can approve. A developer cannot both author and release a change to production | Pipeline configuration; release records |
+| **Pipeline as reviewed code** | Pipeline and infrastructure definitions live in the repository and go through the same review and protection as application code. A change to how the build works is a reviewed change | Change records |
+| **Build isolation and reproducibility** | Builds run in ephemeral isolated environments with no standing credentials and constrained egress; artifacts are digest-addressed and the deployed digest is verified against the built digest | Build logs; deployment verification |
+| **Artifact and dependency integrity** | Dependencies resolved from the managed catalogue with lockfiles committed and verified; artifact stores are write-restricted to the pipeline identity; **no human can publish a production artifact by hand** | Pipeline configuration; artifact-store policy |
+| **Secrets** | No secret in a repository, ever. Secret scanning on every push and on the full history; detections are treated as incidents with mandatory rotation regardless of whether exposure is believed to have occurred | Weekly secret-scan review; 0 unrotated detections |
+| **Audit trail** | Every clone, push, merge, settings change, permission change, pipeline-definition change, artifact publication and deployment is logged, with the log exported to the write-once audit account and retained per `SEC-STD-024`. **Repository administrators cannot alter the audit trail of their own actions** — that separation is what makes the trail evidence | Log-completeness check; audit-account immutability |
+| **Monitoring and alerting** | Alarms on: permission or protection-rule change, force-push attempt, administrator addition, out-of-hours pipeline change, first-time contributor merge, and artifact publication outside the pipeline identity | Alarm definitions; 3 alerts this period, all legitimate changes confirmed within the day |
+| **Backup and recoverability** | Repository and pipeline configuration backed up with a tested restore, so the loss of the hosted service is recoverable rather than terminal | Restore test 2026-05-12 |
+| **Availability and provider dependency** | Repository hosting is a supplier under `SEC-PRO-020` with terms per `SEC-REG-047` §6.1; its compromise is a named incident scenario in the exercise set | Supplier assessment; exercise record |
+| **Joiner/leaver** | Repository access provisioned from the same source of truth as all other access and revoked on the same day as everything else — a departed contributor retaining read access to source is a breach, not an untidiness | `HR-STD-046` §6; exit verification, mean revocation 41 minutes |
+| **Non-production data** | No production or customer data in any repository, fixture, test file or build log. Enforced by the masking and fixture rules in §7 and tested by sampling | Copy register (zero entries); quarterly sample |
+
+**Period record.** 14 repositories, 100% carrying the enforced baseline; 4 enumerated
+pipeline/settings administrators; 0 long-lived tokens; 0 local accounts; 0 force-push successes (2
+blocked attempts, both accidental, both confirmed with the author); 3 protection-change alerts, all
+legitimate; 1 restore test passed; 0 secrets requiring rotation.
+
+### 7A.2 Software licensing obligations and licence-cost decisions
+
+Licensing is a security matter here for two reasons: an obligation we did not know we had accrue as a
+compliance liability, and a licence that lapses or changes can remove a control from the estate
+overnight.
+
+| Requirement | How it is met |
+|---|---|
+| **Complete bill of materials** | An SBOM is produced on every build for every component, direct and transitive, with its licence. There is no manual list — a manually maintained inventory of transitive dependencies is wrong within a week |
+| **Licence policy, by category** | **Permitted** — permissive licences (MIT, BSD, Apache-2.0, ISC). **Permitted with conditions** — weak-copyleft (LGPL, MPL) where the component is dynamically linked and unmodified, recorded per use. **Prohibited without written approval** — strong copyleft (GPL, AGPL) and any licence with a network-use or source-disclosure trigger; approval requires the General Counsel and the CISO, and the reasoning is recorded. **Prohibited** — no licence at all, an unclear licence, a source-available licence restricting commercial hosting, or any licence whose terms we cannot satisfy |
+| **Enforcement at the gate** | The pipeline fails the build on a prohibited or unknown licence. This is a hard gate, not a report — a licence report nobody blocks on is a licence report nobody reads |
+| **Obligation tracking, not just permission** | Permissive licences still carry obligations: attribution, notice retention, licence text distribution. The attribution file is generated from the SBOM at build time so it cannot drift from what is actually shipped |
+| **Licence change on upgrade** | A dependency's licence is re-evaluated on every version change, because relicensing between minor versions happens and is easy to miss. Detected by SBOM diff, not by trust |
+| **AI-generated code** | Code produced with assistance from a generating tool is subject to the same provenance and licence review; the tool configuration prohibits suggestions reproducing training data verbatim, and the position is recorded in `SEC-STD-050` §3.1 for outsourced work |
+| **Commercial licences** | Each commercial licence is recorded with its entitlement basis (per-seat, per-host, per-usage), its renewal date, its owner, and its audit clause. Entitlement is reconciled against actual deployment quarterly, so an under-licensed deployment is found by us rather than by the vendor |
+| **Avoiding future licensing problems** | Before adopting a component, the acquisition evaluation in §2 assesses: the licence today, the licensor's history of relicensing, whether a single commercial entity controls the project and could relicense it, whether a viable fork or alternative exists if terms change, and what our exposure would be if it did. A component with no alternative and a single controlling licensor is a concentration risk and is recorded as one |
+| **Cost-effectiveness of licensing alternatives** | Where a commercial and an open-source option both meet the requirement, the evaluation compares total cost — licence fees against the engineering cost of self-support, the security cost of maintaining a component ourselves, and the exit cost of each. **The cheaper licence is not automatically chosen**: two decisions this period went to the commercial option because vendor-maintained security updates were cheaper than us maintaining them, and one went to open source because the commercial terms placed an audit obligation on customer environments we could not accept |
+| **Renewal and lapse protection** | Renewal dates are monitored with 90-day notice to the owner. A control-bearing licence (EDR, endpoint management, SIEM) lapsing would remove a control, so those renewals are tracked as control dependencies in the risk register and not merely as procurement dates |
+| **Records** | Licence determinations, approvals, exceptions and entitlement reconciliations are retained for the life of the component plus 3 years, which is what makes a licensor's enquiry answerable |
+
+**Period record.** 6 acquisition evaluations with 1 documented rejection (an AGPL-licensed component
+with no viable permissive alternative, rejected rather than approved); 2 weak-copyleft uses recorded
+with conditions; 0 prohibited licences reaching a build; 4 licence changes detected on upgrade, 1
+requiring a replacement decision; 11 commercial licences reconciled against deployment with 0
+entitlement gaps; 0 lapses; attribution file regenerated on 100% of builds.
+
+---
+
+## 8. Roles, evidence and independent testing
+
+| Role | Responsibility |
+|---|---|
+| Head of Platform Engineering | Owns this standard, the engineering principles, the pipeline gates, the component policy, and the non-production environment |
+| Senior security reviewers (2 named engineers) | Mandatory review of authentication, authorization, cryptography, tenant-isolation and security-fixture changes |
+| CISO | Approves this standard and security requirement sets on trigger; owns the acknowledged-shortfall register, the copy register, exceptions, and acceptance of Class A changes |
+| Third-Party Risk Manager | Supplier and component-supplier assessment; attestation and CUEC review |
+| General Counsel | Jurisdictional requirements, licence questions, personal-data authorizations, supplier and IPR terms |
+| Business owner | Acceptance of Class A changes against approved requirements |
+| Internal assessment | Annually: samples design records for the control placement-and-integration analysis; samples releases for the §5.3 pre-operational evaluation; verifies change classification against the criteria and looks for misclassification; reconciles the copy register against CloudTrail export events **in both directions**; verifies masking-check and deletion-verification artefacts; verifies baseline enforcement per repository against the weekly report; confirms the acknowledged-shortfall register was reviewed within the period |
+| External testing | Annual penetration test with tenant-isolation, privilege-escalation and segregation-bypass objectives; quarterly internal and external vulnerability scans; targeted tests for Class A interface changes |
+
+| Evidence | Where it is held |
+|---|---|
+| Secure development baseline and the weekly per-repository enforcement report (14/14) | Engineering handbook; CI reporting |
+| Design records: threat models, control mapping with placement and integration, residual risk, acceptance criteria (12 reviews, 9 models, 2 sent back) | Design repository |
+| Requirement approvals (12 sets, 4 CISO, 1 sent back) | Design repository |
+| Acknowledged-shortfall register: R-014, R-022, R-031, R-032, R-033 | Risk register |
+| Coding standards, lint/SAST/IaC rule sets, suppression report | Configuration repository |
+| Pre-operational evaluations (12/12 releases) | Release records |
+| SBOMs per build; dependency, licence, image and secret scan results; 2 unmaintained-dependency replacement decisions; 2 upstream contributions | CI artefacts; engineering records |
+| Test plans by change class, including the one C→A reclassification | Change records |
+| Penetration test report (1 High fixed in 6 days with a regression test, 3 Medium, 5 Low), retest confirmation | Assessment file |
+| Quarterly scan reports and remediation tracking (41 vulnerabilities remediated); 2 external disclosure reports | Assessment file; SEC-CFG-025 |
+| Non-production rebuild records (4/4) and the enumerated production-difference list | Platform Engineering |
+| **Operational-data copy register (zero entries this period)**, with masking-verification and deletion-verification artefacts where applicable | CISO file |
+| Synthetic fixture repository with version history and integrity checks | Source repository |
+| Secure-coding training completion (16/16) and review-authority grants | Awareness platform; identity provider |
+| Supplier security annex, individual undertakings (11/11), and D-2026-014 | Contracts; deficiency register |
+| Acquisition evaluations (6, with 1 documented rejection) | Vendor register |
+
+## 9. Review history
+
+| Version | Date | Change |
+|---|---|---|
+| 1.0 | 2024-07-15 | Established the development life cycle, the pipeline gates and the coding standards |
+| 2.0 | 2025-06-03 | Threat modelling made mandatory on defined triggers; SBOM generation per build; non-production moved to a separate AWS account; synthetic-fixture programme established to remove the need for operational data in test |
+| 3.0 | 2026-03-23 | Annual review, driven by the four §4.8 findings. **Fail-closed behaviour became an explicitly tested property** after a simulation found a code path that failed open. **Control placement and integration analysis became a required design-record section** after two reviews produced control lists with no integration reasoning. **Foundation-model output reclassified as untrusted input**, with prompt-injection and data-handling requirements added, following the new-technology analysis. **R-032 added** so the zero-trust position states the absence of continuous per-request re-evaluation rather than implying it. Also: tenant scoping mandated at the query layer and identity mandated in cache keys, both from real defects; AI-assisted code brought explicitly under the unapproved-code-sample prohibition with committer accountability; CI runner images brought under the production patch SLA on the reasoning that the pipeline is a production system; the proxy registry's dependency cache recorded as the long-term-availability control; masking moved from post-load cleanup to a verified pre-load step; deletion verification extended to snapshots, telemetry copies and local extracts; and the operational-data copy register's emptiness stated as a measured result rather than as an aspiration |

@@ -1,0 +1,121 @@
+# AI System Deployment Plan
+
+**Document ID:** AIMS-PLAN-008
+**Version:** 3.3
+**Owner:** AI Operations Lead (SRE)
+**Approved by:** AI System Accountable Owner (release authority)
+**Approval date:** 2026-03-05 — **documented and approved before the release it governs**
+**Next scheduled review:** on each material change; otherwise semi-annually (2026-12-31)
+**Scope:** Deployment of the compliance-evaluation AI system to AWS account 471885797689 (us-west-2)
+and to the service cells that host it.
+
+---
+
+## 1. Purpose and standing
+
+This plan is **documented and approved before release**. No AI system release proceeds without a
+current, approved deployment plan; the release authorization gate (AIMS-POL-006 §3) checks its
+currency, and an out-of-date plan blocks release.
+
+## 2. Deployment architecture and sequence
+
+| Step | Action | Gate before proceeding |
+|---|---|---|
+| 1 | Build a reproducible container image from a peer-reviewed, version-controlled commit | All V&V criteria RC-1 … RC-11 passed (AIMS-PLAN-010 §3.3) |
+| 2 | Publish the image and register a new runtime version | Image provenance verified |
+| 3 | Deploy to **alpha** | Automated smoke assessment succeeds end-to-end on the real graph |
+| 4 | Deploy to **beta** | Alpha healthy for its dwell time; no errors or warnings |
+| 5 | Deploy to **gamma** (production-like data volume) | Beta dwell healthy; monitoring confirmed live |
+| 6 | Deploy to **production**, cell by cell rather than globally | Gamma dwell healthy; release authorization signed |
+| 7 | Post-deployment verification | Health, latency, error rate and verdict-distribution within expected bounds |
+
+Deployment is performed only by the pipeline from version-controlled infrastructure definitions.
+**There is no manual production provisioning and no direct-to-production path.** Rollback is to the
+previous registered runtime version and is rehearsed before each release (RC-11).
+
+## 3. Differences between development and deployment environments
+
+The plan explicitly accounts for the ways the deployment environment differs from where the system was
+built, because most deployment defects live in exactly those gaps.
+
+| Dimension | Development environment | Deployment environment | Risk and how the plan handles it |
+|---|---|---|---|
+| Hosting | Engineer's workstation or non-production stage; process run locally | **Cloud** — Bedrock AgentCore managed container runtime. No on-premises or edge deployment exists for this system | Local runs can mask container packaging, filesystem and startup-order defects; step 3 therefore runs a full end-to-end assessment inside the real runtime before promotion |
+| Identity and credentials | Long-lived developer credentials; a self-signed session token accepted because the signature is verified by the real service | Runtime task role plus **short-lived, read-only credentials vended per environment**, with the role resolved server-side | Permission defects appear only in deployment; alpha exercises the real vending path rather than mocking it |
+| Data volume and shape | Small curated fixtures | Real customer accounts: sparse, huge, zero-resource, permission-denied | Gamma runs production-like volume before production; V&V includes environment strata (AIMS-PLAN-010 §3.2) |
+| Concurrency | One invocation at a time | Many concurrent assessments across accounts and cells; the invocation lock serializes work per assessment while the platform scales out | Lock and coordination behaviour verified in gamma, not inferred from local single-process runs |
+| Configuration | `.env` file | Runtime environment variables supplied by infrastructure as code | A missing variable surfaces mid-invocation, not at startup, so configuration parity is asserted in step 3 and drift between the deployed runtime and the local template is a release blocker |
+| Model access | Same managed model endpoints, low volume | Same endpoints under throttling and regional capacity pressure | Fallback model configuration documented; retry and backoff verified in gamma |
+| Observability | Console output | OpenTelemetry to CloudWatch metrics, logs and traces | Step 5 confirms telemetry is actually arriving before production |
+| Network | Direct egress | VPC with private subnets and VPC endpoints | Endpoint and DNS resolution failures are deployment-only; verified in alpha |
+
+## 4. Separate deployment of components
+
+Components are deployed separately, on independent cadences, because they have different blast radii
+and different rollback semantics:
+
+| Component | Deployed | Why separately |
+|---|---|---|
+| Agent runtime image (evaluation graph) | Per release, via the staged pipeline | Highest change rate; rolls back independently |
+| Infrastructure (tables, buckets, queues, roles, VPC) | Via reviewed infrastructure-as-code changes, ahead of the code that needs them | Must be forward-compatible: infrastructure lands first so a code rollback never strands a missing dependency |
+| Prompts, rubrics and control catalogue | With the runtime image, versioned together | Verdict semantics must never disagree with the code that validates them |
+| Model identifier | Configuration change, promoted through the same stages | Lets a model change be rolled back without rebuilding, but still requires full regression before adoption |
+| Front-end and control-plane service | Independently, by its own team | Contract-compatible by agreement; the agent tolerates additive API change |
+
+**Ordering rule:** additive infrastructure and API changes are deployed before the code that depends
+on them, and removals only after every consumer has been promoted — so any single component can roll
+back without breaking another.
+
+## 5. Release criteria
+
+Requirements to be met **prior to release and deployment**:
+
+| # | Release criterion | Category | Evidence |
+|---|---|---|---|
+| 1 | All verification and validation measures passed at their thresholds (RC-1 … RC-7) | **V&V measures to be passed** | AIMS-PLAN-010 §6 release record |
+| 2 | Per-requirement agreement ≥ 0.90 on the held-out test split; gap recall ≥ 0.95; verdict stability ≥ 0.95 | **Performance metrics to be met** | Regression harness output |
+| 3 | Latency and inference cost per assessment within expected bounds, no regression | **Performance metrics to be met** | Release performance report |
+| 4 | Adversarial and injection suite 100% blocked | V&V measure | Adversarial suite output |
+| 5 | Compliance analysts have reviewed a sample of verdicts from the candidate build and accepted rationale quality and interpretability | **User testing to be completed** | Analyst acceptance record (IC-3, IC-11) |
+| 6 | Customer-facing change communicated where behaviour visibly changes | User testing / communication | Release note and customer notice |
+| 7 | Impact criteria IC-1 … IC-12 signed off | **Management approval** | Responsible AI Lead sign-off |
+| 8 | Threat model current; security gate passed | **Management approval** | AI Security Lead sign-off |
+| 9 | Design and technical documentation updated in the same change | Documentation | AIMS-DOC-009, AIMS-DOC-012 |
+| 10 | This deployment plan current and approved | Documentation | This document |
+| 11 | Rollback path rehearsed | Operational readiness | Rollback rehearsal record |
+| 12 | **Release authorization signed by the AI System Accountable Owner** — and by the AIGB for a high-impact system | **Management approval / sign-off** | Release authorization record |
+
+An unmet criterion blocks release; proceeding requires a dated, AIGB-approved exception with a
+compensating control (AIMS-POL-001 §4). The AI Development Lead cannot authorize release of their own
+change (segregation of duties, AIMS-POL-006 §3).
+
+## 6. Perspectives of, and impacts to, interested parties
+
+The plan is shaped by the parties a deployment affects, and each has a defined consideration in it:
+
+| Interested party | Perspective and impact considered | How the plan responds |
+|---|---|---|
+| **Assessed organizations (customers)** | A mid-assessment change could alter a verdict they are acting on; an unannounced scoring change undermines trust in the audit record | Assessments in flight complete on the version that started them; verdict-affecting changes are announced before deployment with their effective date; historical results are never retroactively rewritten |
+| **Compliance analysts and auditors** | They must be able to trust and explain verdicts, and are the human oversight point | Criterion 5 requires their acceptance before release; rationale quality is a gate, not a nice-to-have |
+| **End users of the assessed organizations** | Indirectly affected: a wrong verdict can drive unnecessary change or leave a real gap unaddressed | Gap recall held to the stricter threshold (criterion 2); false-gap rate tracked (IC-7) |
+| **Operations and on-call engineers** | They carry the consequences of a bad deployment at unsociable hours | Staged promotion with dwell times; rehearsed rollback; no deployment into a change freeze or outside business hours without AI Operations Lead approval |
+| **Regulators and external auditors** | Require a reproducible audit trail of what was deployed when | Every deployment records commit, image digest, model identifier, approvals and timestamps, retained 7 years |
+| **Model and platform suppliers (AWS, Anthropic)** | Deprecations and capacity limits are outside our control | Model identifier pinned and promoted as configuration; documented fallback; supplier dependency tracked as R-08 |
+| **Our own employees** | Must not be pressured to bypass a gate to meet a date | Exceptions require AIGB approval and are visible; concerns may be raised under AIMS-PRO-004 without reprisal |
+
+## 7. Post-deployment verification and rollback
+
+Within the dwell period at each stage, the AI Operations Lead confirms: health endpoint responding;
+assessments completing; no errors or warnings in logs; latency and cost within bounds; telemetry
+arriving; and **verdict distribution consistent with the prior release** — an unexplained shift in
+score distribution is treated as a regression signal even when no test failed. Any breach triggers
+rollback to the previous runtime version, and the release is re-entered at V&V.
+
+## 8. Review history
+
+| Version | Date | Reviewer | Outcome |
+|---|---|---|---|
+| 3.0 | 2025-10-02 | AI Operations Lead | Cell-by-cell production rollout replaced global deployment |
+| 3.1 | 2025-12-19 | AI Operations Lead | Added configuration-parity assertion after a missing environment variable surfaced mid-invocation |
+| 3.2 | 2026-02-11 | AI Operations Lead | Added verdict-distribution monitoring to post-deployment verification |
+| 3.3 | 2026-03-05 | AI Operations Lead, approved by AI System Accountable Owner | Added the component-ordering rule (§4) and the interested-party table (§6); approved for the 2026-03 release |

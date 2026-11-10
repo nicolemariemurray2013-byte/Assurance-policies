@@ -1,0 +1,526 @@
+# Equipment Siting, Utilities, Cabling and Maintenance Standard
+
+**Document ID:** OPS-EQP-045
+**Version:** 2.0 — **effective 2026-03-02**, superseding v1.0 of 2025-04-22
+**Owner:** Director, IT Operations
+**Approved by:** CISO 2026-02-26, per the approval authority in GOV-POL-040 §3
+**Next scheduled review:** 2026-12-31 (Annually, and on any change to the equipment inventory, the lease, the building's)
+mechanical and electrical services, or the maintenance supplier set
+**Scope:** All physical equipment the entity operates — the HQ server closet's network equipment and UPS, the
+EU suite's network equipment, 52 laptops, 12 mobile devices, 2 multi-function printers, meeting-room
+audio-visual equipment — together with the supporting utilities and cabling those depend on, and the
+maintenance regime for all of it. Production compute, storage and network equipment in AWS us-west-2 is
+**inherited and out of the entity's operational control**; the inheritance is stated per requirement rather
+than left implicit.
+
+**Related:** SEC-PHY-044 (physical and environmental threats, secure areas), SEC-PRO-013 (physical access),
+SEC-MED-046 (storage media, off-premises assets, secure disposal), SEC-END-043 (endpoint devices),
+OPS-BCK-030 (backup and environmental protection), OPS-BCP-031 (continuity and insurance), OPS-CAP-029
+(capacity), TPR-PRO-016 (supplier risk), GOV-PRO-007 (shared-responsibility allocation), SEC-AST-020 (asset
+inventory and classification).
+
+---
+
+## 1. The equipment inventory this standard governs
+
+| Equipment | Location | Criticality | What depends on it |
+|---|---|---|---|
+| Firewall / router, 24-port switch, patch panel, wireless controller, 2 access points | HQ server closet | **Moderate** — office connectivity only; **no production data at rest or in transit beyond the perimeter** | HQ office network and Wi-Fi |
+| UPS (single unit, clean-shutdown capacity) | HQ server closet | Low | Orderly shutdown of the above |
+| Router and 2 access points | EU suite (wall-mounted, lockable enclosure) | Low | EU office network |
+| 52 laptops (48 issued, 4 loaner pool), 12 mobile devices | With individuals across five geographies | Moderate individually, low collectively | Individual productivity; no data at rest above Internal (SEC-END-043 §2) |
+| 2 multi-function printers (badge-release) | HQ, EU suite | Low | Printing at Internal and below |
+| Meeting-room AV (2 rooms HQ, 1 EU) | Offices | Low | Meetings |
+| **Production compute, storage, network** | AWS us-west-2 | **Critical** | The entire service |
+
+**The boundary, stated once and applied throughout.** The entity's own equipment carries no production
+information asset. The equipment that does — every production host, disk and network device — is AWS's, sited,
+powered, cabled and maintained by AWS under the shared-responsibility allocation in GOV-PRO-007 §5, assured
+annually through the provider's audit reports and **recorded as inherited rather than asserted as operated**.
+Where a requirement below is met by inheritance it says so, names the assurance route, and does not claim
+entity operation. Where it is met by the entity at office scale it says that too. The entity's own controls
+that bear on production equipment are architectural — multi-AZ deployment, infrastructure as code, no
+single-host dependency — and are recorded as the entity's own in OPS-BCK-030 and OPS-BCP-031, with the
+**single-region limitation Board-accepted as R-022**.
+
+---
+
+## 2. Equipment siting and protection (7.8)
+
+### 2.1 Siting to minimise access into work areas and prevent unauthorized access (7.8-R1)
+
+| Equipment | Siting decision | Effect |
+|---|---|---|
+| HQ network equipment and UPS | In a **dedicated closet off the suite's internal corridor**, not in a work area, not in a meeting room, not in the reception zone. The closet is entered from inside the badge-controlled suite, so reaching it requires two authorisation layers | Nobody needs to enter a work area to service it, and nobody servicing it passes through a work area holding screens |
+| EU network equipment | **Wall-mounted in a lockable enclosure** above head height in a service alcove rather than in the open office; no floor-standing rack, so there is no cabinet a visitor could open | Removes the unauthorised-access opportunity rather than supervising it |
+| Multi-function printers | Sited **away from reception and from through-routes**, in sight of staffed desks, with badge release so output is not produced until the originator is present (SEC-PHY-044 §5.5) | A visitor cannot loiter unobserved at the device, and there is no output tray to read |
+| Loaner and spare devices | Keyed device store, not on open shelving | Removes an easy-theft target |
+| Records cabinets | Keyed, in the internal corridor rather than in reception | Access requires suite entry plus a key |
+| Meeting-room AV | Fixed and cable-managed; ports in the room are patched to the guest VLAN only (SEC-NET-047 §5), so a visitor plugging into a wall port reaches the internet and nothing else | Physical access to a port confers no network trust |
+
+### 2.2 Positioning to reduce viewing of sensitive data (7.8-R2)
+
+Information processing facilities handling sensitive data are positioned to reduce the risk of information
+being viewed by unauthorized persons during use:
+
+- **No desk faces a window at street or opposite-building level**; desks on the two ground-adjacent aspects at
+  HQ were reoriented at fit-out for this reason, and the reorientation is recorded so a future desk move does
+  not silently undo it.
+- Desks are positioned so screens are **not readable from the corridor, the reception seating, or a meeting-room
+  glass wall**; the two HQ meeting rooms with glass walls have applied privacy film to the lower two-thirds.
+- Privacy filters are standard issue on every laptop and are mandatory at co-working locations and in transit
+  (SEC-END-043 §2).
+- Roles handling customer evidence most frequently — the assessment operations pair — sit in the two positions
+  furthest from any through-route, a deliberate allocation rather than a coincidence of seating.
+- The clear-screen and positioning rules extend to home locations through the location self-assessment, which
+  asks specifically whether the screen can be seen from outside and issues a filter in response (SEC-END-043
+  §4).
+- **Production data is not viewed on a stored copy at all**: Restricted material is rendered through a brokered
+  session, so the exposure window is a screen for the duration of a task, not a file on a desk.
+
+### 2.3 Controls against physical and environmental threats to equipment (7.8-R3)
+
+Each threat named in 7.8-R3 is addressed for the entity's own equipment, and inherited for production:
+
+| Threat | Entity-operated equipment | Production (inherited) |
+|---|---|---|
+| **Theft** | Closet on a named-list badge reader with dual authorization; EU enclosure locked; laptops cable-locked at desks and never left in vehicles or checked baggage; spares in a keyed store; asset register reconciled to the roster quarterly | AWS facility |
+| **Fire** | Landlord detection and suppression with suite coverage independently verified; smoke detection in the closet reporting to a monitored channel; **no combustible storage in the closet** (enforced after a packaging box was found at inspection); extinguisher of the correct class immediately outside the closet, serviced annually; lithium-battery charging restricted to a designated bench with a metal enclosure, an insurer recommendation implemented this period | AWS facility |
+| **Explosives** | Assessed as **not a design threat** for either site (SEC-PHY-044 §3.3); no blast measure implemented, recorded as a reasoned decision | AWS facility |
+| **Smoke** | Detection in the closet and the suite; the closet is not on a shared return-air path with the ground-floor restaurant, verified at fit-out | AWS facility |
+| **Water and water-supply failure** | **No water-bearing service routed through the closet**, re-verified at every landlord works notification; leak-detection puck under the rack (added 2026-01 after a chilled-water reroute on the floor above, D-2026-015); no equipment on the floor; no basement storage at either site; water-supply failure has no operational impact because there is no water-cooled equipment | AWS facility |
+| **Dust** | Closet door self-closing; rack blanking panels fitted; filter and fan inspection at each quarterly inspection; **building works trigger a dust protection step** — the rack front was sheeted during the corridor works in 2025-10 | AWS facility |
+| **Vibration** | Rack on a rubber-isolated base with seismic restraint straps; no equipment on a shared wall with plant | AWS facility |
+| **Chemical effects** | No cleaning chemicals stored in or used inside the closet; the cleaning contractor's instruction excludes the closet entirely (it has no cleaning access) | AWS facility |
+| **Electrical supply interference** | Surge protection at the closet distribution board; UPS providing line conditioning as well as ride-through for shutdown; equipment on a dedicated circuit rather than shared with office sockets | AWS facility |
+| **Communications interference** | Power and data segregated (§4); wireless channel plan managed by the controller with interference reporting; no unmanaged transmitter permitted in the closet | AWS facility |
+| **Electromagnetic radiation** | Addressed in §2.6 | AWS facility |
+| **Vandalism** | Badge entry, prop-open alarm, laminated glazing on ground-adjacent aspects, no street signage identifying a technology tenant | AWS facility |
+
+### 2.4 Eating, drinking and smoking near information processing facilities (7.8-R4)
+
+Guidelines are established, communicated and enforced:
+
+- **No food or drink of any kind inside the server closet or the EU service alcove.** This is absolute, posted
+  on the closet door, and is a line item on the quarterly inspection.
+- Drinks at desks must be in **closed, lidded containers**; open cups are not permitted at a docked laptop.
+  Two spill incidents in 2025 (one keyboard, one dock, no data loss, both devices replaced from the loaner
+  pool) are the reason this moved from guidance to a rule, and are cited in the awareness module so the rule
+  has a visible cause.
+- No food or drink on the printer or AV equipment surfaces; no eating in meeting rooms during customer calls
+  where a spill would interrupt.
+- **Smoking and vaping** are prohibited throughout both suites under building rules and entity policy;
+  designated areas are outside the building, away from air intakes, and the prohibition includes the balcony
+  adjacent to the HQ suite because it sits beneath a fresh-air intake.
+- Remote locations: personnel are asked to apply the closed-container rule at home, and spill damage to an
+  entity device is handled as a hardware fault under §5 rather than as a disciplinary matter, because a rule
+  that makes people conceal damage produces worse outcomes than the damage.
+
+### 2.5 Monitoring environmental conditions (7.8-R5)
+
+| Location | Monitored | How | Threshold and response |
+|---|---|---|---|
+| **HQ server closet** | Temperature and relative humidity, **continuously** | Networked sensor reporting to the observability platform, with alerting to the IT Operations on-call channel — not to an unmonitored mailbox | Warning at 27 °C, critical at 32 °C; humidity warning outside 30–70 % RH. Response: verify landlord cooling, open the door with the prop-open alarm acknowledged, escalate to building management, and — at critical — perform a controlled shutdown of non-essential equipment |
+| HQ closet | Water presence | Leak-detection puck under the rack, alerting to the same channel | Any detection is an immediate on-call page |
+| HQ closet | Power quality and UPS state | UPS management interface reporting to the observability platform | Battery fault, on-battery, or self-test failure alerts (§3.3) |
+| EU service alcove | Temperature | Sensor in the enclosure | Warning at 30 °C; the enclosure is vented and the equipment load is trivial, so the threshold is set by the equipment specification rather than by convention |
+| Offices generally | Comfort temperature | Landlord BMS | Not an information-security control; recorded to distinguish it from the above |
+| **Production** | Facility environmental conditions | **Inherited** — AWS operates and monitors data-centre environmentals; the entity monitors *service* health, not facility temperature | Assurance via provider audit reports |
+
+**Readings and exceedances this period:** two heat advisories at the HQ city produced closet peaks of 29.4 °C
+and 28.8 °C — both above the warning threshold, neither above critical; both were alerted, both were verified
+against landlord cooling, and both are recorded rather than smoothed away. The 2026-01 leak detector has not
+alerted. The alerting path itself is **tested quarterly** by forcing a synthetic threshold breach, because an
+environmental sensor whose alert path is untested is a sensor that will be discovered to be silent during the
+event.
+
+### 2.6 Lightning protection, industrial protection and electromagnetic emanation (7.8-R6, 7.8-R7, 7.8-R8)
+
+| Requirement | Position |
+|---|---|
+| **Lightning protection applied to buildings; lightning protection filters fitted to incoming power and communications lines (7.8-R6)** | Both buildings carry **landlord-provided structural lightning protection** to the applicable national standard, evidenced by the landlord's inspection certificate obtained annually — the entity is a tenant and cannot install structural protection, so obtaining and reviewing the certificate is the control it can operate. On the entity's side of the demarcation: **surge protective devices are fitted at the closet distribution board and at the incoming telecommunications termination**, which is the filter this requirement asks for at tenant scale, specified by the landlord's M&E contractor and inspected at the annual fixed-wiring inspection. Production is **inherited** |
+| **Special protection for industrial environments, e.g. keyboard membranes (7.8-R7)** | **Not applicable, with the reason recorded.** The entity operates no industrial, manufacturing, laboratory or field environment: all equipment sits in commercial office space, in a service closet, or with individuals in domestic settings. No dust-, moisture- or chemical-hardened equipment is required, and no keyboard membrane, sealed enclosure or ruggedised device is specified. This conclusion is reassessed at each annual site assessment; were the entity to place equipment in such an environment, the pre-occupancy assessment in SEC-PHY-044 §3.1 would trigger the specification |
+| **Protection of equipment processing confidential information against electromagnetic emanation leakage (7.8-R8)** | Addressed proportionately and explicitly. **No entity-controlled equipment processes Confidential or Restricted information in cleartext at rest** — that processing happens in AWS. What the entity's own equipment carries is encrypted transit traffic. The assessed risk from emanation is therefore low, and the measures applied are: fibre-optic cabling for the closet uplink and for inter-floor runs, which does not radiate (§4.4); shielded twisted-pair for the copper runs carrying management traffic; segregation of power from data (§4.3); and the architectural control that Restricted material is rendered rather than transferred. **No TEMPEST-grade shielding is implemented**, and that is a recorded, reasoned decision based on the assessed threat and the absence of cleartext Confidential processing on entity premises — not an oversight. It is revisited at each annual assessment and would change if the entity ever processed Restricted material on premises |
+
+### 2.7 Physical separation from facilities not managed by the entity (7.8-R9)
+
+Information processing facilities managed by the entity are **physically separated** from those not managed by
+it:
+
+- The HQ **server closet is entity-keyed on a lock that is not part of the building master suite**, so the
+  landlord's facilities staff cannot enter it; landlord access to the suite is scheduled-only or escorted, and
+  the closet is excluded from all landlord access (SEC-PRO-013 §2).
+- The entity's network equipment terminates on **its own patch panel**, physically separate from the building's
+  riser and structured cabling, with the demarcation point documented so responsibility for any given
+  segment is unambiguous.
+- The EU enclosure is locked and entity-keyed; the landlord's own comms cabinet on that floor holds no entity
+  equipment.
+- **Co-working locations:** the entity places no equipment on site at all and leaves nothing overnight, which
+  is separation by absence — the strongest available form when the space is shared.
+- The entity's network is logically separated from any landlord- or operator-provided network: at co-working
+  locations personnel use the always-on VPN over the operator's network and treat it as hostile (SEC-NET-047
+  §6); no entity device joins a landlord SSID as a trusted client.
+- **Production:** entity workloads run in a dedicated AWS account (471885797689) with account-level isolation
+  from every other tenant — the separation is logical and provider-enforced, which is the correct form for
+  shared infrastructure and is recorded as inherited rather than described as physical separation the entity
+  performs.
+
+---
+
+## 3. Supporting utilities (7.11)
+
+### 3.1 Protection from power failures and other utility disruption (7.11-R1)
+
+| Utility | Entity dependency | Protection | Consequence of failure |
+|---|---|---|---|
+| **Electrical power** | HQ closet equipment; office desks | Landlord supply on a dedicated circuit to the closet with surge protection; **UPS sized for orderly shutdown**, not for ride-through; laptops hold 6–10 hours of battery | Office connectivity lost; **no production impact**, because production is in AWS and personnel work remotely by default. The documented response is to work remotely, which is the normal state |
+| **Telecommunications** | Office internet, both sites | HQ has **two carriers on diverse physical entries** (§3.5); EU has one carrier plus 4G/5G failover on the router | Degraded office connectivity; individuals tether to entity mobile devices |
+| Cooling | HQ closet | Landlord-provided, with entity temperature alarming and a documented shutdown procedure at the critical threshold | Managed by §2.5's response |
+| Water | Sanitation only | No operational dependency; no water-cooled equipment | Facility habitability only; the response is to work remotely |
+| Gas | None — neither suite has a gas supply | Not applicable, recorded | — |
+| **Production power, cooling, network** | Absolute | **Inherited** from AWS, whose facility redundancy the entity relies on and assures via audit reports; the entity's own contribution is **multi-AZ deployment**, which is a real control over facility-level utility failure and is claimed as the entity's own | Regional utility event remains the R-022 residual |
+
+**The honest shape of this control:** the entity has deliberately **not** purchased generator backup, N+1
+cooling or extended UPS runtime for its offices, because no production information asset or processing depends
+on them. Buying utility resilience for an office that could be closed for a day with no customer impact would
+be spending against the wrong risk. The decision, its reasoning and its residual are recorded here and in the
+continuity plan, so that the absence of a generator reads as a decision rather than as a gap.
+
+### 3.2 Configuration, operation and maintenance to manufacturer specification (7.11-R2)
+
+The equipment supporting the utilities that the entity owns — the UPS, the surge protective devices, the closet
+sensors and the fans — is configured, operated and maintained to the **manufacturer's specifications**:
+
+| Item | Manufacturer requirement | How it is met |
+|---|---|---|
+| UPS | Ambient ≤ 25 °C for rated battery life; battery replacement at 4 years or on self-test failure; quarterly self-test; firmware currency | Ambient monitored (§2.5); battery installed 2024-03, **replacement scheduled 2028-03 and recorded in the maintenance calendar**; automatic quarterly self-test with the result reported to the observability platform; firmware updated 2025-09 under change control |
+| Surge protective devices | Visual status indicator check; replacement after a significant surge event; inspection at the fixed-wiring interval | Indicator checked at each quarterly inspection; no surge event recorded; inspected at the 2026-01 fixed-wiring inspection |
+| Closet environmental sensor | Calibration interval 24 months | Calibrated 2025-06; next 2027-06, in the calendar |
+| Rack fans and blanking | Airflow front-to-back with blanking panels fitted; filter inspection | Verified at each quarterly inspection |
+| Landlord-owned utilities (mains, cooling, lightning protection, fire systems) | Manufacturer and statutory regimes | **Operated by the landlord**; the entity obtains the inspection and service certificates annually under the lease and reviews them — the control the entity can operate is obtaining and reading the evidence, and a missing certificate is chased and recorded rather than assumed |
+
+### 3.3 Regular inspection and testing (7.11-R3)
+
+| Test / inspection | Interval | Performed by | Result this period |
+|---|---|---|---|
+| **UPS self-test** | Quarterly, automatic | UPS firmware, result to observability | 4 of 4 passed |
+| **UPS load and shutdown test** — a real transfer with a verified graceful shutdown sequence | **Annually** | IT Operations, under a change record, out of hours | Performed 2026-01-17: transfer clean, shutdown sequence completed in 4 min 12 s, **one finding** — the wireless controller was not in the shutdown script and would have lost power uncleanly. Recorded as **D-2026-019** (Low), script corrected and retested 2026-01-24 |
+| Surge protective device indicator check | Quarterly | Facilities lead | 4 of 4, all healthy |
+| **Environmental alert-path test** (synthetic threshold breach) | Quarterly | IT Operations | 4 of 4 alerts received on the on-call channel |
+| Leak detector test | Quarterly since installation | Facilities lead | 1 of 1 |
+| Fixed electrical wiring inspection (statutory) | Per the applicable interval, most recently 2026-01 | Landlord's contractor, certificate to the entity | Satisfactory; no code items |
+| Fire alarm and extinguisher service | Annually / per statute | Landlord and service contractor | Certificates obtained for both sites |
+| Emergency lighting test | Monthly flick test, annual duration test | Landlord, certificates to the entity | Obtained; the annual duration test at HQ found two failed fittings, replaced by the landlord |
+| Generator | **None installed** — no test, recorded as not applicable with the §3.1 reasoning | — | — |
+
+### 3.4 Appraising utility capacity against business growth (7.11-R4)
+
+Utilities are **appraised regularly for their capacity to meet business growth and their interactions with
+other supporting utilities**:
+
+- The **annual utility capacity appraisal** (performed 2026-01-28) reviews headroom against the growth plan:
+  desk count against the suite's power and cooling allocation, closet circuit load against its rating (measured
+  at 38 % of the dedicated circuit's capacity), UPS VA headroom (61 % spare), switch port count (7 of 24 spare),
+  and internet bandwidth against measured peak (peak 42 % of committed).
+- **Interactions between utilities** are explicitly considered rather than each being appraised alone: the
+  closet's cooling demand rises with electrical load, so adding equipment is assessed against both; the UPS's
+  rated battery life depends on ambient temperature, so a cooling degradation shortens the shutdown window and
+  the shutdown script's timing was validated at the upper ambient rather than at 22 °C; and the landlord's
+  cooling is itself electrically supplied, so a mains failure removes cooling at the same moment the UPS begins
+  discharging — which is precisely why the design goal is orderly shutdown rather than ride-through.
+- Growth triggers a reappraisal out of cycle: a headcount increase above 60, an office move, or any equipment
+  addition to the closet. The **production** capacity appraisal is a different discipline entirely and lives in
+  OPS-CAP-029; conflating cloud capacity with office utilities would hide both.
+- The appraisal's conclusion this period: office utility capacity is adequate for the 24-month plan with no
+  investment required; the one action raised was to reserve two switch ports rather than allow the spare count
+  to reach zero unnoticed.
+
+### 3.5 Multiple feeds, diverse routing, and alarms — where the risk assessment justifies them (7.11-R5, 7.11-R6)
+
+Both requirements are conditioned on the entity's **risk assessment of utility dependency**, and that
+assessment is the honest determinant here:
+
+| Requirement | Where the entity's critical information processing actually is | What is implemented |
+|---|---|---|
+| **Multiple feeds with diverse physical routing (7.11-R5)** | **Production, in AWS.** The provider's facilities carry redundant power feeds and diverse routing; the entity's own contribution to feed diversity is **multi-AZ deployment across three availability zones**, which places the workload on physically distinct facilities with independent power and network paths — the entity's own control, claimed as such. For the **offices**, the risk assessment concluded that a single power feed is acceptable because no critical processing depends on it; **telecommunications diversity was nonetheless implemented at HQ — two carriers entering the building by physically separate routes** — because office connectivity loss during an incident would delay response, which is a real if moderate risk. The EU suite has a single carrier plus cellular failover, proportionate to 9 desks | Multi-AZ (production, entity-owned decision); dual-carrier diverse entry (HQ); cellular failover (EU); **single power feed accepted** with recorded reasoning |
+| **Alarms to detect utility malfunction (7.11-R6)** | Both | Closet temperature, humidity, water presence, UPS state and mains state all alarm to the **monitored on-call channel** with the path tested quarterly (§3.3); carrier failure alarms from the router; fire and emergency-lighting alarms are the landlord's, monitored 24/7 by their contractor with escalation to the entity's facilities lead. **Production** utility alarming is inherited; the entity's own production alarming is on service health and is covered in SEC-MON-026 and the A.9.4 alarm set |
+
+### 3.6 Utility equipment on a separate network, and internet exposure (7.11-R7, 7.11-R8)
+
+| Requirement | Implementation |
+|---|---|
+| **Utility-supporting equipment, if network-connected, is on a separate network from the information processing facilities (7.11-R7)** | The UPS management interface, the closet environmental sensor and the leak detector are the only network-connected utility devices the entity owns. All three sit on a **dedicated management VLAN** that is segregated from the office user VLAN, from the guest VLAN and from any path to production (SEC-NET-047 §5). The VLAN permits only the monitoring collector to reach them, on the specific ports required, and permits **no lateral traffic between the devices themselves**. The landlord's building management system is on the landlord's own network with **no interconnection to the entity's** — verified at fit-out and re-verified at each landlord works notification |
+| **Utility-supporting equipment is connected to the internet only when needed and only in a secure manner (7.11-R8)** | These devices have **no inbound internet reachability and no outbound internet access by default**. Monitoring is *pulled* by the collector inside the network rather than pushed to a vendor cloud. Where a firmware update requires vendor access, the device is granted **time-bound, destination-restricted egress under a change record** and the egress is removed when the update completes — done once this period, for the 2025-09 UPS firmware update. Default credentials were changed at commissioning, the vendor's cloud-management feature is **disabled**, and the devices' web interfaces are reachable only from the management VLAN with TLS enabled where the device supports it. One device (the leak detector) supports only HTTP; that limitation is recorded, and the compensating control is that it is reachable only from the collector on a segregated VLAN |
+
+### 3.7 Emergency lighting, communications, switches, valves and contacts (7.11-R9, 7.11-R10, 7.11-R11)
+
+| Requirement | Implementation |
+|---|---|
+| **Emergency lighting and communications are provided (7.11-R9)** | Emergency lighting is landlord-installed on statutory maintenance in both suites, with monthly flick tests and annual duration tests whose certificates the entity obtains and reviews (§3.3) — the two failed HQ fittings found at the 2026 duration test were replaced. **Emergency communications**: the entity does not depend on office telephony; every member of staff carries a mobile phone (12 entity-issued to on-call personnel, personal devices otherwise), the incident bridge is reachable from any network including cellular, and the incident runbook's contact tree is available offline as a printed card at both offices and as a downloaded copy on every on-call engineer's phone — because a contact list that lives only in the system that is down is not an emergency communication |
+| **Emergency switches and valves to cut off power, water, gas or other utilities are located near emergency exits or equipment rooms (7.11-R10)** | The **closet's electrical isolation point is inside the closet at the entrance, labelled, and identified on the posted emergency sheet** (SEC-PHY-044 §4.7) with the instruction not to operate it except in an emergency. The suite's distribution board isolator is in the service riser adjacent to the main suite exit, labelled and unobstructed — obstruction of it is a line item on the quarterly inspection. Water isolation for the floor is in the landlord's riser adjacent to the same exit, and its location is recorded on the emergency sheet even though operating it is the landlord's action. **There is no gas supply to either suite**, recorded so that its absence is not mistaken for an unlocated valve |
+| **Emergency contact details are recorded and available to personnel in the event of an outage (7.11-R11)** | A single-page contact sheet — on-call IT Operations, facilities lead, CISO, building management (in and out of hours), the landlord's M&E contractor, the carriers' fault numbers with the circuit IDs, the UPS vendor, and emergency services — is **posted inside the closet door and at both office entrances**, distributed as a printed card to on-call personnel, and held in the incident runbook. Currency is checked at the quarterly inspection, and was corrected once this period when an on-call number changed. The circuit IDs are on the sheet deliberately: an engineer reporting a carrier fault at 02:00 should not have to find a contract to do it |
+
+---
+
+## 4. Cabling security (7.12)
+
+### 4.1 Protection of power, data and supporting-service cables from interception, interference and damage (7.12-R1)
+
+| Cable class | Where | Protection |
+|---|---|---|
+| Incoming telecommunications (2 carriers, HQ) | Building entry to the closet | Landlord-provided containment in the riser; entity's segment in **locked containment**; surge protective device at the termination; termination inside the locked closet, so the demarcation is behind two access layers |
+| Closet-to-floor structured cabling | Riser and ceiling void | In **enclosed metal containment** (not open basket) for the entity's runs, terminating on the entity's own patch panel inside the closet |
+| Desk drops | Floor boxes and desk legs | Floor cable protectors where a run crosses a walkway; no trailing leads; annual visual inspection |
+| Meeting-room and AV cabling | Rooms | Cable-managed and terminated; room ports patched to the **guest VLAN only**, so interception of a room port yields internet access and nothing else |
+| Power in the closet | Distribution board to rack PDU | Dedicated circuit, in containment, surge-protected, physically segregated from data (§4.3) |
+| **Production network cabling** | AWS facilities | **Inherited**; the entity has no cabling in any data centre |
+
+### 4.2 Underground routing or adequate alternative protection (7.12-R2)
+
+Power and telecommunications lines into the information processing facilities are **routed underground where
+possible, or subject to adequate alternative protection**:
+
+- Both buildings' incoming power and telecommunications services enter **underground** — a factor recorded in
+  the pre-occupancy assessments (SEC-PHY-044 §3.2), where an overhead service entry would have been a noted
+  exposure. The underground segments are the utility providers' and the landlord's; the entity's assurance is
+  the landlord's service records and the site assessment, not an inspection it could perform itself.
+- **Protection of the underground runs from accidental cuts** — armoured conduit and buried-service markers —
+  is the utility's and the landlord's responsibility under the lease and the wayleave; the entity's control is
+  to have confirmed it exists at assessment and to require notification of any excavation affecting the
+  building, which arrived once this period for a footway works and was tracked to completion with no
+  interruption.
+- Inside the building, where "underground" does not apply, the **alternative protection** is enclosed metal
+  containment in risers and ceiling voids, locked containment for the entity's segment, and **floor cable
+  protectors** on the two runs that cross walkways at HQ. Utility poles are not present at either site.
+- **HQ's two carriers enter by physically separate routes** (§3.5), so a single excavation strike cannot remove
+  both — the diversity is in the routing, not only in the contract, which is the distinction that makes it
+  worth having.
+
+### 4.3 Segregation of power from communications cables (7.12-R3)
+
+Power cables are segregated from communications cables to prevent interference:
+
+- **Separate containment** for power and data throughout the entity's installation; where a crossing is
+  unavoidable it is at 90°, and the two crossings at HQ are recorded on the as-built drawing.
+- **Minimum separation distances** to the installation standard are specified in the cabling specification and
+  were verified at fit-out by the installer, whose certificate is held.
+- In the rack, power distribution is on the **rear right** vertical path and data on the **rear left**, with no
+  shared bundles — a layout rule that survives changes because it is written down and checked at the quarterly
+  inspection rather than remembered.
+- Fibre is used for the closet uplink and inter-floor runs, which are immune to electromagnetic interference
+  and remove the interference question from the runs where separation is hardest to guarantee (§4.4).
+- Interference is also monitored empirically: switch port error counters are collected by the observability
+  platform, and a rising error rate on a copper port is an investigation trigger — which found one poorly
+  seated patch lead this period, corrected at the inspection.
+
+### 4.4 Additional controls for sensitive or critical systems (7.12-R4)
+
+Each measure named in 7.12-R4 is considered, and the applied/not-applied decision is recorded with its reason
+rather than left ambiguous:
+
+| Measure | Decision | Reasoning |
+|---|---|---|
+| **Armoured conduit, and locked rooms or boxes at inspection and termination points** | **Applied** at tenant scale: enclosed metal containment for entity runs; the **termination point is inside the locked server closet**; the EU termination is in a locked wall enclosure; the patch panel is inside the closet, not in an open corridor cabinet | The termination point is the highest-value cabling target, and it is behind two access layers |
+| **Electromagnetic shielding** | **Partially applied**: shielded twisted-pair for management-VLAN copper runs; fibre for uplinks. **No room-level shielding** | Assessed against §2.6: no cleartext Confidential processing occurs on entity premises, so room-level shielding would protect encrypted transit traffic — a recorded, reasoned decision, revisited annually |
+| **Periodical technical sweeps and physical inspections for unauthorized devices attached to the cables** | **Applied**: the quarterly closet inspection includes a physical check for any device not on the inventory — inline taps, unrecognised dongles, unexpected media converters, rogue access points — against the as-built drawing and the asset register. It is complemented by a **technical** check: 802.1X port authentication means an unauthorised device gains no network access, switch MAC tables are reviewed monthly for unexpected addresses, and the wireless controller reports rogue SSIDs. **No RF/TSCM sweep is performed**, a decision recorded against the assessed threat | A physical sweep with no technical backstop is theatre; the combination is what makes an unauthorised attachment detectable |
+| **Use of alternative routings or transmission media providing appropriate security** | **Applied** at HQ (dual diverse carriers) and at the EU suite (cellular failover); fibre chosen over copper for the runs where interception or interference risk is highest | Proportionate to a moderate-criticality office network |
+| **Controlled access to patch panels and cable rooms** | **Applied**: the patch panel is inside the named-list, dual-authorised server closet; there is no separate cable room; the landlord's comms cabinet holds no entity equipment and the closet is excluded from landlord access | This is the control that most reduces cabling risk here |
+| **Use of fibre-optic cabling** | **Applied** for the closet uplink and inter-floor runs; copper retained for desk drops where fibre would add cost without addressing an assessed risk | Fibre where the run is long, shared or hard to inspect; copper where it is short and inside a controlled area |
+
+### 4.5 Labelling of cables at each end (7.12-R5)
+
+Cables are **labelled at each end with sufficient source and destination detail to enable physical
+identification and inspection**:
+
+- The labelling scheme is defined in the cabling specification: `<site>-<panel>-<port> ⇄ <device>-<interface>`,
+  printed labels (not handwritten), applied at **both ends** of every permanent run and every patch lead in
+  the rack.
+- An **as-built cabling drawing and a port-to-outlet schedule** are maintained in the same repository as the
+  network documentation (SEC-NET-047 §3) and are updated by the change that alters them — a cabling change is
+  not closed until the drawing is updated, which is enforced as a checklist item rather than trusted to
+  diligence.
+- **Verification is a line item on the quarterly closet inspection**: labels present, legible and correct at
+  both ends, sampled against the schedule. This has found and corrected one unlabelled patch lead and one
+  label that survived a change while the connection behind it did not — the second is the more dangerous of the
+  two, because a wrong label is worse than no label, and it is why the inspection samples the label *against
+  the schedule* rather than merely checking that a label exists.
+- Floor outlets and desk drops carry the outlet identifier on the faceplate; the wireless access points carry
+  their name and switch port.
+
+---
+
+## 5. Equipment maintenance (7.13)
+
+### 5.1 The maintenance programme (7.13-R1)
+
+Equipment is maintained in accordance with the **supplier's recommended service frequency and specifications**,
+and the entity **implements and monitors a maintenance programme**:
+
+| Equipment | Supplier requirement | Programme entry | Monitoring |
+|---|---|---|---|
+| Firewall/router, switch, wireless controller, access points | Firmware maintained to a supported release; hardware support contract with next-business-day replacement; no scheduled physical service | Firmware reviewed monthly against vendor advisories, applied under change control within 30 days (7 days for a Critical/exploited CVE); support contract renewal in the calendar | Firmware currency reported monthly with the patch report; **contract expiry alarmed 90 days ahead**, because an expired support contract is discovered at the worst possible moment |
+| UPS | Quarterly self-test; annual load test; battery replacement at 4 years or on self-test failure; ambient ≤ 25 °C | Automatic quarterly self-test; annual load and shutdown test under change record; **battery replacement scheduled 2028-03** | Self-test results to observability; battery age on the asset record |
+| Environmental sensor | 24-month calibration | Calibrated 2025-06; next 2027-06 | Calendar with owner |
+| Multi-function printers | Managed service contract: consumables, preventive service annually, break-fix | Vendor-scheduled; entity-escorted (§5.3) | Service records filed against the asset |
+| Laptops and mobile devices | No scheduled service; battery health monitored; **4-year refresh** | Refresh plan in the asset register; battery health reported by MDM; loaner pool of 4 covers break-fix | MDM hardware report; 9 devices refreshed this period |
+| AV equipment | Firmware currency | Reviewed at the quarterly inspection | Inspection record |
+| Landlord systems (fire, lighting, cooling, lightning protection, fixed wiring) | Statutory and manufacturer regimes | **Landlord-operated**; the entity's programme entry is to **obtain and review the certificate** at each interval and to chase a missing one | Certificate register with due dates; two certificates were chased this period and both obtained |
+| **Production infrastructure** | — | **Inherited.** AWS maintains the hardware; the entity's equivalent discipline is patching, AMI currency and infrastructure-as-code drift detection under SEC-CFG-025 | Provider audit reports; entity patch and drift reporting |
+
+The programme is a dated calendar with a named owner per item, reviewed monthly by the Director IT Operations;
+an overdue item is a deficiency with an owner and a date, not a rolling intention. **This period: 14 of 14
+scheduled maintenance items completed on time**, one certificate obtained 3 weeks late (recorded, landlord
+delay), and the D-2026-019 shutdown-script finding from the annual UPS load test.
+
+### 5.2 Authorized maintenance personnel and their confidentiality obligations (7.13-R2)
+
+**Only authorized maintenance personnel carry out repairs and maintenance**, and maintenance personnel are
+**subject to a suitable confidentiality agreement**:
+
+- Entity-side maintenance of closet equipment is performed only by the **named server-closet access list**
+  (currently 5 individuals, dual-authorised), all of whom are employees under signed confidentiality
+  undertakings (HR-PRO-042 §4.3).
+- **External maintenance suppliers** — the printer managed-service provider, the UPS vendor, the landlord's
+  M&E and fire contractors, the network hardware vendor's field service — are engaged under contracts that
+  include a **confidentiality clause**, and, where the engineer will be in the closet or handling a device that
+  has held entity data, an **individual confidentiality undertaking from the named engineer**, on the same
+  reasoning as for named vendor personnel: a corporate clause binds the company, not the technician standing in
+  the closet. Two individual undertakings were obtained this period.
+- Screening: the supplier attests to its engineers' screening in the requirements annex; for closet work the
+  attestation is a **hard gate**, verified before the visit is scheduled, and one visit was **deferred by four
+  days** this period until the attestation arrived.
+- Unauthorised maintenance is prevented physically as well as contractually: an engineer without an escort
+  cannot enter the closet, and the landlord's staff have no closet access at all.
+
+### 5.3 Records of faults and of preventive and corrective maintenance (7.13-R3)
+
+**Records of all suspected or actual faults, and of all preventive and corrective maintenance, are kept**, in
+the ticketing system against the asset record so that an asset's history is readable in one place:
+
+| Record type | What is captured | Retention |
+|---|---|---|
+| **Suspected fault** — including intermittent and unconfirmed ones | Reporter, asset, symptom, date, investigation, outcome (including "no fault found") | 3 years |
+| Actual fault | The above plus root cause, parts replaced, downtime, and whether any information was at risk | 3 years |
+| Preventive maintenance | Scheduled item, performed date, performer (named), findings, next due | 3 years |
+| Corrective maintenance | Change or incident reference, work performed, tamper inspection result (§5.6), return-to-service verification | 3 years |
+| Vendor service reports | Supplier's own report attached to the asset record | 3 years |
+
+**Suspected faults are recorded even when nothing is found**, because the pattern is the value: the two spill
+incidents, the rising port error counter that turned out to be a patch lead, and three "intermittent Wi-Fi"
+reports that resolved to a single failing access point were each individually inconclusive and collectively
+diagnostic. **This period: 23 fault records** (18 endpoint, 3 network, 2 printer), of which 4 were closed as no
+fault found.
+
+### 5.4 Controls when equipment is scheduled for maintenance (7.13-R4)
+
+| Situation | Controls applied |
+|---|---|
+| **On-site maintenance by external personnel** | Visit pre-authorised with the named engineer and purpose recorded; identity verified at reception against the pre-registration; **escorted for the entire visit** by a member of the closet access list, with the escort named in the visit record; the two-person rule in SEC-PHY-044 §4.3 means the escort satisfies it; recording equipment used only with authorisation (SEC-PHY-044 §4.6); the engineer does not connect a laptop to a management port without a change record naming that action; work is performed under a change record with a rollback |
+| **On-site maintenance by entity personnel** | Change record; two-person rule for invasive work; out-of-hours entry alerting |
+| **Remote maintenance** | **Authorised and controlled**: no supplier holds standing remote access to entity equipment. Where a vendor must connect — the 2025-09 UPS firmware update was the only case this period — access is granted **just-in-time, time-bound, destination-restricted, screen-shared and observed by an entity engineer**, logged, and revoked at completion. No vendor cloud-management feature is enabled on any device (§3.6) |
+| Maintenance involving a device that has held entity data | Handled under SEC-MED-046 §6: the device is **wiped or the storage removed before it leaves the entity's hands**; where a warranty repair requires the original disk, the disk is retained and destroyed and the vendor supplies a replacement — never returned with data on it |
+| Maintenance of a landlord system that requires suite access | Scheduled, notified, and either supervised or restricted to areas excluding the closet; unscheduled work is escorted (SEC-PRO-013 §2) |
+| Printer maintenance | Escorted; **the device's storage is a known data-bearing component**, so the service contract includes the return-of-drive-on-replacement obligation and the device's spool is cleared before service |
+
+### 5.5 Off-premises equipment maintenance (7.13-R5)
+
+Where equipment containing information is taken off premises for maintenance, the **security measures for
+assets off-premises in SEC-MED-046 §4 apply** — authorisation, a chain-of-custody log naming the individuals
+and organisations responsible, secure transport, and secure deletion of anything that need not travel with the
+asset. In practice the entity's off-premises maintenance is almost entirely **endpoint** repair: the device is
+**wiped remotely and confirmed before it is despatched**, it travels by tracked courier under the courier's
+custody record, and the return is verified against the asset register with a re-enrolment before reuse. Three
+laptops went for warranty repair this period; all three were wiped and confirmed before despatch, and one
+required a disk replacement in which the original disk was **retained and destroyed** with a certificate rather
+than returned to the vendor.
+
+### 5.6 Insurance-imposed maintenance requirements (7.13-R6)
+
+**All maintenance requirements imposed by insurance are complied with.** The entity's property, equipment and
+cyber policies impose specific conditions, and each is mapped to a programme item so that a lapse is visible as
+a maintenance miss rather than discovered at claim time:
+
+| Insurer-imposed requirement | Programme item | State |
+|---|---|---|
+| Fire detection and extinguishers serviced to the statutory interval, certificates retained | Certificate register, annual | Current, both sites |
+| Fixed electrical wiring inspected at the specified interval | Landlord certificate, obtained 2026-01 | Current |
+| Lithium-battery charging in a designated location with a metal enclosure | Implemented 2026-01 following the surveyor's recommendation | Implemented |
+| Extinguisher signage to the specified standard | Implemented 2026-01, same recommendation | Implemented |
+| Police report for theft above the policy threshold | In the loss/theft procedure (SEC-END-043 §2.3) | Documented; not exercised |
+| Equipment maintained to manufacturer specification as a condition of the equipment cover | §3.2 and §5.1 | Current |
+| Cyber policy: patching within the stated window and MFA on remote access | SEC-CFG-025 and SEC-IAM-021, reported monthly | Current |
+
+The insurer's survey and its recommendations, and the entity's implementation record, are held with the
+continuity plan (OPS-BCP-031 §7) so that the insurance dependency is visible to the people who would need to
+claim.
+
+### 5.7 Inspection before returning equipment to operation (7.13-R7)
+
+**Before equipment is put back into operation after maintenance it is inspected to ensure it has not been
+tampered with and is functioning properly.** The inspection is a recorded step in the change or fault record,
+not an assumption, and it differs by equipment because tampering looks different on each:
+
+| Equipment | Tamper inspection | Function verification |
+|---|---|---|
+| Network equipment | Physical check against the as-built drawing and the asset register: no added device, no unexpected cable, no altered port assignment, labels correct at both ends, chassis seals intact; **configuration compared against the version-controlled baseline** so an undocumented configuration change is detected rather than trusted | Link state, error counters, throughput test, authentication test, and a check that logging is still reaching the SIEM — because silent loss of logging is the most valuable outcome an attacker could obtain from a maintenance window |
+| **Laptop returned from external repair** | Serial verified against the register; case screws and tamper indicators checked; **the device is re-imaged from the golden baseline rather than trusted**, and re-enrolled with a new device certificate; firmware/BIOS integrity and secure-boot state verified; any storage the vendor touched is treated as untrusted | Full posture check must pass before access is restored |
+| Printer after service | Panel and internal check against the service report; **spool cleared**; confirmation that the drive was not replaced without notification | Test print and badge-release function verified |
+| UPS after battery or firmware work | Firmware version verified against the approved release; management interface configuration compared to baseline; **default credentials re-verified as changed** | Self-test executed and passed before it is relied on |
+| Any equipment after landlord works in its vicinity | Physical inspection against §2.3's threat list, especially water and dust | Environmental readings and link state |
+
+**Recorded outcome this period:** the three repaired laptops were all re-imaged and re-enrolled rather than
+returned to their users as received; the wireless controller's post-change inspection is what surfaced
+D-2026-019's shutdown-script omission; and one printer service was **not signed off** on first attempt because
+the engineer's report did not state whether the storage drive had been replaced — the sign-off waited two days
+for written confirmation that it had not.
+
+### 5.8 Disposal after maintenance (7.13-R8)
+
+Where it is determined that equipment is to be **disposed of** rather than repaired, the measures for secure
+disposal or re-use in **SEC-MED-046 §6 apply** without exception: verification of whether the item contains
+storage media, secure erasure or physical destruction of that media by a method appropriate to the
+classification of what it held, removal of entity labels and markings, a certificate of destruction retained
+against the asset record, and the asset register updated to the disposed state with the certificate reference.
+A repair quotation exceeding the replacement cost is the usual trigger; **4 items were disposed of this period**
+(2 laptops beyond economic repair including one spill case, 1 failed access point, 1 legacy switch removed at
+the network refresh), each with a certificate on file and each removed from the asset register only after the
+certificate was received — the sequence matters, because a register entry deleted before the certificate
+arrives is how disposals become unevidenced.
+
+---
+
+## 6. Roles, evidence and independent testing
+
+| Role | Responsibility |
+|---|---|
+| Director IT Operations | Owns this standard, the equipment inventory, the maintenance programme and the supplier relationships within it |
+| Facilities lead | Quarterly inspections, environmental and utility checks, certificate register, escorting external engineers |
+| Head of Platform Engineering | Network equipment configuration baseline, firmware currency, management VLAN design |
+| CISO | Approves the standard; owns tamper-inspection expectations, the deficiency register and the monitoring path |
+| General Counsel | Confidentiality clauses and individual undertakings for maintenance engineers; lease obligations |
+| Third-Party Risk Manager | Supplier assessments for maintenance providers; screening attestations |
+| Internal assessment | Annually: verifies the maintenance calendar against completion records; samples fault records including no-fault-found cases; verifies the UPS annual load test and the environmental alert-path tests actually occurred; samples cable labelling against the schedule; verifies escort and undertaking records for external engineers; verifies certificates of destruction against asset-register disposals |
+
+| Evidence | Where it is held |
+|---|---|
+| Asset register with location, criticality, age, refresh date and disposition | IT asset register |
+| Maintenance calendar with owners and completion records | IT Operations |
+| Fault records including suspected and no-fault-found | Ticketing system, against the asset |
+| UPS self-test and annual load/shutdown test records | Observability platform; IT Operations file |
+| Environmental readings, exceedances and quarterly alert-path test records | Observability platform |
+| Certificate register: fire, extinguishers, emergency lighting, fixed wiring, lightning protection | Facilities file |
+| Insurer survey, recommendations and implementation records | Facilities file; OPS-BCP-031 |
+| As-built cabling drawing, port schedule, installer certificate | Network documentation repository |
+| Quarterly inspection records including label sampling and unauthorised-device checks | Facilities file |
+| External engineer visit records: authorisation, screening attestation, escort name, undertaking | Facilities file; vendor register |
+| Just-in-time remote-maintenance grants and their revocation | Identity provider; change system |
+| Post-maintenance tamper and function inspection records | Change/fault records |
+| Certificates of destruction against disposals | Asset register |
+| Deficiency D-2026-019 with closure evidence | Deficiency register |
+
+## 7. Review history
+
+| Version | Date | Change |
+|---|---|---|
+| 1.0 | 2025-04-22 | Established the equipment inventory, the maintenance programme, the cabling specification and the utility appraisal; recorded the inherited/operated boundary for production |
+| 2.0 | 2026-03-02 | Annual review. Environmental alert-path testing made a quarterly recorded control; annual UPS load-and-shutdown test introduced and its first finding recorded (D-2026-019); leak detection added; management VLAN isolation for utility devices documented, with the HTTP-only leak detector recorded as a limitation; lithium-battery enclosure and extinguisher signage implemented on the insurer's recommendation; cable-label verification changed from "label present" to "label sampled against the schedule"; post-repair endpoints now re-imaged and re-enrolled rather than trusted; keyboard-membrane and TEMPEST positions recorded as reasoned non-applications rather than omissions |

@@ -1,0 +1,263 @@
+# Processing Integrity — Input and Processing Controls Standard
+
+**Document ID:** PRD-PIN-032
+**Version:** 3.0 (current) — **effective 2026-05-11**
+
+**Revision note.** Version 3.0 separates input controls from processing controls, which version 2.x had treated
+as one undifferentiated pipeline, and states the input-characteristic and processing specifications as testable
+figures rather than as prose. It records the two mechanisms by which the system refuses to emit a result it
+cannot substantiate, and registers the three open deficiencies found while writing it. It supersedes version
+2.3 of 2025-11-10.
+
+**Owner:** Head of Platform Engineering
+**Approved by:** Head of Engineering 2026-05-06; reviewed by the Audit Committee 2026-05-08
+**Next scheduled review:** Annually (next by 2026-12-31), and on any change to the assessment graph's node set
+
+**Scope.** The inputs to and processing performed by the assessment service: invocation payloads, customer
+evidence documents, environment scan results, and model inference, through to a written requirement-level
+verdict. The reference implementation is AWS account **471885797689**, region **us-west-2**; the service
+account is **355478542318**.
+
+Companion documents: the output delivery and protection procedure (what happens to a result once produced);
+the backup, recovery, and environmental protection standard (retention and recoverability of these records);
+the information requirements and data flows standard (where these inputs come from); the change management
+policy (how a specification change reaches production).
+
+---
+
+## 1. Why inputs are treated as untrusted and processing as fallible
+
+The service consumes data it does not own. Invocation payloads arrive from a scheduler; evidence documents are
+authored by customers; scan results describe accounts under someone else's control; and one processing stage is
+a language model, which is non-deterministic by construction. **No input to this system is trustworthy on
+arrival, and no processing stage is assumed to have succeeded because it returned.**
+
+Two principles follow, and they are the two things this standard actually asserts:
+
+1. **Absence of data is never read as a negative finding.** A scan that could not read a setting and a scan
+   that read the setting and found it wrong are different results, and the system is required to distinguish
+   them. Conflating them is the single most damaging processing error available here, because it manufactures
+   compliance conclusions out of missing information.
+2. **A result that cannot be substantiated is not emitted as a pass.** The system has an explicit representation
+   for "could not determine", and that representation is propagated into the score rather than discarded.
+
+---
+
+## 2. Characteristics of processing inputs (PI1.2-R1)
+
+Each input class has **defined, machine-checkable characteristics**. These are not descriptive notes; they are
+the conditions the input must satisfy before processing proceeds.
+
+| Input class | Source | Defined characteristics | Where enforced |
+|---|---|---|---|
+| Invocation payload | Scheduler / dispatcher | Required: environment identifier, framework, framework version, control identifier, project. Identifiers must be well-formed; the framework triple must resolve to an enabled framework for that project | Request handling at the service entry point, before any work is scheduled |
+| Assessment scope | Dispatcher-stamped | Region scope and account list must be present and must resolve to accounts the environment actually contains | Scope resolution, which prefers the dispatcher-stamped scope over a re-derived one |
+| Tool arguments | Internal, model-generated | Every agent tool declares a typed schema; arguments are validated against it before the tool body runs | `zod` schema per tool declaration |
+| Customer evidence document | Customer upload | Retrievable by identifier; declared media type must agree with the document's form; must carry at least one control reference for the control under assessment | Evidence resolution during context gathering |
+| Environment scan result | Assessed AWS account | Each step records the resource type queried, the access path used, and an explicit outcome; a step must report success or failure, never neither | Scan-plan execution |
+| Model inference output | Bedrock | Must parse as the declared result schema, carry a per-requirement status drawn from the closed status set, and cover every requirement in the control | Result parsing and finalisation |
+| Prior assessment context | Own service | Annotations, comments and tasks are read as *context*, and are attributed to the assessment they came from rather than merged | Context gathering |
+
+The **closed status set** is central: a requirement may be recorded only as met, partially met, not met, not
+applicable, or unable to assess. A status outside that set is a validation failure, not a novel outcome. This
+is what makes "could not determine" a first-class result rather than an informal remark in prose.
+
+---
+
+## 3. Evaluating inputs for compliance with those characteristics (PI1.2-R2)
+
+Evaluation is **positional**: each characteristic is checked at the earliest point the data is available, and
+a failure at that point stops the work rather than being carried forward.
+
+| Check | When | Disposition on failure |
+|---|---|---|
+| Payload completeness and identifier form | On receipt, before the assessment lock is claimed | Request rejected; nothing is written; no assessment record is created |
+| Concurrency admission | On receipt, after payload validation | A second concurrent invocation is **rejected**, and the already-running assessment is left untouched |
+| Framework and control resolvability | Before scan planning | Assessment fails explicitly rather than assessing an unknown control against a default plan |
+| Tool argument schema | Per tool call | Tool call fails and is surfaced to the calling node, which may retry with corrected arguments |
+| Evidence retrievability | During context gathering | An evidence identifier that fails retrieval is **dropped with a warning** and the remaining evidence is used; the drop is recorded |
+| Evidence relevance | During context gathering | Scan-produced evidence is excluded from the document-evidence set, so a scan artefact cannot be mistaken for a customer attestation |
+| Scan step outcome | Per scan step | Step recorded as failed with its cause; the control's verdict must then account for the missing fact rather than assume it |
+| Cross-account credential vending | Before any scan of a customer account | Scan is not attempted; the affected steps are recorded as unable to read |
+| Result schema and coverage | At finalisation | Result rejected; the assessment ends in an error state rather than persisting a partial verdict |
+| Optimistic concurrency on update | At every result write | Write refused if the record changed underneath; the stale writer does not overwrite the newer state |
+
+**The rejection of a second concurrent invocation is the check most often got wrong**, and it is called out
+because the failure mode is asymmetric. Admitting the newcomer and evicting the incumbent would abandon an
+in-flight assessment in progress with no writer left to finish it — a silently incomplete result. Rejecting
+the newcomer costs one retry. The system therefore rejects the newcomer, and the running assessment's claim on
+the lock is not disturbed by the rejection.
+
+---
+
+## 4. Records of system input activity (PI1.2-R3)
+
+Input activity is recorded **completely, accurately and at the time it happens**, not reconstructed afterwards.
+
+| Record | What it captures | Timeliness |
+|---|---|---|
+| Assessment record | The full input tuple — environment, framework, version, control, project — with creation and last-updated timestamps | Written before processing begins |
+| Structured run journal | Every node transition, tool invocation, tool outcome, and narrative emitted during the run, timestamped and node-attributed | Appended as the run proceeds |
+| Evidence annotations | Which evidence documents, at which versions, were actually used for the control | Written at finalisation, reconciled against annotations already present |
+| Scan step ledger | Per step: resource type, access path taken, outcome, and the resource scope it applied to; aggregated as total, succeeded and failed counts | Written as each step completes |
+| Control-plane audit trail | API calls made against the service and the assessed accounts | Continuous, via the account trail |
+| Cross-account access records | Each credential vending event for an assessed account | At vend time |
+
+**Counts are recorded alongside outcomes** — a scan reporting twenty-nine steps of which twenty-nine succeeded
+is a materially different record from one reporting a success list with no total, because only the first makes
+an omission visible. This is the same completeness principle the restore tests apply: reconcile against an
+expected population, not against the list of things that happened to work.
+
+Records are protected and retained per the backup standard: the account trail writes to an object store with
+public access blocked and server-side encryption, under a customer-managed key with annual rotation, and flow
+logs are retained 400 days.
+
+---
+
+## 5. Policies and procedures over inputs (PI1.2-R4)
+
+The requirement is met: input handling is governed by this standard, implemented in code at the points named
+in §3, and changed only through the change management process.
+
+- **Specification precedes implementation.** An input characteristic is defined here or in the tool's declared
+  schema before code depends on it. A tool cannot accept an argument it has not declared.
+- **Validation is not optional at the call site.** Schema validation is performed by the tool framework rather
+  than by each tool body, so a tool author cannot omit it by oversight.
+- **Changes to an input contract are reviewed as interface changes**, with the calling service considered, and
+  are covered by tests before release.
+- **Every input rule in §2 has a test.** The test suite exercises the rejection paths — malformed payloads,
+  unresolvable frameworks, unretrievable evidence, denied scan access, concurrent invocation, and stale writes
+  — because a validation rule that is never exercised against a bad input is an assumption, not a control.
+
+---
+
+## 6. Processing specifications (PI1.3-R1)
+
+The product is a **requirement-level compliance verdict with a rationale and a numeric score**. Its
+specifications are:
+
+| Specification | Definition |
+|---|---|
+| Coverage | Every requirement of the assessed control receives exactly one status from the closed set |
+| Substantiation | Every status carries a rationale that cites the evidence or observed fact it rests on |
+| Status semantics | Met, partially met and not met are scored; not applicable and unable to assess are **excluded from both numerator and denominator** rather than scored as zero |
+| Score derivation | Met 100, partially met 50, not met 0, averaged over scorable requirements only |
+| Honesty clamp | A control containing **any** unable-to-assess requirement is capped below a full pass, and a control with no scorable requirement yields **no score at all** rather than a default |
+| Determinism of scoring | Given a set of requirement statuses, the score is a pure function of them — the arithmetic is not model-produced |
+| Timeliness | A single assessment completes within its wall-clock budget of 780 seconds, and is terminated rather than allowed to run unbounded |
+| Traceability | The run journal must permit reconstruction of how each status was reached |
+
+**The honesty clamp and the exclusion rule are the specification's substance.** Scoring "unable to assess" as
+zero would penalise the customer for the service's blindness; scoring it as met would fabricate assurance;
+excluding it silently would let a control with one readable requirement report a perfect result. Excluding it
+from the average *and* capping the control is the only treatment that misreports in neither direction, and the
+cap is what makes the exclusion safe.
+
+---
+
+## 7. Processing activities defined to meet those specifications (PI1.3-R2)
+
+Processing is a **defined graph of five nodes with declared dependencies**, not an open-ended agent loop. The
+structure exists so that each specification above is the responsibility of a named stage.
+
+| Stage | Activity | Specification it serves |
+|---|---|---|
+| Context gathering | Resolve the control, its requirements, prior assessments, annotations, tasks, comments and current evidence; decide which downstream work is required | Coverage; traceability |
+| Environment scanning | Execute the control's scan plan against the in-scope accounts, recording each step's outcome | Substantiation |
+| Evidence analysis | Evaluate customer documents against each requirement | Substantiation; coverage |
+| Audit | Reconcile document claims against observed facts and assign the requirement statuses | Status semantics; substantiation |
+| Finalisation | Validate the result, compute the score, persist the verdict, annotations and tasks | Score derivation; honesty clamp; determinism |
+
+Two structural properties are deliberate. **Scanning and analysis are conditional**, gated by a routing
+directive from context gathering, so a control needing no environment scan does not fabricate one. And
+**scoring is separated from judging**: the audit stage assigns statuses and the finalisation stage computes
+the number, so the arithmetic cannot drift with model behaviour.
+
+The scan plan itself is specified as a **priority waterfall** over access paths — direct service call, then
+generic resource control, then configuration query, then configuration rule, then security findings — and the
+first path that returns a definitive reading wins. The waterfall is ordered by directness of evidence, and
+**a path is only consulted when the more direct one could not answer**.
+
+---
+
+## 8. Detecting and correcting processing errors in a timely manner (PI1.3-R3)
+
+| Error class | Detection | Correction |
+|---|---|---|
+| Node failure mid-run | Graph node returns an error; run journal records the failing node | Assessment ends in an explicit error state and is re-runnable; no partial verdict is persisted |
+| Worker process loss | Assessment lock heartbeat stops; the lock expires | Assessment becomes re-runnable without operator action; verified quarterly by fault injection |
+| Wall-clock budget exceeded | Elapsed time against the 780-second budget | Run terminated; recorded as incomplete rather than reported on partial data |
+| Inference unavailability or quota exhaustion | Model call error | Fall back to an alternate model or region; degraded duration recorded as a distinct capacity figure |
+| Scan access denied | Per-step outcome, distinguishing a denial from a negative reading | Affected requirements recorded as unable to assess, which triggers the honesty clamp |
+| Empty evaluation result | A configuration rule that returns no evaluation at all | **Treated as no reading, not as compliance** — the historically dangerous case, corrected because it converted missing data into a pass |
+| Ambiguous rule resolution | More than one candidate rule matched, or a match depended on result ordering | Rule matched explicitly rather than by arrival order, so a verdict does not depend on pagination |
+| Finding scope mismatch | A security finding relating to a resource outside the control's scope | Findings scoped to the control's resources before they can influence the verdict |
+| Result schema violation or missing requirement | Validation at finalisation | Result rejected; assessment errors rather than persisting an incomplete verdict |
+| Stale write | Optimistic concurrency check on update | Write refused; the newer state stands |
+| Systematic misjudgement | Score trend review and sampling of rationales against source evidence | Prompt, plan or specification change through change management |
+
+**"No reading" and "a passing reading" are held apart at every row of that table**, and three of the entries —
+empty evaluation, access denial, and out-of-scope findings — exist specifically because each was once capable
+of producing a pass from an absence. Correction is timely because these are in-run checks: the error is caught
+in the assessment that produced it, not in a later review.
+
+---
+
+## 9. Records of system processing activity (PI1.3-R4)
+
+Every stage writes a durable record: node entry and exit, each tool call with its arguments and outcome, the
+narrative reasoning emitted at each phase, the per-step scan ledger, the requirement statuses with rationales
+and confidence figures, and the computed score with the status counts behind it. Records carry the assessment
+identifier, so a verdict can be traced to the inputs, the observed facts and the reasoning that produced it.
+
+Two properties make these records useful as evidence rather than as debug output. **Rationales cite specific
+observed facts**, so a reviewer can contradict them from source data. And **the result carries a schema
+version**, so a stored verdict remains interpretable after the result format changes — a record that cannot be
+read against the schema that produced it is not a record.
+
+---
+
+## 10. Complete, accurate, timely and authorised processing (PI1.3-R5)
+
+| Property | How it is achieved | How it is verified |
+|---|---|---|
+| Complete | Result validation requires a status for every requirement of the control; missing requirements reject the result | Validation tests per control shape |
+| Accurate | Statuses must be substantiated; the audit stage reconciles document claims against observed facts and downgrades a claim contradicted by a fact | Sampling of rationales against source evidence; regression runs across the framework |
+| Timely | Bounded by the wall-clock budget; long-running invocations are transported over a path with no shorter client-side timeout than the budget itself | Duration recorded per assessment; degraded-mode duration tracked separately |
+| Authorised | Assessment runs only for a control on an enabled framework in a project the caller is scoped to; cross-account scanning uses vended, short-lived credentials for the specific assessed account | Project-scoped permission checks; credential vending records |
+| Single-writer | One invocation per process holds the lock; a competing invocation is rejected rather than admitted | Concurrency tests; quarterly lock-expiry fault injection |
+
+**A transport timeout shorter than the processing budget was a real defect**, not a hypothetical: it caused a
+still-running invocation to be judged dead and re-dispatched, producing exactly the concurrent-writer
+condition the lock exists to prevent. Client timeouts are now required to exceed the processing budget, and
+the rule is stated here because it is a *processing-integrity* constraint that looks like a networking detail.
+
+---
+
+## 11. Registered deficiencies
+
+Stated because a processing-integrity standard that reports no deficiencies is not describing a real system.
+
+| Deficiency | Effect | Owner | Due |
+|---|---|---|---|
+| Confidence figures accompany each requirement status but are not yet used to route low-confidence verdicts to human review | A weakly substantiated status is treated identically to a strongly substantiated one | Head of Platform Engineering | 2026-08-31 |
+| Rationale-to-source sampling is manual and its sample size is not yet defined as a figure | Accuracy verification depends on reviewer diligence rather than a specified rate | Head of Platform Engineering | 2026-07-31 |
+| Scan-step ledgers are retained with the run journal but are not yet reconciled against the plan's expected step population at run time | An omitted step would be visible only on inspection, not automatically | Head of Platform Engineering | 2026-09-30 |
+
+---
+
+## 12. Governance
+
+| Activity | Frequency | Owner | Evidence |
+|---|---|---|---|
+| Review of input characteristics and validation points | Annually, and on any input contract change | Head of Platform Engineering | Approved standard |
+| Review of processing specifications, including the scoring rule | Annually, and on any change to the status set | Head of Engineering | Approved specification |
+| Sampling of requirement rationales against source evidence | Quarterly | Platform Engineering | Sampling record with exceptions |
+| Fault injection: worker loss, lock expiry, inference fallback | Quarterly / semi-annually | Platform Engineering | Test records with measured timings |
+| Review of assessments ending in error, by cause | Monthly | Platform Engineering | Error review with dispositions |
+| Review of unable-to-assess rates by control and access path | Quarterly | Head of Platform Engineering | Trend report with remediation items |
+| Deficiency tracking to closure | Quarterly | Head of Platform Engineering | Deficiency register |
+| Reporting of processing integrity results | Quarterly | Head of Platform Engineering | Audit Committee minutes |
+
+Deficiencies are recorded in the control deficiency register with an owner and due date, tracked to closure,
+and reported to the Audit Committee quarterly.

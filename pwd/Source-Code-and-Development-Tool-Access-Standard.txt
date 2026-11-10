@@ -1,0 +1,255 @@
+# Source Code and Development Tool Access Standard
+
+**Document ID:** ENG-SRC-041
+**Version:** 1.0 — **effective 2026-08-22**
+**Owner:** Head of Engineering (source-code access); Head of Platform Engineering (repository platform, pipeline
+identities, and signing keys)
+**Approved by:** CISO 2026-08-22; Head of Engineering 2026-08-22
+**Next scheduled review:** Annually (next by 2026-12-31), and on any change to the repository platform, the branch
+protection model, the signing arrangements, or the roles named in §3
+
+**Scope.** Read and write access to program source code, development tools, and software libraries — first-party
+code, infrastructure-as-code, pipeline definitions, agent prompts, build tooling, and the open-source and
+third-party components the build consumes. Covers the repository platform, the tooling through which people reach
+it, the audit record of access, and the integrity controls applied to source code the entity publishes. The
+reference implementation is AWS account **471885797689**, region **us-west-2**.
+
+Companion documents: the change management and release control policy (authorization, peer review, and the
+pipeline that consumes what is in the repository); the identity and access management standard (joiner–mover–leaver
+process, privileged access, and the access review cycle); the cryptographic standard and key management procedure
+(signing keys and their lifecycle); the logging standard (log retention, protection and review); the supplier
+management process (third-party and open-source component intake).
+
+**Why this document exists separately from the change policy.** The change policy governs what may be *done* to
+source code — authorization, review, gates, deployment. This standard governs who may *reach* it at all, in which
+direction, through what, and what record that leaves. The two are deliberately distinct: a faultless change
+process still leaves the code exposed if read and write access is not itself managed, and access management is
+what this document is accountable for.
+
+---
+
+## 1. Principles
+
+1. **Write access is a privilege, not a role attribute.** It is granted to named individuals against a recorded
+   business need, never to a group by default, and never as a side effect of joining a team.
+2. **Read and write are separate decisions.** Broad read access supports engineering quality; write access is the
+   control point for integrity. Conflating them is the single most common failure of this control.
+3. **The repository is not reached directly.** People act on source code through tooling that authorizes, mediates
+   and records the action. Direct platform credentials are not the working path (§5).
+4. **Access to third-party and open-source code is governed exactly as first-party code is.** A dependency that
+   enters the build is source code the entity depends on, whoever wrote it.
+5. **Every access leaves a record, including reads.** Change alone is not a sufficient audit surface: exfiltration
+   of source code is a read, not a write (§6).
+
+---
+
+## 2. The repository platform, and how the code is protected at rest (8.4-R2)
+
+All program source code, infrastructure-as-code, pipeline definitions and program listings are held in **one
+controlled central source code management system** — a managed, hosted **Git** service operated as an enterprise
+tenant. There is no second location of record. Local working copies exist on engineering endpoints and are
+governed by §5.3; they are working copies, never the record.
+
+| Protection | How it is implemented | Verification |
+|---|---|---|
+| **Central control** | A single enterprise Git tenant holds every repository. Repository creation is restricted to the platform-engineering role and performed from a template that carries the branch protection, review requirements and logging settings of §3 and §4 — a new repository cannot be created without them | Quarterly reconciliation of the tenant's repository list against the service inventory; 0 repositories outside the tenant at 2026-08-12 |
+| **Encryption at rest** | Provider-managed encryption on all repository storage and backups, AES-256, keys managed by the provider under its own rotation schedule | Provider attestation reviewed annually under the supplier management process |
+| **Encryption in transit** | TLS 1.2 or higher enforced for every protocol the platform accepts; plaintext Git protocols and unencrypted HTTP are disabled at the tenant level | Configuration reviewed quarterly; last verified 2026-08-12 |
+| **Authentication** | Enterprise SSO through the corporate identity provider, MFA required, no local platform passwords. Machine access uses short-lived tokens or workload identity, never a standing human credential | Quarterly review of authentication settings and of every non-human identity holding access |
+| **Logical protection** | Private repositories by default; public visibility requires the review in §7. Tenant policy blocks visibility changes by anyone outside the platform-engineering role | Tenant policy assertion, checked quarterly |
+| **Physical protection** | The repository platform is provider-hosted; physical and environmental controls are the provider's and are relied on under the supplier management process, not asserted by the entity. Program listings and design documents held on endpoints are covered by the endpoint and physical security standards | Provider attestation on file |
+| **Backup** | Daily off-account repository backups with 90-day retention, per the change policy; a quarterly documented exercise restores a repository from backup | Restore exercise completed 2026-07-08 |
+
+Program listings, design documents and generated code artifacts are held in the same tenant or in the access-
+controlled document store, and never on unmanaged shared drives or in general-purpose chat or ticket attachments.
+
+---
+
+## 3. Read and write differentiated by role (8.4-R1, 8.4-R3)
+
+Access is assigned by role, from the matrix below. The matrix is the authoritative statement of who may do what;
+anything not listed is denied.
+
+| Role | Read | Write (branch) | Write (protected branch) | Approve merge | Repository administration |
+|---|---|---|---|---|---|
+| **Engineer (product team)** | Yes, all first-party repositories | Yes, feature branches | No — protected branches accept only reviewed merges | Yes, for changes they did not author | No |
+| **Engineer (other team)** | Yes, all first-party repositories | No, unless granted for a recorded cross-team need, time-bound | No | No | No |
+| **Platform engineer** | Yes | Yes, feature branches | No | Yes | Yes, named individuals only |
+| **Release / pipeline identity** | Yes, the repositories it builds | No | No | No | No |
+| **Contractor / third party** | Only the specific repositories named in the engagement | Only where the engagement requires it, time-bound to the engagement | No | No | No |
+| **Auditor (internal or external)** | Read-only, scoped and time-bound | No | No | No | No |
+| **Everyone else** | No | No | No | No | No |
+
+**Nobody writes to a protected branch.** Write access to `main` and to release branches is held by no human role.
+The only identity that can advance a protected branch is the merge function of the platform, and it does so only
+when the change policy's gates are satisfied — peer review by someone other than the author, passing automated
+checks, and the risk-tiered approvals. This is why the "Write (protected branch)" column is `No` for every role
+including administrators: privileged personnel approve and merge, they do not push.
+
+**Broad read, narrow write, and why.** Read access to first-party repositories is deliberately broad across the
+engineering population: it supports review, reuse and incident response, and narrow read access on a small
+engineering team produces worse security outcomes by concentrating knowledge. The compensating controls are that
+read is authenticated, role-assigned, logged per §6, and revoked on the same day as departure. Write access is the
+opposite: 11 individuals hold feature-branch write access to production-service repositories at 2026-08-12, and
+repository administration is held by 3 named platform engineers.
+
+### 3.1 Open-source and third-party code components (8.4-R3)
+
+Third-party code is not exempt from this matrix; it is subject to a stricter form of it.
+
+| Component class | Where it lives | Read | Write |
+|---|---|---|---|
+| **Consumed open-source dependencies** | Curated internal package repository; the build resolves from it and never from a public index | Read by the build identity and by engineers | Nobody. The mirror is append-only from the intake process; no human writes to it |
+| **Vendored or forked third-party source** | A first-party repository, marked as vendored, with the upstream and its version recorded | As per the matrix above | As per the matrix above, plus the intake review below before an upstream change is accepted |
+| **Entity code published as open source** | Public repository in the same tenant | Public, by intent, after the §7 review | Same restriction as any protected branch; external contributions arrive as proposals and are merged by the entity's reviewers, never pushed |
+
+New or updated third-party components pass the supplier and acquisition review in the change policy before entry
+to the curated repository: licence, provenance, maintenance status, known vulnerabilities, and a recorded owner.
+Write access to the curated repository is held by the intake process alone, so an engineer cannot introduce a
+dependency by placing it there directly.
+
+### 3.2 Provisioning, change and revocation (8.4-R1)
+
+| Event | Action | Timeliness | Evidence |
+|---|---|---|---|
+| **Joiner** | Role assigned from §3 on the basis of the documented business need in the access request; approved by the hiring manager and, for write access, by the Head of Engineering | Before first day of code access | Access request record |
+| **Mover** | Access re-derived from the new role; anything the new role does not carry is removed rather than left in place | Within 3 business days | Access change record |
+| **Leaver** | SSO disabled and all repository access revoked; tokens and keys invalidated | Same business day | Revocation record; 3 departures in the 12 months to 2026-08-12, all revoked same day |
+| **Contractor engagement ends** | Access removed and the time-bound grant confirmed expired | On the engagement end date | Engagement closure record |
+| **Quarterly review** | Every holder of write access and of repository administration re-justified by the Head of Engineering; every read grant to a non-employee re-justified | Quarterly | Review record; last completed 2026-07-15, 2 write grants removed as no longer needed |
+| **Emergency grant** | Time-bound elevation with a recorded reason, expiring automatically | Expires within 8 hours | Elevation record; 1 in the period, expired automatically |
+
+Access is granted **only through this process**. A grant made any other way is a finding, and the quarterly review
+is the detective control for it: it reconciles the platform's actual permission state against the approved
+records, so an out-of-process grant is found even if nobody reports it.
+
+---
+
+## 4. Access and change performed under change control (8.4-R4)
+
+Both halves of this requirement are governed by the change management and release control policy, and are
+restated here only where they bear on access:
+
+- **Updates to source code** reach a protected branch only through the reviewed, gated merge path of §3. The
+  author cannot approve their own change, and no human can bypass the path by pushing.
+- **Granting of access to source code** is itself a change: it requires the recorded authorization named in
+  §3.2 before it takes effect, and it produces a record that the quarterly review reconciles.
+- **Development tools and software libraries** follow the same route. Changes to build tooling, runner images and
+  pipeline definitions are code in the same repositories, under the same review; changes to the curated dependency
+  repository go through the intake review in §3.1.
+
+---
+
+## 5. Developers reach the repository through controlled tooling, not directly (8.4-R5)
+
+The intent of this requirement is that a developer's actions on source code are mediated by something that
+authorizes, constrains and records them, rather than performed as unconstrained access to the store. The entity
+implements it as follows.
+
+### 5.1 What mediates access
+
+| Path | What it is | What it controls |
+|---|---|---|
+| **The platform's own review and merge function** | The only route by which a change reaches a protected branch | Enforces reviewer identity, approval count, passing checks, and linear history. A developer proposes; the platform merges |
+| **Managed developer workstation and toolchain** | Corporate-managed endpoint, entity-provided IDE and Git client, SSO-brokered credentials | Access is only available to an enrolled, compliant device holding a valid short-lived SSO session; no standing credential to hand around |
+| **Short-lived, brokered credentials** | Repository access is authorized by the identity provider and expires. No long-lived personal access tokens are issued to humans | A credential cannot be copied to an unmanaged machine and retain useful life |
+| **Pipeline identity for all build and release action** | A workload identity, not a person | No human identity can publish an artifact; the build reads code and a person cannot substitute their own |
+
+### 5.2 Stated plainly, because the requirement is easy to over-claim
+
+Developers **do** run Git locally against the central repository, and this standard does not claim they operate
+through a proxy or a browser-only interface. What they cannot do is act on source code outside the mediated path:
+they cannot write to a protected branch, cannot merge their own change, cannot obtain a credential that outlives
+its session, cannot reach the repository from an unmanaged device, and cannot publish an artifact under a human
+identity. The control is placed on **authorization and activity**, which is what the requirement asks the
+developer tooling to control, rather than on physically interposing a tool between the developer and the store.
+
+### 5.3 Working copies on endpoints
+
+Local clones are working copies, never the record (§2). They are protected by full-disk encryption, screen lock,
+endpoint management and the acceptable-use standard's prohibition on placing entity source code on personal
+devices or unapproved cloud storage. On departure or device retirement the endpoint is wiped under the asset
+return standard. No production credential is present in a working copy: secrets are resolved at runtime from the
+secrets service, and a pre-commit and pipeline secret scan rejects credentials committed to source.
+
+---
+
+## 6. Audit log of all accesses and all changes (8.4-R6)
+
+Both are logged, and the read half is stated explicitly because it is the half usually missing.
+
+| Event | Source | Retention | Review |
+|---|---|---|---|
+| **Read access** — clone, fetch, pull, web view of file contents, archive download | Repository platform audit log, per actor, repository, timestamp and source address | 400 days | Anomaly review monthly; a clone volume or pattern inconsistent with the actor's role is investigated |
+| **Change** — push, merge, branch and tag create or delete, force-push attempt, history rewrite | Repository platform audit log plus the immutable commit history itself | 400 days (log); indefinite (commit history) | Reviewed at merge by the reviewer; force-push and history-rewrite attempts on protected branches alert to the platform team |
+| **Access administration** — grant, change, revoke, role assignment, repository visibility change | Platform audit log and the access request records | 400 days | Quarterly reconciliation (§3.2); visibility changes alert immediately |
+| **Authentication** — SSO sign-in, MFA result, token issue and expiry, failed attempts | Identity provider log | 400 days | Failed-authentication and impossible-travel alerting |
+| **Pipeline access to code** | Build logs, tied to the pipeline identity and the commit built | 400 days | Every deployment traceable from requirement to commit to artifact |
+
+Logs are exported to the central log store, where they are write-once for the retention period and readable by the
+security function but not modifiable by engineers — including by the repository administrators whose actions they
+record. Clock synchronization is per the logging standard, so records from the platform, the identity provider and
+the pipeline correlate. Loss of log delivery is itself alarmed; an audit log that can stop silently is not an
+audit log.
+
+---
+
+## 7. Integrity assurance for published source code (8.4-R7)
+
+The entity publishes a limited amount of source code (client libraries, examples and infrastructure templates).
+Publication is a decision, not a default, and it carries additional integrity controls.
+
+### 7.1 The publication decision
+
+Making a repository public requires: a recorded business reason; a security review covering secrets, embedded
+credentials, internal hostnames, customer data and information disclosure through commit history; a licence
+decision; a named maintainer accountable for it thereafter; and approval by the Head of Engineering and the CISO.
+History is reviewed, not just the current tree, because a removed secret is still present in an earlier commit —
+where history cannot be cleared, the repository is republished from a fresh initial commit rather than exported
+with its history.
+
+### 7.2 Integrity controls applied
+
+| Control | Implementation | Consumer verification |
+|---|---|---|
+| **Signed commits on protected branches** | Commits merged to a protected branch of a published repository are cryptographically signed; the platform rejects unsigned commits on those branches | Signature visible per commit |
+| **Signed release tags** | Every release is a signed, annotated tag naming the version and the commit | Tag signature verifiable against the published key |
+| **Signed build artifacts and checksums** | Published artifacts are signed by the release identity and accompanied by SHA-256 checksums; artifacts are content-addressed | Documented verification steps published alongside the artifact, so verification is a supported action rather than a theoretical one |
+| **Provenance attestation** | Each published artifact carries an attestation binding it to the source commit, the build definition and the builder identity | Attestation published with the artifact |
+| **Key management** | Signing keys are held in the managed key service, never on an endpoint or in a repository. Use is restricted to the release identity, logged per §6, rotated annually and on any suspected compromise; revocation and re-signing are exercised as part of the annual review | Public keys published through a documented channel with fingerprints |
+| **Tamper detection after publication** | The published tree and artifact digests are compared against the internal record on a scheduled basis; a mismatch is a security incident under the incident response program | — |
+
+### 7.3 Where the controls are considered and deliberately not applied
+
+The requirement asks that additional controls be *considered* and implemented *as appropriate*, so the negative
+decisions are recorded too. Internal-only repositories are not commit-signed on feature branches: the integrity
+risk there is addressed by authenticated access, review and the immutable audit trail, and universal signing on
+short-lived branches adds friction without addressing a risk that is not already covered. Published repositories
+are the exception precisely because their consumers cannot rely on the entity's internal controls and need
+something they can verify themselves.
+
+---
+
+## 8. Effectiveness measures
+
+| Measure | Target | At 2026-08-12 |
+|---|---|---|
+| Repositories outside the enterprise tenant | 0 | 0 |
+| Human identities with write access to a protected branch | 0 | 0 |
+| Holders of feature-branch write access to production-service repositories | Reviewed quarterly | 11 |
+| Repository administrators | Minimized, named | 3 |
+| Leaver revocations completed same business day | 100% | 100% (3 of 3) |
+| Standing long-lived human access tokens | 0 | 0 |
+| Write grants removed at the last quarterly review as no longer needed | — | 2 |
+| Published repositories with signed release tags and published verification steps | 100% | 100% |
+| Access-log delivery gaps | 0 | 0 |
+| Out-of-process access grants found by reconciliation | 0 | 0 |
+
+---
+
+## 9. Review
+
+Reviewed annually by the Head of Engineering with the CISO, and on any change to the repository platform, the
+branch protection model, the signing arrangements, or the roles in §3. The review confirms the §3 matrix still
+matches the platform's actual permission state, that the §8 measures are being produced, and that the negative
+decisions in §5.2 and §7.3 remain the right ones.

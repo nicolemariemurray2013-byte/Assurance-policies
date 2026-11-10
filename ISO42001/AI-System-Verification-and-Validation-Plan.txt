@@ -1,0 +1,179 @@
+# AI System Verification and Validation Plan and Results
+
+**Document ID:** AIMS-PLAN-010
+**Version:** 4.1
+**Owner:** AI Development Lead; responsible-AI criteria owned by the Responsible AI Lead
+**Approved by:** AI System Accountable Owner
+**Approval date:** 2026-03-04
+**Next scheduled review:** 2026-12-31, and on any material change
+**Scope:** The compliance-evaluation AI system in AWS account 471885797689 (us-west-2).
+
+---
+
+## 1. Verification and validation measures
+
+**Verification** asks whether the system was built to specification. **Validation** asks whether the
+system, in its intended domain of use, produces outcomes that are correct and acceptable. Both are
+defined and documented here.
+
+| ID | Measure | V or V | What it establishes |
+|---|---|---|---|
+| M-1 | Unit and contract tests | Verification | Components behave as specified |
+| M-2 | Deterministic scoring tests | Verification | The score is exactly the documented formula over the per-requirement statuses, and unreadable requirements never score as failures |
+| M-3 | Requirement-coverage validation | Verification | Every canonical requirement receives exactly one status; no invented, dropped or merged requirement ids |
+| M-4 | Evaluation accuracy against labelled ground truth | Validation | Verdicts match qualified human judgement in the intended domain |
+| M-5 | Run-to-run consistency | Validation | Identical input yields stable verdicts — a precondition for a defensible audit record |
+| M-6 | Adversarial and prompt-injection suite | Validation | Customer-supplied content cannot redirect the system |
+| M-7 | Fairness-strata evaluation | Validation | Comparable evidence receives comparable verdicts across strata |
+| M-8 | End-to-end integration on the real graph | Verification | The full path works against live dependencies, not mocks |
+| M-9 | Impact-criteria evaluation (individuals, groups, societies) | Validation | Responsible-AI criteria in §4 are met |
+| M-10 | Staged live verification | Validation | Behaviour holds on production-like traffic before full release |
+
+## 2. Criteria for when and how the measures are used
+
+| Trigger | Measures applied | How |
+|---|---|---|
+| Every commit | M-1, M-2, M-3 | Automated in the build; a failure blocks the merge |
+| Every release candidate | M-1 … M-8, M-9 | Full suite in the release pipeline; all must pass before release authorization |
+| **Standard change** (prompt, rubric, dependency) | Full V&V regression re-run | AIMS-POL-006 §4 |
+| **Material change** (model family, new data category, changed oversight point or scoring semantics) | Full V&V **plus** re-run impact assessment and release re-authorization | AIMS-POL-006 §4 |
+| Model version or identifier change | M-4, M-5, M-6, M-7 against the new identifier | Adoption blocked until non-regressing |
+| Emergency fix | M-1, M-2, M-3 immediately; full regression within 48 hours | Retrospective within 5 business days |
+| Quarterly, without any change | M-4, M-5, M-7 | Detects supplier-side model drift (R-08) |
+| Post-incident or substantiated concern | Targeted measures plus M-4 | Findings feed AIMS-POL-006 §6.5 |
+
+## 3. Testing methodologies, tools, test data and release criteria
+
+### 3.1 Methodologies and tools
+
+| Measure | Methodology | Tool |
+|---|---|---|
+| M-1 | Unit and contract testing, mocked AWS SDK boundaries | Automated test framework in the internal build system |
+| M-2 | Property and table-driven tests over every status combination, including all-unreadable and all-not-applicable edge cases | Same |
+| M-3 | Schema and coverage assertions on the published result | Same |
+| M-4 | Blind replay of labelled assessments; per-requirement agreement, plus precision and recall on gap detection | Evaluation regression harness |
+| M-5 | N-of-5 repeated execution on identical inputs; verdict-stability comparison | Regression harness |
+| M-6 | Injection payloads embedded in every customer-controllable field (evidence content, title, description, annotation notes, custom framework text) | Adversarial suite |
+| M-7 | Stratified comparison across document-style and service-coverage strata | Regression harness |
+| M-8 | Local harness driving the real five-node graph against a live non-production stage, with real credential vending and real scans | Local invocation harness |
+| M-9 | Structured review against the impact criteria in §4 | Responsible AI Lead review record |
+| M-10 | Staged promotion with monitoring and a defined dwell time per stage | Deployment pipeline |
+
+### 3.2 Test data and its representation of the intended domain of use
+
+The intended domain of use is: **assessing an organization's compliance with a managed control
+framework, from documentary evidence supplied by that organization and from authorized read-only
+observation of its cloud environment.** Test data is selected to represent that domain, and its
+representativeness is reviewed annually.
+
+| Test data set | Composition | Domain property represented |
+|---|---|---|
+| Labelled regression corpus — **test split (70%, held out, never used for tuning)** | De-identified historical assessments with dual-analyst labels | Real customer evidence and real requirement text |
+| Validation split (30%) | Same population, disjoint from the test split | Used for tuning only, so accuracy claims stay honest |
+| Framework coverage strata | Multiple managed frameworks and control groups, `document` and `hybrid` workflow types | The system must not be tuned to one framework |
+| Evidence-quality strata | Fully compliant, partially compliant, non-compliant, terse-but-compliant, verbose-but-empty, wrong-subject, corrupt/unreadable | Discrimination between compliance and presentation, and correct handling of unreadable evidence |
+| Environment strata | Rich-scan accounts, sparse accounts, **zero-in-scope-resource accounts**, permission-denied reads | The system must distinguish "not configured" from "not readable" from "not applicable" |
+| Adversarial set | Injection, contradiction between document and observed state, overstated compliance claims | Hostile input is in-domain, not exceptional |
+| Negative controls | Evidence for the wrong control; empty documents | Must not produce a compliant verdict |
+
+**Known limitation on representativeness:** the corpus is English-language and over-represents recent
+frameworks; non-English evidence is routed to human review and the corpus is rebalanced annually
+(AIMS-REG-006 §3.4).
+
+### 3.3 Release criteria requirements
+
+Release is blocked unless **all** of the following hold, evidenced in the release record:
+
+| # | Release criterion | Threshold |
+|---|---|---|
+| RC-1 | M-1, M-2, M-3 | 100% pass, no coverage reduction |
+| RC-2 | M-4 per-requirement agreement on the held-out test split | ≥ 0.90, and no regression versus the current release |
+| RC-3 | M-4 gap-detection recall | ≥ 0.95 — failing to detect a real gap is the costlier error and is held to a stricter bar than precision |
+| RC-4 | M-5 run-to-run verdict stability | ≥ 0.95 |
+| RC-5 | M-6 adversarial suite | 100% blocked; zero instruction-following from customer content |
+| RC-6 | M-7 fairness strata | No material disparity between strata |
+| RC-7 | M-8 end-to-end | Full path green, no warnings or errors |
+| RC-8 | M-9 impact criteria (§4) | Signed off by the Responsible AI Lead |
+| RC-9 | Security gate | Threat model current; AI Security Lead sign-off |
+| RC-10 | Documentation currency | Design (AIMS-DOC-009) and technical documentation (AIMS-DOC-012) updated in the same change |
+| RC-11 | Rollback | Rollback path rehearsed and evidenced |
+
+An unmet criterion blocks release. Proceeding requires a dated, AIGB-approved exception with a
+compensating control (AIMS-POL-001 §4). Release authorization is given by the AI System Accountable
+Owner — never by the AI Development Lead who built and validated the change (segregation of duties).
+
+## 4. Evaluation criteria for impacts on individuals, groups and societies
+
+Defined and documented jointly with the Responsible AI Lead, and derived from the responsible-AI
+development and use objectives (AIMS-POL-006 §1 and AIMS-POL-011 §2):
+
+| ID | Impact area | Criterion | Threshold / evidence |
+|---|---|---|---|
+| IC-1 | **Fairness** | No material verdict disparity across evidence-presentation and service-coverage strata | M-7; disparity investigated before release |
+| IC-2 | **Accountability** | Every published verdict has a named human able to review and override it; no verdict is final without that route | M-9 review; oversight point exercised in M-8 |
+| IC-3 | **Transparency and explainability** | 100% of verdicts carry a rationale a qualified reader can follow, citing the specific evidence relied on | M-4 review of rationale quality; sampled by the Responsible AI Lead |
+| IC-4 | **Correct attribution of fault** | An unreadable or absent source is never reported as customer non-compliance | M-2 and M-4: zero mis-attributions permitted |
+| IC-5 | **Security and privacy** | No customer evidence content in telemetry; no cross-tenant exposure; no customer data in training | M-6 plus privacy review; zero tolerance |
+| IC-6 | **Safety and health** | Not directly applicable — the system does not control physical processes or make clinical, safety or employment decisions. Assessed and recorded as not applicable at each review, with the basis stated, rather than left unexamined | Impact assessment record |
+| IC-7 | **Financial consequences** | Verdicts can trigger customer remediation spend and affect audit outcomes, so a false gap has real cost; false-gap rate is tracked and bounded | M-4 precision tracked release over release |
+| IC-8 | **Accessibility** | Results are consumable by assistive technology; findings are not conveyed by colour alone | Front-end accessibility review |
+| IC-9 | **Human rights** | The system assesses organizations, not individuals; it makes no determination about any individual's rights, and must not be repurposed to do so without a new impact assessment | Intended-use statement; reviewed at each impact assessment |
+| IC-10 | **Societal** | Beneficial use (raising the floor on AI governance practice) is not undermined by enabling "compliance theatre" — a document alone cannot assert away an observed misconfiguration | Design precedence rule (AIMS-DOC-009 §3.3); evasion tests in M-6 |
+| IC-11 | **Interpretability by interested parties** | Auditors and analysts can determine, unaided, why a verdict was reached and what evidence supports it | Analyst comprehension review, sampled quarterly |
+| IC-12 | **Environmental sustainability** | Inference cost and estimated emissions per assessment do not grow unmanaged | RD-8 tracking, reported per release |
+
+## 5. Operational factors considered by the evaluation criteria
+
+| Operational factor | How it is reflected |
+|---|---|
+| **Data quality** | Strata for corrupt, wrong-subject, terse and verbose evidence; integrity failures must produce a read-failure state, not a verdict |
+| **Intended use** | Accuracy is claimed only for the domain in §3.2; out-of-domain use (non-English, unsupported framework) is documented as a limitation and routed to human review |
+| **Acceptable ranges** | RC-2 ≥ 0.90 agreement; RC-4 ≥ 0.95 stability; RC-3 ≥ 0.95 gap recall; disparity and cost bounds per IC-1 and IC-12 |
+| **Error rates** | Both directions tracked separately: false gaps (IC-7, customer cost) and missed gaps (RC-3, assurance risk). Missed gaps are held to the stricter threshold because an undetected gap defeats the system's purpose |
+| **Interpretability of outputs by interested parties** | IC-3 and IC-11 — rationale quality and analyst comprehension are release criteria, not afterthoughts |
+| **Latency and cost** | Assessment duration and inference cost per assessment monitored; regression treated as a defect |
+| **Environment variability** | Strata for sparse, zero-resource and permission-denied accounts, so scan sparsity is never mistaken for non-compliance |
+
+## 6. Evaluation against the criteria, and management of deficiencies
+
+The system **is evaluated against the criteria above at every release** and quarterly regardless of
+change. Results are recorded in the release record; the current position is:
+
+| Criterion | Result (release 2026-03-04) | Verdict |
+|---|---|---|
+| RC-1 | All unit, scoring and coverage tests pass | Pass |
+| RC-2 | 0.94 per-requirement agreement on the held-out test split | Pass |
+| RC-3 | 0.96 gap-detection recall | Pass |
+| RC-4 | 0.97 verdict stability over N-of-5 repeats | Pass |
+| RC-5 | 100% of the injection suite blocked | Pass |
+| RC-6 | No material disparity across strata | Pass |
+| RC-7 | End-to-end path green against the live non-production stage | Pass |
+| RC-8 | Impact criteria IC-1 … IC-12 reviewed and signed | Pass |
+| RC-9 | Threat model refreshed 2026-02-20; security sign-off given | Pass |
+| RC-10 | AIMS-DOC-009 v5.2 and AIMS-DOC-012 v3.0 current | Pass |
+| RC-11 | Rollback rehearsed | Pass |
+
+### 6.1 Where criteria are not met
+
+When a criterion is not met the deficiency is **reconsidered or managed** — never silently accepted.
+The defined dispositions are: **(a) fix** and re-run V&V; **(b) reduce scope** so the deficient
+condition is outside the supported domain of use, and document the limitation; **(c) add a
+compensating control**, such as mandatory human review for the affected class, recorded as a dated
+AIGB-approved exception; **(d) do not release**, or roll back if already released. Disposition (b) or
+(c) requires the Responsible AI Lead's agreement and a review date; an expired exception is a
+nonconformity.
+
+Two recorded instances of deficiency management:
+
+| Date | Deficiency | Disposition | Outcome |
+|---|---|---|---|
+| 2025-11-04 | IC-4 breached: unreadable sources were being published as customer non-compliance | (a) Fix — introduced the distinct read-failure state, excluded from scoring | Closed 2025-11-18 (AIMS-DOC-009 v4.2); M-2 extended to prevent recurrence |
+| 2026-02-06 | IC-10/RC-6 concern: requirements no API can observe were scored as gaps, penalizing customers for API blindness rather than for non-compliance | (a) Fix — documented scan-versus-document precedence, with observed technical state still governing where the scan reads it directly | Closed 2026-03-06 (AIMS-DOC-009 v5.2); evasion cases added to M-6 to ensure the fix cannot be exploited |
+
+## 7. Review history
+
+| Version | Date | Reviewer | Outcome |
+|---|---|---|---|
+| 3.0 | 2025-08-08 | AI Development Lead | Added fairness strata and consistency measures |
+| 4.0 | 2025-12-12 | AI Development Lead + Responsible AI Lead | Added the IC impact-criteria set and made IC sign-off a release criterion |
+| 4.1 | 2026-03-04 | AI Development Lead, approved by AI System Accountable Owner | Recorded the 2026-03-04 release results; added IC-10 and IC-12; documented deficiency dispositions in §6.1 |

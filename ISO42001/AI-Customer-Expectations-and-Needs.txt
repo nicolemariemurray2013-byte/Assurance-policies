@@ -1,0 +1,142 @@
+# Understanding Customer Expectations and Needs
+
+**Document ID:** AIMS-PRO-026
+**Version:** 3.1
+**Owner:** AI System Accountable Owner, with Product and Account Management
+**Approved by:** AI Governance Board
+**Approval date:** 2026-03-06
+**Next scheduled review:** 2026-12-31, and on any change to the customer base or intended use
+**Scope:** Customers and potential customers of the compliance-evaluation AI system (AWS account
+471885797689, us-west-2), across all relationship types.
+
+---
+
+## 1. Understanding customer and potential-customer expectations and needs
+
+The organization **understands the expectations and needs of customers and potential customers of the AI
+system**, and does so at the points where that understanding can still change the product — the **design
+and engineering phases** — as well as through contractual requirements and usage agreements.
+
+### 1.1 How expectations and needs are gathered
+
+| Mechanism | When | What it produces | Owner |
+|---|---|---|---|
+| **Discovery interviews with compliance analysts and auditors** | Before and during design; refreshed per major capability | The functional expectations that shape design: cited rationale, override, journal traceability | Product + AI Development Lead |
+| **Design reviews with practising analysts** — the people who will be the human oversight | **Design and engineering phases**, before build | Rubric wording, output presentation, and the deliberate choice of failure mode (unable-to-assess over guessing) | AI Development Lead |
+| **Engineering-phase validation with real evidence** | Engineering phase | Confirmation that the output is usable by a qualified reader unaided (IC-11) | Compliance analysts |
+| Contractual requirements gathering | Pre-contract | Security, privacy, residency, retention, audit-right and SLA needs | Legal + Account Management |
+| Usage agreements and acceptable-use terms | Contracting | Agreed scope, valid domain, prohibited uses, responsibility split | Legal |
+| Onboarding needs assessment | Per customer | Environment scope, frameworks, evidence readiness, who will review | Account Management |
+| Ongoing account reviews | Quarterly for enterprise | Changing expectations, dissatisfaction, new use intentions | Account Management |
+| Support and adverse-impact reports | Continuous | Unmet expectations revealed by real friction (AIMS-PLAN-016 §A) | Support + Responsible AI Lead |
+| **Prospective-customer objections and lost-deal reasons** | Continuous | Expectations we do **not** meet — the most useful and most easily ignored input | Product |
+| Analyst override patterns | Monthly | Where the system's judgement diverges from the expert expectation | Accountable Owner |
+| External auditor and certification-body feedback | Per engagement | Evidentiary expectations of the parties who ultimately rely on results | Accountable Owner |
+
+**Feeding back into design.** Gathered expectations enter the requirements backlog with the source
+recorded, and are reviewed at each release-planning cycle. Three product decisions came directly from
+this input: mandatory per-requirement citation (auditors would not rely on an uncited verdict);
+unable-to-assess as a first-class status rather than a defaulted gap (analysts said a wrong gap costs
+more than an admitted unknown); and substance-over-polish rubrics (small customers objected that
+verbose documentation was scoring better than terse-but-complete documentation).
+
+### 1.2 Different relationships involve different needs
+
+**Different customer relationships involve different needs and expectations,** so requirements are
+gathered and met per relationship rather than as a single averaged set.
+
+| Relationship type | Primary expectations | Needs that differ from the norm | How met |
+|---|---|---|---|
+| **Enterprise, regulated sector** | Defensible, audit-ready evidence; data residency; audit rights; formal change notice | Longest retention; strictest residency; wants **advance notice of verdict-affecting change**; may need our output to survive its own regulator's scrutiny | 7-year records; disclosed processing locations; ≥ 10 business days' change notice; full journal on request |
+| **Mid-market** | Speed, coverage breadth, low operating burden | Little or no internal compliance function — needs interpretation help more than raw findings | Interpretation guide; clear remediation actions; plain-language output |
+| **Small organization** | Affordability; not being penalized for informal documentation | Terse documentation must not read as non-compliance — a **fairness** expectation, not just a feature request | Substance-over-polish rubrics; terse-compliant stratum as a permanent release gate |
+| **Internal use (our own organization)** | Same as any user; no privileged treatment | Must not become an untested path or a shortcut around approval | Subject to AIMS-POL-018 as a user like any other |
+| **Partners / integrators embedding results** | Stable interfaces; clear pass-through obligations | Needs the responsibility split in writing, and to inherit the disclosure duties | Partner agreement with pass-through terms (AIMS-PRO-025 §3) |
+| **External auditors acting for a customer** | Traceability, reproducibility, provenance | Needs to test our reasoning, not just read our conclusion | Journal, cited evidence, model identifier and runtime version disclosed |
+| **Prospective customers** | To know before buying whether it fits | Needs **limitations disclosed pre-sale**, not post-contract | Limitations and valid domain published and provided pre-contract (AIMS-REG-017 O-16) |
+| Non-customers affected by a customer's use | Not to be harmed by a wrong verdict | No contractual route — needs a channel that does not require a relationship | Public adverse-impact reporting, open to anyone (AIMS-PLAN-016 R-2) |
+
+## 2. Where responsibility lies — us versus the customer
+
+**Understood, agreed at contracting, and stated where it will actually be read** — in the product and in
+the usage agreement, not only in a schedule. The full life-cycle allocation is AIMS-PRO-025 §1.2; the
+customer-facing summary is below.
+
+| Aspect | Our responsibility | The customer's responsibility |
+|---|---|---|
+| Assessment logic and its quality | Correct, tested, documented, and disclosed limitations | — |
+| Rationale and citation for every verdict | Provided for every requirement | — |
+| **Truth and completeness of supplied evidence** | Assess and cite what is supplied; report unreadable or absent evidence as **unable-to-assess, never as non-compliance** | **Supplying accurate, complete evidence, and linking it to the controls it supports** — an unlinked document is invisible to the control |
+| Access to the customer's environment | Use only what was granted, read-only, in scope; every read attributable in the customer's own CloudTrail | **Creating, bounding, maintaining and revoking the read-only role**; defining the scope |
+| **Human review of consequential verdicts** | Provide the capability, the guidance and the record; verify it is being exercised | **Exercising it** — a qualified reviewer must review before reliance |
+| **The compliance conclusion, certification or attestation** | Never issued by us or by the system | **Theirs, with qualified human sign-off** |
+| Remediation of findings | Report clearly and actionably | Perform it in their environment |
+| Personal data in evidence | Processor duties: minimize, secure, retain per policy, delete on request | **Controller duties**: lawful basis, purpose, what to submit, subject rights |
+| Availability and incident response | Monitor, contain, notify per AIMS-PLAN-016 | Notify us of what they observe |
+| Use within the valid domain | Publish the domain and its limits | **Use within it**, and not present results as more than they are |
+| Currency of results | Timestamp results; state their point-in-time nature | Re-assess after environment change; not relying on a stale result |
+
+The rule applied to ambiguity: **where responsibility is unclear, it is written down before the contract
+is signed**, not resolved during an incident. Where a customer assumes a duty we have not accepted, it is
+corrected in writing at contracting and at each renewal.
+
+## 3. Risks arising from customer use, and the information provided against them
+
+**Risks that could arise from customers' use of the AI system are identified**, and information is
+provided to customers to help them use it appropriately — **including the limits of the valid domain of
+use.**
+
+### 3.1 Identified risks from customer use
+
+| # | Risk arising from customer use | Consequence | Information provided | Additional mitigation |
+|---|---|---|---|---|
+| CR-1 | **Over-reliance** — treating output as a certification and skipping human review | A wrong verdict propagates into an attestation or a regulatory filing | Machine-generated labelling on every result; explicit not-a-certification statement **on the result itself and in every export**; human-review requirement stated in the agreement | Override rate and review coverage monitored monthly; a zero override rate is investigated |
+| CR-2 | **Use outside the valid domain** — an unsupported framework, non-English evidence, unscoped regions | Uncharacterized accuracy presented as characterized | **Published valid domain and limitations**, provided pre-contract; non-English evidence flagged and routed to human review | Domain constraints enforced technically — only enabled frameworks and registered scope can be assessed |
+| CR-3 | **Misreading a coverage gap as compliance** | A real gap goes unremediated because "nothing was flagged" | Unable-to-assess shown as a distinct status, never as a pass; scoring behaviour disclosed, including that unreadable requirements are excluded rather than passed | Coverage reported per assessment; **an empty scope never yields a compliant score** |
+| CR-4 | **Incomplete or unlinked evidence** producing an unfairly poor result | Wasted remediation effort; loss of trust | Linkage requirement surfaced at the point of upload and in the guide — the most common user error, so it is stated where it is made | Specific, actionable upload rejection reasons |
+| CR-5 | **Using output to evaluate individuals** | Harm to a person from a system never validated for that purpose; a **prohibited use** | Prohibited-use statement in the agreement and in-product | Contractual prohibition; Severity 1–2 incident if observed (AIMS-PLAN-016 I-7) |
+| CR-6 | **Relying on a stale result** after the environment changed | A result that was true is presented as still true | Point-in-time nature stated on every result with its timestamp | Re-assessment guidance; results are dated, never undated |
+| CR-7 | **Presenting results to third parties as assurance** | Third parties rely on something never intended as assurance | Pass-through disclosure obligations in the agreement; the disclosure travels **on the artefact**, not just in the contract | Partner pass-through terms |
+| CR-8 | Over-scoping the granted role beyond read-only | Unnecessary standing access in the customer's account | Guidance to grant **only** the read-only role, with the minimum policy | We hold no write path to use even if over-granted; write attempts alarmed (`AIGov-AgentWriteAttempt`) |
+| CR-9 | Submitting personal or special-category data that no requirement needs | Unnecessary privacy exposure created by the customer | Guidance to redact before upload; statement that special-category data is not solicited and never extracted | Minimization; content excluded from logs and telemetry |
+| CR-10 | **Gaming** — supplying documents asserting a state that the environment contradicts | A false pass, and an unfair advantage over honest customers | Disclosure that observed technical state governs wherever a scan reads the subject | **Where the scan directly observes the setting, the observed state decides; a document cannot overwrite it.** A document is decisive only where the scan cannot read the requirement's subject at all. Contradiction cases are in the adversarial release suite |
+| CR-11 | Treating a low score as a supplier failure rather than an evidence gap | Misdirected effort | Rationale distinguishes "not evidenced" from "not compliant" in every verdict | Distinct statuses; per-requirement rationale |
+| CR-12 | Expecting the system to remediate or to write to the environment | Unmet expectation; and a request we must refuse | Stated plainly: **read-only, by construction, with no write path to grant** | Technical impossibility, not policy alone |
+
+### 3.2 Limits of the valid domain of use — as provided to customers
+
+Provided pre-contract, published, and repeated in-product: supported managed frameworks **only**;
+English-language documentary evidence, with accuracy uncharacterized outside it; AWS environments within
+the registered account and regions; **read-only observation** — no write, no remediation; assessment of
+**evidence**, not of the truth of undocumented practice; **point-in-time** results; findings limited to
+what the underlying AWS APIs expose, so API blindness is reported as an evidence gap rather than
+non-compliance; **an assessment aid and not a certification, attestation or legal opinion**; and not
+validated for, and prohibited from, any assessment of individual persons.
+
+### 3.3 How the information reaches customers
+
+At the point of use rather than only in documentation: essential statements on the result itself and in
+every export; the limitations set published and provided **before** contracting; the interpretation guide
+and upload guidance in-product; the responsibility split in the usage agreement and summarized in-product;
+≥ 10 business days' notice of verdict-affecting change; and annual transparency reporting on performance
+and known limitations (AIMS-REG-017 O-23). Completeness, currency and accuracy of this information are
+validated per AIMS-STD-015 §4.2.
+
+## 4. Verification that understanding is current
+
+Customer expectations are re-examined semi-annually and on any change to the customer base or intended
+use. The 2026-03-06 review confirmed the relationship types in §1.2 still match the actual customer base,
+added CR-10 to §3.1 following the API-visibility rubric change — so that the coverage-gap-versus-
+contradiction rule is disclosed to customers rather than left implicit — and recorded one unmet
+expectation: **multi-language evidence support**, repeatedly requested by prospective customers and
+currently outside the valid domain. It is disclosed as a limitation rather than described as forthcoming.
+Recording an unmet expectation is deliberate; a review that reports only satisfied expectations is not
+listening.
+
+## 5. Review history
+
+| Version | Date | Reviewer | Outcome |
+|---|---|---|---|
+| 2.0 | 2025-10-01 | Accountable Owner + Product | Established the gathering mechanisms and the responsibility split |
+| 3.0 | 2026-01-16 | Accountable Owner | Added §1.2 per-relationship needs and §3.1 customer-use risks after analyst and lost-deal feedback |
+| 3.1 | 2026-03-06 | Accountable Owner, approved by AIGB | Added CR-10 gaming risk with the observed-state-governs disclosure; recorded the unmet multi-language expectation; moved essential disclosures onto the result artefact itself |

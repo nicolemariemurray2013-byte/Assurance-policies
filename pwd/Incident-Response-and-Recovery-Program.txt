@@ -1,0 +1,395 @@
+# Incident Response and Recovery Program
+
+**Document ID:** SEC-IRP-027
+**Version:** 5.1 — **effective 2026-03-23**, superseding v4.6 of 2025-10-13
+**Owner:** CISO (program owner); Head of Security Engineering (operational execution)
+**Approved by:** CISO 2026-03-18; reviewed by the General Counsel 2026-03-17 for the breach-notification
+provisions
+**Next scheduled review:** Annually (next by 2026-12-31), after every Severity 1 or 2 incident, and after every
+recovery test
+
+**Scope.** Understanding, containing, mitigating, remediating, recovering from, communicating about, and learning
+from security, availability, processing-integrity, confidentiality, and privacy incidents. Applies to the
+production service, the supporting infrastructure, the build and supply chain, endpoints, and incidents
+originating at a third party that affect the entity's commitments. The reference implementation is AWS account
+**471885797689**, region **us-west-2**.
+
+Companion documents: the security monitoring procedure (how an incident is detected and declared); the
+configuration standards and vulnerability management procedure (remediation deadlines); the business continuity
+and recovery testing plan (availability disruption scenarios); the data-subject rights and third-party
+disclosure procedures (privacy obligations); the change management policy (the route by which a remediation
+reaches production).
+
+---
+
+## 1. Roles and responsibilities (CC7.4-R1)
+
+### 1.1 Internal roles
+
+| Role | Assigned to | Responsibility in an incident |
+|---|---|---|
+| **Executive sponsor** | Chief Executive | Accountable for the entity's response; authorises external communication and any decision with material business consequence |
+| **Program owner** | CISO | Owns the design, maintenance, and effectiveness of this program; declares Severity 1; decides on external forensic engagement; owns notification decisions jointly with the General Counsel |
+| **Incident commander** | Assigned per incident from a trained roster (Head of Security Engineering, Head of Platform Engineering, and two senior engineers are currently qualified) | Single decision-maker for the duration; owns the timeline, the containment decision, and the record. **The commander does not perform hands-on remediation** — the role is coordination, so that judgement is not crowded out by execution |
+| **Security duty analyst** | 24×7 rota | First triage; declares an incident at Severity 2 or below; escalates to the commander |
+| **Service on-call engineer** | 24×7 rota | Executes technical containment and recovery; provides system context |
+| **Platform / infrastructure lead** | Head of Platform Engineering | Infrastructure containment, credential revocation, network isolation, restoration from backup |
+| **Forensic lead** | Security Engineering, or the retained external firm | Evidence preservation and analysis; determines method of occurrence and scope of access |
+| **Privacy lead** | Data Protection Officer | Determines whether personal information is engaged; owns the breach determination and the data-subject notification content |
+| **Legal counsel** | General Counsel | Regulatory notification obligations, privilege, preservation duties, contractual notice, law-enforcement liaison |
+| **Communications lead** | Head of Marketing & Communications | Customer, public, and internal messaging, consistent with §6 |
+| **Customer liaison** | Head of Customer Success | Named-customer notification and the ongoing status relationship |
+| **Human Resources** | Head of People | Where an employee or contractor is implicated; owns the conduct process and sanctions under §8.3 |
+| **Scribe** | Assigned per incident | Maintains the contemporaneous timeline; frees the commander from record-keeping |
+
+Every role has a **named primary and a named alternate**, both recorded in the on-call system with out-of-hours
+contact paths validated monthly. No role depends on one individual — the recovery tests in §7 include a scenario
+in which the primary is unavailable.
+
+### 1.2 External resources, engaged when internal capability is exceeded
+
+| Resource | Purpose | Engagement route |
+|---|---|---|
+| Retained digital forensics and incident response firm | Deep forensic analysis, adversary attribution, surge capacity | Master services agreement with a **pre-agreed response-time commitment**; engaged by the CISO without needing a new procurement cycle |
+| External breach counsel | Regulatory notification analysis across jurisdictions; privilege | Retainer; engaged by the General Counsel |
+| Cloud provider security and support | Provider-side investigation, log retrieval beyond entity visibility, account-level containment | Support relationship; escalation path recorded in the runbook |
+| Cyber insurer and its panel | Coverage notification, panel resources | Notified per the policy's terms, which the General Counsel tracks |
+| Law enforcement | Where criminal activity is indicated | Via the General Counsel only |
+| Customer and vendor security contacts | Coordinated response where an incident crosses an organisational boundary | Contact details maintained in the customer and supplier registers |
+
+The retainers exist **before** they are needed, because negotiating a forensic engagement during an active
+incident is itself a failure mode. Contact details are verified annually.
+
+**Open item, recorded rather than omitted:** the cloud account's alternate security contact and a dedicated
+incident-management support role are not yet configured in the reference account. The escalation path currently
+runs through the account's primary contact and the support relationship, which is functional but concentrates the
+path. *Owner: CISO. Due: next quarterly review.*
+
+---
+
+## 2. Understanding the incident: nature, severity, and scope (CC7.4-R7, CC7.4-R8)
+
+### 2.1 Declaration and initial understanding
+
+An incident is declared from a security event under the monitoring procedure's criteria. Within the initial
+triage window the commander establishes, and the scribe records: what was observed and by which detection; the
+**method of occurrence** as far as it is then known; which system resources, data stores, identities, and
+credentials are affected or in reach; whether the activity is ongoing; whether personal, confidential, or
+customer data is engaged; and which entity objectives and commitments are threatened.
+
+The audit trail is the primary instrument for this. Because the trail records identity, source, parameters, and
+outcome for every control-plane call, and is protected by log file validation and a customer-managed key with a
+policy that excludes operational identities from deletion, the reconstruction of "what did this principal
+actually do" is evidentiary rather than inferential. Data-plane access logs on all 13 buckets and flow logs on the
+in-scope VPC extend the same reconstruction to data access and network activity.
+
+**Understanding is provisional and revised.** The initial scope is explicitly recorded as provisional; scope is
+re-assessed at every status checkpoint, and a scope expansion re-triggers the severity assessment. An incident is
+never closed on the initial scope alone.
+
+### 2.2 Severity and response time frames
+
+| Severity | Definition | Response time frame |
+|---|---|---|
+| **Sev 1** | Confirmed unauthorized access to customer or personal data; confirmed malware or unauthorized code in production; loss of audit integrity; complete service unavailability; ransomware; compromise of the break-glass or root credential | Commander assigned and response underway **within 30 minutes**, 24×7; executive sponsor and General Counsel notified within 1 hour; status checkpoints hourly |
+| **Sev 2** | Credible indicator of compromise without confirmed data access; compromise of a single non-privileged credential; partial or degraded service; unauthorized component in production; confirmed control bypass | Underway **within 2 hours**, 24×7; checkpoints every 4 hours |
+| **Sev 3** | Contained security weakness actively being exploited at low impact; isolated endpoint malware detection successfully quarantined; single-tenant processing error | Underway **within 1 working day**; daily checkpoints |
+| **Sev 4** | Policy violation without exploitation; unexplained but bounded anomaly requiring investigation | Underway **within 3 working days**; reviewed weekly |
+
+Severity is assigned from **impact and reach, not from the volume of alerts**, and is re-assessed at every
+checkpoint — it may be raised or lowered, and every change is recorded with its reason. Malware affecting
+production or customer data is Sev 1 by default. Where severity is genuinely ambiguous, the incident is run at
+the **higher** severity until evidence supports lowering it.
+
+---
+
+## 3. Containment (CC7.4-R2, CC7.4-R9)
+
+### 3.1 Determining the containment approach
+
+Containment is a **decision with a stated trade-off**, not a reflex. For each incident the commander chooses
+between immediate isolation and monitored containment, weighing the rate of ongoing harm, the evidentiary value
+of continued observation, the availability impact of isolation, and the risk that the adversary detects the
+response and escalates. The decision, its rationale, and its time are recorded. Default: **when customer or
+personal data is in reach and actively accessible, isolate immediately** and accept the loss of observation.
+
+### 3.2 The containment actions available
+
+| Vector | Containment action | Notes |
+|---|---|---|
+| Compromised credential or session | Deactivate the credential; invalidate sessions; attach a deny-all policy where deletion would destroy evidence | Revoke first, investigate second. The already-inactive retired build credential in the reference account carries exactly this deny-all pattern as a standing example |
+| Compromised runtime component | Replace the task from a known-good artifact digest; revoke the component's role credentials | The runtime is immutable, so replacement is the normal operation, not an emergency measure |
+| Compromised endpoint | Network-isolate via EDR; preserve, then re-image | Full-disk encryption limits confidentiality impact of physical loss |
+| Network-borne activity | Tighten security group and network rules to default-deny; **VPC Block Public Access is already `block-bidirectional`**, which bounds the exposure before any incident begins | Pre-existing posture is the cheapest containment |
+| Unauthorized configuration change | Revert by redeploying the infrastructure-as-code definition; identify the actor from the trail | Drift reconciliation confirms the revert held |
+| Data exfiltration path | Remove the egress channel; apply a restrictive bucket or key policy; disable the credential that authorised the read | Object-store access logs establish what was read |
+| Supply-chain compromise | Quarantine the artifact and the dependency version; block the version in the curated repository; redeploy the last known-good digest | Bill of materials identifies every affected release |
+| Vendor-side compromise | Suspend the vendor's access from the entitlement record; search the trail for its use in the exposure window | Enumerate from records, not from memory |
+| Audit-integrity concern | Preserve the archive; verify log file validation digests; restrict all mutation on the archive | No operational identity holds delete permission on the archive |
+| Account-level compromise | Engage the provider's account-level containment; use break-glass only under the two-person rule, which itself raises `AIGov-RootAccountUsage` | The alarm firing during a sanctioned response is expected and is recorded in the timeline |
+
+### 3.3 Evidence preservation during containment
+
+Before remediation destroys state, and where feasible without prolonging harm: capture volatile memory and disk
+images from affected endpoints, snapshot affected volumes, export the relevant trail and access-log windows to
+preservation storage, and record hashes of everything captured with a chain of custody. Legal counsel issues a
+**preservation notice** for Sev 1 and Sev 2 incidents, suspending routine deletion for the relevant data. In the
+immutable runtime, the replaced task is captured before termination where the platform permits; where it cannot
+be, that limitation is recorded in the timeline rather than left as an unexplained gap.
+
+---
+
+## 4. Mitigating ongoing effects and remediating (CC7.4-R3, CC7.4-R4, CC7.4-R10, CC7.4-R11, CC8.1-R11)
+
+### 4.1 Mitigating while the incident is live
+
+Containment stops the mechanism; mitigation limits the consequences that are already in motion. Concurrent with
+containment: revoke every credential the affected component could have reached, not only the one known to be
+used; rotate secrets and keys in the blast radius; assess and bound the exposure using the entitlement and asset
+records; heighten monitoring on the affected identities, resources, and data paths for the duration and for a
+defined watch period afterward; notify affected internal teams so that dependent decisions are not made on
+compromised assumptions; and, where processing integrity is affected, **quarantine the affected outputs so that
+downstream consumers do not act on them** while correction is in progress.
+
+### 4.2 Remediating: closing the vulnerability and removing unauthorized access
+
+Resolution requires all of the following to be evidenced before an incident may be closed:
+
+1. **The vulnerability is closed** — the specific weakness that permitted the incident is fixed, not merely
+   worked around. Where a permanent fix takes longer than the containment can safely hold, an interim
+   compensating control is put in place with an owner and a dated plan, and the incident remains open.
+2. **Unauthorized access is removed** — every credential, session, key, policy grant, trust relationship,
+   network path, and persistence mechanism the adversary held or could have created is enumerated and removed.
+   Enumeration is from records and the trail, not recollection.
+3. **Configuration is returned to baseline** — the affected resources evaluate compliant against the continuous
+   rule set (**368 rules**), allowing for the up-to-24-hour periodic evaluation latency, which is noted in the
+   timeline rather than treated as an unresolved finding.
+4. **Artifact integrity is confirmed** — the running digest matches the approved release.
+5. **Detection coverage is confirmed or added** — if the incident was found by something other than a detection,
+   or later than it should have been, a detection work item is raised before closure.
+
+**All remediation reaches production through the change management process.** Identification of a needed change
+during an incident **initiates the change process immediately**, using the emergency path where the urgency
+requires: a second person's concurrence at the time, and full documentation within one working day. Emergency
+changes compress the sequence but do not omit approval, testing where feasible, or the record. Incident-derived
+changes are tagged as such so that the weekly change review can examine them as a set.
+
+### 4.3 Documenting and communicating remediation
+
+Every incident carries a record containing: the timeline with times and actors; the detections that fired and
+when; severity assignments and every change to them; the method of occurrence; the scope of affected resources
+and data; every containment, mitigation, and remediation action with its actor and time; the evidence preserved
+and its custody; the notification determinations and every communication issued; the root cause; the corrective
+actions with owners and due dates; and the closure approval. Sev 1 and Sev 2 records are approved by the CISO at
+closure; Sev 1 records are reported to the Audit Committee and to the executive sponsor. Remediation activities
+are communicated to affected internal teams at each checkpoint, to affected customers per §6, and to the Audit
+Committee quarterly in aggregate.
+
+---
+
+## 5. Restoration and recovery (CC7.4-R5, CC7.5-R1)
+
+### 5.1 Restoring to an interim operating state
+
+The objective immediately after containment is a state in which entity objectives can be met, which may be
+degraded relative to normal. Options, in order of preference: redeploy the last known-good artifact digest to
+clean infrastructure; fail over to an unaffected component or region; restore data from a verified backup to the
+last known-good point using point-in-time recovery; or operate a reduced-function mode with the affected capability
+disabled. **Interim states are recorded as such, with an owner and a target date for full restoration**, so that
+a temporary posture does not silently become permanent.
+
+### 5.2 Full restoration
+
+| Restoration activity | How it is performed |
+|---|---|
+| Rebuilding systems | From infrastructure-as-code and an approved artifact digest — never by cleaning a compromised instance in place. Endpoints are re-imaged, not repaired |
+| Updating software and installing patches | Through the pipeline as a normal change; because the runtime is immutable, patching is a redeploy |
+| Modifying access controls | Entitlements revised per the least-privilege review the incident triggered; changes reviewed by an owner other than the requester |
+| Changing configurations | Baseline updated in infrastructure-as-code first, so the corrected configuration is the durable intent and not a console change that drift will later overwrite |
+| Restoring data | From backups whose restorability is proven by the testing regime in the backup standard, to a validated point in time, with integrity verification before return to service |
+| Rotating cryptographic material | Keys and secrets in the blast radius rotated; the customer-managed trail key's rotation schedule is unaffected but rotation can be forced |
+| Re-validating before return to service | Configuration rules compliant; detections healthy and firing; artifact digest verified; functional and integrity checks passed; the specific vulnerability confirmed closed |
+
+Return to service is a **decision by the incident commander with the service owner's concurrence**, recorded with
+the evidence relied upon. A heightened monitoring watch period follows every Sev 1 and Sev 2 restoration, with its
+duration set by the commander and a minimum of **14 days**.
+
+---
+
+## 6. Communication (CC7.4-R6, CC7.5-R2)
+
+### 6.1 Communication matrix
+
+| Audience | Trigger | Timing | Owner | Content |
+|---|---|---|---|---|
+| Incident team | Declaration | Immediate | Commander | Full detail |
+| Executive sponsor and CISO | Sev 1; Sev 2 on escalation | Within 1 hour of Sev 1 | Commander | Impact, containment status, decisions needed |
+| General Counsel | Any incident with possible data, regulatory, or contractual implication | Within 1 hour of Sev 1 | Commander | Facts for the notification analysis |
+| Affected customers | Confirmed or reasonably suspected impact to their data or service | Without undue delay, and within any contractual notice period — **72 hours** is the default outer bound absent a shorter contractual term | Customer liaison, content approved by Legal and Communications | What happened, what data or service was affected, what the entity is doing, what the customer should do, and how to get updates |
+| All customers | Material service disruption | Status updates at each checkpoint | Communications lead | Status, scope, expected restoration |
+| Data subjects | Confirmed unauthorized use or disclosure of personal information, where the risk threshold in §8.2 is met | Without undue delay, per the applicable statutory deadline | Privacy lead, approved by Legal | Nature of the breach, categories of data, likely consequences, mitigation measures, contact point, and steps the individual can take |
+| Supervisory authorities and regulators | Per the jurisdictional analysis in §8.1 | Per the applicable statutory deadline — **72 hours from awareness** where that regime applies | General Counsel | As prescribed by the regime |
+| Sub-processors and vendors | Where their environment or data is implicated | Promptly | Commander | Scope and required action |
+| Cyber insurer | Per policy terms | Per policy terms | General Counsel | As prescribed |
+| Law enforcement | Where criminal activity is indicated and disclosure is appropriate | At the General Counsel's direction | General Counsel | As appropriate |
+| Internal workforce | Sev 1, and any incident with behavioural lessons | At closure, or earlier if action is required | Communications lead | Sanitised account and required actions |
+| Audit Committee | Sev 1 individually; all incidents in aggregate | Sev 1 promptly; otherwise quarterly | CISO | Incidents, root causes, corrective actions, trends |
+
+### 6.2 Communication principles
+
+Communications state **what is known, what is not yet known, and when the next update will come**. Speculation is
+excluded; a correction is issued promptly and prominently if a statement turns out to be wrong. A single approved
+channel and a single spokesperson are used per audience to prevent divergent accounts. Pre-drafted templates exist
+for each audience so that drafting is not on the critical path, and the templates are exercised in the tests in
+§7. Communications about recovery actions and about the measures taken to prevent recurrence are issued at
+closure, internally and — for incidents that were externally visible or notified — externally.
+
+---
+
+## 7. Root cause, learning, and testing (CC7.5-R3 to CC7.5-R10, CC7.4-R12, CC7.4-R13)
+
+### 7.1 Root cause and corrective action
+
+Every incident at Sev 3 and above gets a post-incident review within **10 working days** of closure, chaired by
+someone who was **not the incident commander**. It is explicitly blameless as to individuals and explicitly
+unforgiving as to systems. It determines:
+
+- The **root cause**, pursued past the proximate trigger to the systemic reason — a missing control, a control
+  that existed but did not operate, a process that permitted the state, or a design decision that made the failure
+  possible. "Human error" is never accepted as a root cause; the question is why the system permitted the error
+  to have that effect.
+- **Which preventive control failed or was absent**, and what preventive or detective control is added or changed
+  as a result (CC7.5-R4). This produces concrete architecture or control changes — additional detections, a
+  tightened policy, a new automated gate, a segmentation change — each raised through change management.
+- **Whether detection performed as designed** (CC7.2-R12): did it fire, at what stage of the attack chain, and how
+  could it have fired earlier. An incident found by a human or a customer rather than a detection is itself a
+  finding.
+- **The timeline against the target response times** in §2.2, with an explanation for any target missed.
+- **Corrective actions**, each with a single named owner and a due date, entered into the deficiency register and
+  tracked to closure. Overdue corrective actions escalate to the CISO and are reported to the Audit Committee.
+
+### 7.2 Periodic review of incident patterns and program design
+
+| Review | Frequency | Purpose |
+|---|---|---|
+| Incident pattern review across security, availability, processing integrity, confidentiality, and privacy incidents | **Quarterly** | Identify recurring root causes and the **system changes** they imply (CC7.4-R13). A cause recurring across incidents is a systemic finding regardless of the low severity of each instance |
+| Program design effectiveness evaluation | **Annually**, and after every Sev 1 | Evaluate whether the design of the response activities — roles, severities, time frames, escalation, communication, retainers — is adequate for the current threat landscape and architecture (CC7.4-R12) |
+| Corrective action closure review | Monthly | Confirm actions are closing, not merely being logged |
+| Lessons-learned incorporation | After each test and each incident | Update this program, the runbooks, and the recovery procedures (CC7.5-R5) |
+
+### 7.3 Recovery plan testing (CC7.5-R6 to CC7.5-R10)
+
+Testing runs at least **semi-annually**, alternating tabletop exercises with technical simulations, plus a
+recovery test after any material change to the architecture or the response team.
+
+**Scenario selection is risk-driven (CC7.5-R7):** scenarios are chosen from the threat register by the product of
+**likelihood and magnitude**, so the exercise set reflects what is actually likely to happen and what would hurt
+most, and the selection rationale is recorded. The current standing set:
+
+| Scenario | Threat basis | What it exercises |
+|---|---|---|
+| Credential compromise leading to data access | High likelihood; high magnitude | Revocation, trail-based scope reconstruction, breach determination, customer and data-subject notification |
+| Ransomware or destructive action on stored data | Moderate likelihood; severe magnitude | Backup restoration to a validated point, integrity verification, interim operating state |
+| Supply-chain compromise in a dependency | Moderate likelihood; high magnitude | Bill-of-materials exposure query, artifact quarantine, rollback to known-good digest |
+| Insider misuse of a privileged entitlement | Lower likelihood; high magnitude | `AIGov-*` alarm triage, two-person break-glass, HR and conduct process, evidence handling |
+| Regional or provider service loss | Lower likelihood; severe magnitude | Failover, degraded-mode operation, customer communication at scale |
+| Processing-integrity failure producing incorrect assessment output | Moderate likelihood; moderate magnitude | Output quarantine, correction and re-issue, notification of affected consumers |
+| Audit-log tampering or loss | Low likelihood; severe magnitude | Log file validation verification, preservation, provider escalation |
+
+**Cross-entity component coverage (CC7.5-R8):** each test enumerates the components relevant to the availability
+impairment being simulated and confirms each is exercised or explicitly scoped out with a reason — the runtime,
+the record store, the object store, the key management dependency, the identity dependency, the audit and
+monitoring estate, the build pipeline, the endpoint fleet, third-party dependencies, and the human processes
+(on-call, communications, decision authority). A component never included in any test within a rolling 12 months
+is a coverage gap raised as a finding.
+
+**Key-personnel unavailability (CC7.5-R9):** at least one test per year is run with the primary incident
+commander, the primary on-call engineer, and one executive role declared unavailable at the start, with no advance
+warning to the alternates. The test's purpose is to prove the alternates can execute from the documented
+runbooks — if the exercise only succeeds because someone's undocumented knowledge was reachable, that is the
+finding.
+
+**Revising the posture on results (CC7.5-R10):** every test produces a report with findings, and findings become
+corrective actions with owners and due dates. Where results show that a recovery objective is not achievable as
+designed, the **resilience posture and continuity plans are revised** — the objective is corrected or the
+architecture is changed, and the choice is made explicitly by the CISO and the service owner rather than left as
+an aspirational number. Revisions flow into the business continuity plan and, where they require engineering
+work, into the roadmap with executive visibility.
+
+---
+
+## 8. Privacy breach provisions (CC7.4-R14, CC7.4-R15, CC7.4-R16)
+
+### 8.1 Breach response procedure for a confirmed privacy incident
+
+When an incident is confirmed to involve personal information, the privacy breach procedure runs **in addition to**
+everything above, owned by the Privacy lead with the General Counsel:
+
+1. **Confirm and classify** — establish which categories of personal information, which data subjects, which
+   jurisdictions, and which volume, using the data inventory and classification from the asset inventory
+   standard and the access evidence from the trail and data-plane logs.
+2. **Determine controller/processor posture** — where the entity processes personal information on a customer's
+   behalf, the entity is a processor and its primary duty is to notify that controller **without undue delay**,
+   supplying the information the controller needs for its own regulatory notification. Where the entity is the
+   controller, it notifies authorities and data subjects directly. This determination is made and recorded
+   explicitly, because it dictates who notifies whom.
+3. **Assess risk to individuals** — likelihood and severity of harm, considering sensitivity, identifiability,
+   volume, whether the data was encrypted or otherwise unintelligible, and whether the recipient is known.
+4. **Notification analysis per jurisdiction** — the General Counsel determines the applicable regimes, thresholds,
+   deadlines, and content requirements. Where a **72-hour-from-awareness** obligation applies, the clock is
+   recorded from the moment of awareness, and a notification is made on the information available rather than
+   delayed for completeness, with a supplementary notification to follow.
+5. **Notify** — per §6.1, with content per §8.2.
+6. **Record** — a breach register entry is created for **every** confirmed privacy incident, including those
+   assessed as not notifiable, with the reasoning for the non-notification decision. Regulators may ask to see
+   the decisions that led to silence as readily as the ones that led to notice.
+7. **Support affected individuals** — a contact point, and where warranted, monitoring or protective services.
+8. **Remediate and learn** — as §4 and §7.
+
+### 8.2 Communicating unauthorized use or disclosure of personal information (CC7.4-R15)
+
+Notification to data subjects, authorities, and other required recipients is made when the assessment in §8.1.3
+indicates a risk to individuals or when a regime requires notification irrespective of risk. Content includes: the
+nature of the breach; the categories and approximate number of individuals and records; the likely consequences;
+the measures taken or proposed, including mitigation; a contact point for further information; and the steps
+individuals can take to protect themselves. Notification is direct where contact details exist and by public
+communication where individual notice is disproportionate or impossible. Customers who are controllers are given
+what they need to discharge their own obligations, and the entity does not notify a controller's data subjects
+without that controller's coordination.
+
+### 8.3 Evaluating conduct and applying sanctions (CC7.4-R16)
+
+Where an unauthorized use or disclosure of personal information involves the conduct of an individual or an
+organisation, the conduct is evaluated:
+
+| Party | Evaluation | Consequence range |
+|---|---|---|
+| Employee or contractor | Investigation by Human Resources with Security Engineering, respecting due process and the individual's rights; the factual record comes from the audit trail and access logs, not from supposition | Coaching and retraining; formal warning; removal of entitlements; suspension; termination; referral to law enforcement where criminal conduct is indicated. Applied consistently with employment law and the disciplinary policy, which the workforce acknowledges at onboarding and annually |
+| Vendor, sub-processor, or other organisation | Assessment against contractual security and privacy obligations; request for their incident report and corrective actions; re-assessment of their risk tier | Mandated remediation with deadlines; suspension of access or of processing; contractual remedies; escalation to termination and offboarding with certified deletion under the disposal standard |
+| Customer-side party | Assessment against the terms of service and the shared-responsibility boundary | Notification, required remediation, suspension of the affected integration |
+
+Sanctions are applied **in accordance with entity policies and applicable legal and regulatory requirements**, are
+proportionate to the conduct, and are recorded. The evaluation is performed for every such incident, and the
+outcome — including a determination that no sanction is warranted, with its reasoning — is recorded in the
+incident record. Consistency of application is reviewed annually by Human Resources with the CISO, because
+selectively applied sanctions are not a control.
+
+---
+
+## 9. Governance
+
+| Activity | Frequency | Owner | Evidence |
+|---|---|---|---|
+| On-call rota, contact path, and paging validation | Monthly | Security Engineering | Test record |
+| Corrective action closure review | Monthly | CISO | Register with ages |
+| Incident pattern review across all five categories | Quarterly | CISO | Review record and system-change items |
+| Breach register review | Quarterly | Privacy lead | Reviewed register with non-notification reasoning |
+| Recovery and response testing | Semi-annually, alternating tabletop and technical | Head of Security Engineering | Exercise report, findings, corrective actions |
+| Key-personnel-unavailable exercise | Annually | CISO | Exercise report |
+| Program design effectiveness evaluation | Annually and after every Sev 1 | CISO | Evaluation record |
+| External retainer and contact verification | Annually | General Counsel | Verified contact list |
+| Sanction consistency review | Annually | Human Resources with CISO | Review record |
+| Program review and approval | Annually | CISO | Approved version |
+
+Deficiencies are recorded in the control deficiency register with an owner and due date, tracked to closure, and
+reported to the Audit Committee quarterly.

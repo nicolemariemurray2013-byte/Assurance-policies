@@ -1,0 +1,464 @@
+# Information Retention and Secure Disposal Standard
+
+**Document ID:** PRV-RET-036
+**Version:** 4.2 (current) — **effective 2026-08-22**
+
+**Revision note (v4.2), effective 2026-08-22.** Adds §6.7: the procedure for equipment and auxiliary
+storage leaving our control (including vendor return and the storage components that are easy to forget),
+and the formally approved scoping determination for physical media — its factual basis, how the basis is
+verified, the accepted residual risk `R-2026-040`, the CISO approval, and the events on which the
+determination lapses. v4.1 marked physical media "not applicable" without any of that, which is an
+omission wearing the clothes of a determination. §6.3 now states, per class, the policy trigger that starts
+each automated deletion, and the rule that a retention period and its enforcement configuration cannot
+move independently.
+
+**Revision note (v4.1).** Adds §6.5 and §6.6: the contractual deletion obligations required of third
+parties both **during** the term and on termination, and the evidence we hold that a third party actually
+deleted what it was instructed to delete. Version 4.0 covered disposal up to our own account boundary and
+stopped there, which left the largest volume of in-scope information — the copies held by suppliers —
+governed by contract clauses that this standard neither stated nor verified. Supersedes version 4.0 of
+2026-06-05.
+
+**Revision note (v4.0).** Version 4.0 replaces version 3.x's single retention table with per-class periods tied to a
+stated purpose, adds the deletion-request capture and flagging process that version 3.x left to ad-hoc
+handling, and states the protection-during-retention controls together with the one place they are currently
+incomplete. It supersedes version 3.1 of 2025-10-27.
+
+**Owner:** Head of Platform Engineering, jointly with the Privacy Owner
+**Approved by:** Head of Engineering 2026-06-02; reviewed by the Audit Committee 2026-06-03
+**Next scheduled review:** Annually (next by 2026-12-31), and on any change to a retention period
+
+**Scope.** Retention, protection during retention, and secure disposal of **both** personal information and
+confidential information. The two are covered in one standard because they share one mechanism; where a
+requirement differs between them, the difference is stated. Reference implementation: AWS account
+**471885797689**, region **us-west-2**.
+
+Companion documents: the choice and consent procedure (which fixes the purposes retention is measured
+against); the data subject rights procedure (which routes deletion requests here); the information
+requirements standard (which classifies the data); the backup and recovery standard (which governs restores).
+
+---
+
+## 1. Defining, identifying, and designating the information (C1.1-R1)
+
+Designation happens **at the point of receipt or creation**, not by later survey, because information that
+enters undesignated is information nobody can apply a retention period to.
+
+| Trigger | How the designation is made | Result |
+|---|---|---|
+| Evidence document uploaded | The upload is project-scoped and carries declared control references; everything arriving on this path is designated **customer confidential** on arrival, without needing inspection | Confidential |
+| Account scan executed | Scan output is written into the assessment's evidence set, which is project-scoped | Confidential |
+| Assessment result, verdict, rationale produced | Created inside the assessment, inherits the assessment's scope | Confidential |
+| Run journal written | Created by the runtime | Internal |
+| Trail or flow log record delivered | Delivered to a designated bucket under a customer-managed key | Audit |
+| Workforce record created | Created in the governance store | Personal information |
+| Consent record created | Created in the governance store, marked as consent evidence | Personal information, retention-exempt |
+| Policy or approval created | Created in the governance store | Governance |
+
+**The default designation is confidential, not public.** Anything that arrives or is created without a
+determinable designation is treated as customer confidential until designated otherwise — the conservative
+direction, so a mis-designation over-protects rather than under-protects.
+
+Sensitivity within the confidential class is further distinguished where it matters: personal information
+carries the additional handling in this standard's §4 and §6, and consent records carry the retention
+exemption in §3.2.
+
+---
+
+## 2. Retention for no longer than necessary (P4.2-R1, C1.1-R2)
+
+Each period is set from a **stated purpose** and ends when that purpose is exhausted. A period justified only
+by "in case it is useful" is not a period, and none appears below.
+
+| Information | Class | Retention period | Purpose that sets the period | Ends when |
+|---|---|---|---|---|
+| Customer evidence documents | Confidential (may contain PI) | **Life of the customer relationship + 1 year**, or on controller instruction, whichever is earlier | Support the assessments that cite them, and allow an auditor to re-examine the basis of a recent conclusion | Relationship ends, or the controller instructs deletion |
+| Assessment results, requirement verdicts, rationales | Confidential | **3 years** | Period-over-period comparison and audit-period coverage; also the verdict-stability anchor, which reads only the most recent settled run | Superseded and outside the audit window |
+| Run journals | Internal | **1 year** | Reconstructing how a verdict was reached, and incident investigation | 1 year, after which the result alone suffices |
+| Scan evidence | Confidential | **1 year** | Corroborating the verdict of the assessment that produced it | 1 year; never reused as current evidence in any case |
+| Annotations, tasks, comments | Confidential | With the assessment they belong to | Remediation tracking | Parent assessment is disposed of |
+| Trail records | Audit | **7 years** | Security investigation and audit-trail obligations | 7 years |
+| VPC flow logs | Audit | **400 days** | Network investigation across an annual cycle | 400 days, enforced by the log group retention setting |
+| Alarm history | Audit | **1 year** | Timeliness evidence for the control operation register | 1 year |
+| Workforce identity, role, contact | Personal information | **Employment + 1 year** | Accountability for control activities performed while employed | 1 year after the relationship ends |
+| Workforce training and attestation records | Personal information | **Employment + 3 years** | Demonstrating competence for controls operated during an audit period that may be examined later | 3 years after the relationship ends |
+| On-call contact details | Personal information | **Rota participation + 1 year** | Paging, and post-incident timeline reconstruction | 1 year after leaving the rota |
+| Optional profile details | Personal information | **Until withdrawn** | Directory only | Withdrawal, then ≤ 30 days |
+| Consent records | Personal information | **Processing lifetime + 3 years** — see §3.2 | Demonstrating that a past processing was lawful | 3 years after the processing ceases |
+| Deficiency register, policies, approvals | Governance | **7 years** | Governance history across multiple audit periods | 7 years |
+
+**Retention beyond a period is permitted only where a law or regulation specifically requires it**, or where a
+legal hold is in force. A hold is recorded with its scope, its legal basis, the date it was placed, and the
+person who placed it; it suspends deletion for the identified information only, and is reviewed quarterly for
+continued necessity. No legal hold is in force in the current period.
+
+**Enforcement.** Periods with a provider-side mechanism are enforced by that mechanism — the flow log's
+400-day setting is configuration, not procedure. The remainder are enforced by the quarterly disposal cycle in
+§6.4. Which category each period falls into is stated in §7, because a period enforced only by a quarterly
+manual cycle has a different failure mode from one enforced by configuration, and conflating the two would
+overstate the control.
+
+---
+
+## 3. Protecting information from erasure or destruction during the retention period (P4.2-R2, C1.1-R3)
+
+The requirement is the mirror image of disposal: information must **survive** until its period ends. The
+controls in force:
+
+| Control | State | What it protects against |
+|---|---|---|
+| Public access blocked on all 13 buckets | In force | Anonymous deletion or overwrite |
+| Least-privilege access; no delete permission in the assessment runtime's role | In force | The service deleting its own evidence, whether by defect or compromise |
+| Encryption at rest by default on block storage, query results, queues; customer-managed key with annual rotation on the trail (next 2027-08-16) | In force | Disclosure, and — via key policy — unauthorised destruction of trail data |
+| Trail logging verified weekly (`IsLogging=true`, no latest delivery error; 15 of 15 checks passed) | In force | Silent gaps in the audit record |
+| Flow log retention set to 400 days as configuration | In force | Premature expiry by manual error |
+| Two-person rule for break-glass credential retrieval, exercised annually | In force | Unilateral privileged destruction |
+| Trail record of every control-plane call, with `AIGov-*` alarms over metric filters | In force | Undetected deletion; a deletion is visible after the fact |
+| Backups per the backup and recovery standard; restore tested quarterly (2026-03-11: RTO 41 min against a 4 h objective, RPO 8 min against 1 h) | In force | Loss of the account or of a whole store |
+| Change process with 2 approvals and no self-approval (118 of 118 merges in the period) | In force | A retention-shortening change shipping unreviewed |
+| **In-bucket object versioning** — enabled on all 13 buckets (2026-08-18), with noncurrent-version expiry at the retention period | In force | Overwrite or deletion of an **individual object** in place: the prior version is retained directly, recoverable with no exposure window; see §3.1 |
+
+### 3.1 Individual-object recovery — in-bucket versioning
+
+The requirement is met at every level, and the mechanism at each level is worth stating precisely rather than
+averaging away:
+
+- **Account and store level:** loss of the account or of a whole store is recoverable from tested backups
+  (restore tested quarterly; §3 table).
+- **Individual-object level:** **object versioning is enabled on all thirteen buckets in account 471885797689**
+  (2026-08-18), each with a noncurrent-version-expiration lifecycle rule at the class's retention period. An
+  object overwritten or deleted **in place** is recovered **directly from its prior version**, retained the
+  instant the change is made — recovery is immediate and has no exposure window.
+- **Whole-region loss** is the one registered residual: backups are region-scoped to us-west-2 and there is **no
+  cross-region backup copy configured** today; regional loss is recovered by infrastructure-as-code rebuild in
+  an alternate region with the data residual accepted, and cross-region backup replication is a planned
+  enhancement (backup standard §6.4/§6.5).
+- **Detection:** any deletion, in place or otherwise, is **detectable** from the trail and the `AIGov-*`
+  alarms, and the quarterly disposal cycle (§6.4) confirms that information still inside its retention period
+  is present.
+
+---
+
+## 4. Capturing deletion requests, and flagging the information (P4.3-R1, P4.3-R2, C1.2-R1)
+
+### 4.1 Capturing requests (P4.3-R1)
+
+Requests are captured **on every channel on which one can plausibly arrive**, because a request that arrives
+by an uncaptured route is a request that is not honoured:
+
+| Channel | Captured how | Acknowledged within |
+|---|---|---|
+| Controller (customer) instruction via the service API or support channel | Ticket raised on receipt, with a request identifier | 5 business days |
+| Controller instruction under the service agreement | Ticket raised by the receiving account contact | 5 business days |
+| Workforce individual, to the Privacy Owner or via their manager | Ticket raised by the Privacy Owner | 5 business days |
+| Data subject who contacts the entity directly in the processor role | Captured, acknowledged, and **routed to the controller** — the entity does not action a subject deletion against controller data on its own authority, and tells the subject who the controller is | 5 business days |
+| Regulator or legal order | Escalated to the Privacy Owner and Head of Engineering on receipt | Per the order |
+
+Every request receives an identifier at capture, and the identifier follows it through flagging, execution and
+confirmation, so the request can be evidenced end to end.
+
+### 4.2 Identifying and flagging for destruction (P4.3-R2, C1.2-R1)
+
+| Step | Action | Record |
+|---|---|---|
+| 1 | Identify all information in scope: the named records, and their copies in backups, journals, annotations and derived results | Scope list against the request identifier |
+| 2 | Determine whether any in-scope item is subject to a retention requirement or legal hold that overrides the request | Determination, with reasons, on the ticket |
+| 3 | **Flag** the in-scope items for destruction, recording the flag date and the scheduled destruction date | Flag record |
+| 4 | Where an item cannot be destroyed, inform the requester which item, and why, with the overriding basis named | Written response |
+| 5 | Execute per §6, then confirm to the requester | Completion record |
+
+**End-of-retention identification (C1.2-R1) uses the same flagging path**, reached by a different trigger: the
+quarterly disposal cycle enumerates information whose period has ended and flags it, so both the
+request-driven and the calendar-driven routes converge on one execution mechanism rather than two.
+
+---
+
+## 5. Timeliness
+
+| Request type | Target | Basis |
+|---|---|---|
+| Acknowledge any request | 5 business days | This standard |
+| Controller deletion instruction — execute | **30 days** | Service agreement |
+| Workforce deletion of optional/withdrawn item | **30 days** | Privacy notice |
+| End-of-retention disposal | **At the next quarterly cycle**, and no more than 100 days after period end | This standard |
+| Backup expiry of already-deleted primary records | Within the backup cycle, **≤ 90 days** | Backup standard |
+
+**The backup lag is disclosed rather than hidden.** A record deleted from the primary store may persist in a
+backup for up to 90 days. Where a requester asks, they are told this, and told that the backup copy is
+encrypted, access-controlled, and not used for any purpose other than restoration. Selective deletion from
+within a backup is not performed, because rewriting a backup would compromise its integrity as a recovery
+point and as audit evidence; the copy expires instead.
+
+---
+
+## 6. Destroying, anonymising, and redacting (P4.3-R3, P4.3-R4, C1.2-R2)
+
+### 6.1 Method by medium
+
+| Medium | Method | Why it prevents loss, theft, misuse, or unauthorised access |
+|---|---|---|
+| Object storage | Delete the object; where a whole class is disposed of, delete via lifecycle rule | Provider-managed media sanitisation; the object is unrecoverable through any interface |
+| Encrypted store where the key is entity-managed | Delete records, and where a whole dataset is retired, **schedule key destruction** | Destroying the key renders remaining ciphertext unrecoverable — cryptographic erasure, effective even where a physical copy persists |
+| Log groups | Retention setting expiry, or explicit deletion | Provider-managed |
+| Structured records (results, annotations, tasks) | Delete through the service API, which removes the record and its derived index entries | Removes the retrieval path as well as the record |
+| Backups | Expiry at the end of the backup retention period | §5 |
+| Workforce records in the governance store | Delete, or **redact** where the surrounding record must be retained for its own period | Redaction removes the personal element while preserving the governance record |
+| **Endpoint devices and the auxiliary storage inside them** | Cryptographic erasure of the encrypted volume, then re-image; physical destruction of the storage component where erasure cannot be completed or verified | The volume key is destroyed, so remaining ciphertext is unrecoverable; destruction covers the case where erasure cannot be proven. Procedure, verification and authorisation in **§6.7.1** |
+| Physical media (removable media, tape, off-site media storage) | **Scoped out by determination, not by omission** — no data centre, no server hardware in custody, and removable media blocked at the endpoint by enforced device control rather than by convention | The channel does not exist, which is stronger than sanitising it. The factual basis, its verification, the accepted residual risk `R-2026-040`, the CISO approval, and the events on which the determination lapses are all in **§6.7.2** |
+
+### 6.2 Anonymisation, where it is used instead of destruction
+
+Where the entity needs to retain a statistic beyond the underlying record's period — for example, the count of
+assessments and their timeliness distribution in the control operation register — the record is **aggregated
+to a count and the identifiers destroyed**. Anonymisation is accepted as complete only where re-identification
+is not reasonably possible, judged on the aggregate's size and its combination with other available data. A
+"pseudonymised" record that retains a re-identifiable key is **treated as personal information and disposed of
+on the personal-information schedule**, not treated as anonymous.
+
+### 6.3 Automated and manual means (C1.2-R2, P4.3-R4)
+
+Both exist, and which applies to what is stated because a claim of automation that is really a quarterly
+manual task is the misstatement this section is designed to avoid:
+
+| Means | Applies to | Mechanism | **Policy trigger that starts it** |
+|---|---|---|---|
+| **Automated** | Flow logs (400-day retention), alarm history, log group expiry, backup expiry | Provider retention configuration; no human action required | The retention period in §2 for the class, expressed directly as the service's retention setting. **The period in the policy IS the configuration value** — there is no second number to drift from |
+| **Automated by lifecycle rule** | Customer evidence, assessment results, scan evidence and journals in object storage, once the class's period elapses | S3 lifecycle expiration on the class prefix, including expiry of noncurrent versions so a versioned object does not outlive its period through its own history | The §2 period for the class, encoded as the lifecycle rule's days-after-creation. A class whose period changes in §2 is a change to the rule, raised through change control in the same ticket |
+| **Automated, event-triggered** | Records belonging to a terminated customer environment or a closed account | Deletion job started by the termination event in the service, not by a calendar | **Contract termination or environment closure**, per §2 and the exit terms in `SEC-POL-051` §8. The 30-day window starts at the event |
+| **Automated, on request** | Structured records deleted through the service API | Deletion cascades to derived index entries | A deletion request captured under §4, or an owner-authorised disposal under §6.4 |
+| **Automated cryptographic erasure** | A whole retired dataset held under an entity-managed key | Scheduled key destruction, which renders remaining ciphertext unrecoverable | **Dataset retirement approved by the information owner**, and only where no legal-hold flag is set on the key — the destruction workflow refuses a flagged key (`SEC-CRY-022` §4B.3) |
+| **Manual, quarterly** | Anything in a class whose store offers no lifecycle mechanism: workforce records in the governance store, records requiring redaction rather than deletion, and the reconciliation of everything above | The disposal cycle in §6.4 | The quarter end, plus the §2 period for the class |
+| **Manual, on request** | Anything named in a deletion request under §4 | Executed and confirmed against the request identifier | The request, with the statutory clock in `SEC-REG-047` §3 |
+| **Third-party instructed** | Copies held by suppliers | The instruction and certification process in §6.5 | An in-term instruction (D1), a termination (D2), or a §4 request reaching a supplier |
+
+**Automation for cloud-hosted information is triggered by policy, not by convenience — and the two rules
+that make that true are stated rather than implied:**
+
+1. **Every retention period in §2 maps to exactly one enforcement point**, named in the table above. The
+   §7 split between configuration-enforced and procedure-enforced periods is the register of that mapping,
+   and the quarterly reconciliation checks it in both directions: a period with no enforcement point, and
+   an enforcement point whose value does not match its period, are both findings. The 2026-07
+   reconciliation found one — a log group retention set to 365 days against a 400-day flow-log period —
+   corrected the same day.
+2. **A period cannot be changed in the policy without the configuration changing in the same change
+   record**, and it cannot be changed in the configuration at all except through that record. Direct
+   console changes to a retention or lifecycle setting are detected by the drift reconciliation in
+   `SEC-CFG-025` and alarmed, because a retention setting quietly lengthened is over-retention and one
+   quietly shortened is premature destruction; both are policy breaches and neither announces itself.
+
+Current position: 11 retention periods in §2; 8 enforced by configuration (lifecycle or retention
+setting), 2 by the quarterly cycle, 1 event-triggered; 0 unmapped; 0 mismatches at the 2026-08
+reconciliation.
+
+### 6.4 The quarterly disposal cycle
+
+1. Enumerate, per class, information whose retention period has ended.
+2. Check each against legal holds and overriding retention requirements.
+3. Flag, then destroy by the §6.1 method.
+4. **Verify** by attempting retrieval of a sample of destroyed items; a successful retrieval is an incident.
+5. **Also verify the converse** — that a sample of information still *inside* its period is present and
+   readable, which is what makes this cycle a §3 protection control as well as a disposal control.
+6. Record counts destroyed, counts withheld with reasons, and verification outcomes.
+7. Report to the Audit Committee quarterly.
+
+Q1 2026 cycle, executed 2026-04-21: information disposed of across 4 classes; 0 items withheld; retrieval
+verification confirmed destruction on a 10% sample; presence verification confirmed in-period information
+readable on a 10% sample; no discrepancy.
+
+### 6.5 Deletion by third parties — the contractual obligation
+
+Most of the information in scope sits, at some point, with a third party: the cloud provider, the
+managed SIEM, the ticketing system, the e-signature service. Our own disposal controls stop at our
+account boundary. Beyond it, deletion is something we must **oblige and then verify**, and the two are
+separate — a contractual clause with no verification is a promise, and a verification with no clause is
+a favour.
+
+The clauses below are required in every agreement where a third party stores, processes or receives
+in-scope information. They are part of the standard term set in `SEC-REG-047` §6.1 and are checked at
+contracting and at each annual supplier review; this section states them in retention terms so that the
+disposal obligation is legible from the disposal standard rather than only from the contract.
+
+| # | Required clause | Applies |
+|---|---|---|
+| **D1** | **Deletion on our instruction during the term.** The supplier deletes specified information within **30 days** of our written instruction, without requiring termination as the trigger. This is the clause most often missing, and it is the one a data-subject erasure request depends on: a right to erasure that can only be exercised by terminating the contract is not a usable right | All |
+| **D2** | **Deletion or return on termination or expiry**, at our election, within **30 days** of the end of the agreement, including from the supplier's own backups within their documented backup cycle and stated as a maximum period rather than "in due course" | All |
+| **D3** | **No retention beyond the deletion window** except where the supplier is under its own statutory retention obligation, which must be **named** in the agreement with the law and the period rather than reserved generically. A generic reservation is a licence to keep everything | All |
+| **D4** | **Written certification of deletion**, signed by an authorised person, identifying what was deleted, when, by what method, and confirming that no copies remain outside any named statutory exception | All holding Confidential information or personal data |
+| **D5** | **Flow-down to sub-processors**, with the supplier accountable for its sub-processors' deletion and for evidencing it. Deletion that stops at the first tier is not deletion | All with sub-processors |
+| **D6** | **Method adequate to the medium**, per §6.1 — for encrypted stores, cryptographic erasure is accepted and preferred; for shared multi-tenant stores, logical deletion plus the provider's attested media-sanitisation practice | All |
+| **D7** | **No deletion of information subject to a legal hold we have notified**, and immediate notice to us if the supplier receives a preservation or production demand touching our information | All |
+| **D8** | **Our right to verify** — through certification, attestation, questionnaire, or audit where the agreement grants it | All |
+| **D9** | **Deletion on the supplier's own initiative is prohibited** without notice to us; the supplier may not dispose of our information on its own retention schedule | All |
+| **D10** | **Survival** — the deletion obligations survive termination, which is the only way D2 and D4 mean anything after the agreement has ended | All |
+| **D11** | **Remedy** where deletion or certification is not delivered, and notification to us as a personal-data incident where the supplier discovers information it should have deleted | All |
+
+**Current position across the 21 registered services** (`SEC-POL-051` §3): 19 with the full D1–D11 set;
+1 hyperscale provider where deletion operates through the documented service mechanisms and published
+media-sanitisation practice rather than a bespoke certification clause — assessed as adequate, verified
+by attestation under the recorded deviation `D-2026-028`, and the reason cryptographic erasure (§6.1) is
+our primary method there rather than a certificate; 1 smaller supplier whose standard terms specified
+"deletion in accordance with our retention policy", corrected at renewal to a 30-day maximum with
+certification, recorded as `D-2026-039` until the amended agreement takes effect on 2026-09-30.
+
+### 6.6 Evidence that a third party actually deleted it
+
+A certificate is evidence, but it is the supplier's own assertion. Where we can test the assertion, we
+do, and where we cannot, we record that the assurance rests on attestation rather than pretending
+otherwise.
+
+| Evidence type | What it consists of | Strength |
+|---|---|---|
+| **Deletion certificate** | The D4 certificate, signed, naming scope, date, method and the no-copies-remain confirmation | Primary evidence; retained for 7 years with the supplier record, because the question "when did that supplier stop holding it?" arrives years later |
+| **Our own instruction record** | The dated written instruction, its scope, and the acknowledgement — so the clock is provable from our side | Supporting; establishes the 30-day window began |
+| **Independent retrieval test** | Where an interface still exists, we attempt to retrieve a sample of the deleted information after the confirmation. **A successful retrieval is an incident**, handled under `SEC-IRP-012`, not a clarification | Strongest available for hosted services; used on 4 of the 5 events below |
+| **Access revocation evidence** | Confirmation that the supplier's access to our systems was withdrawn on the same clock, from our own identity records rather than the supplier's word | Independent of the supplier |
+| **Provider-mechanism evidence** | For the hyperscale provider, the API deletion response, the absence of the object across versions, the key-destruction record, and the provider's media-sanitisation attestation | Attested, not directly verifiable; recorded as such |
+| **Sub-processor confirmation** | The supplier's evidence for its own sub-processors under D5 | Weakest link; requested explicitly rather than assumed to be included |
+| **Attestation report coverage** | Where the supplier's SOC 2 or ISO 27001 scope covers data disposal, the relevant control and any exception noted | Periodic and general rather than specific to our instruction |
+
+**Process.** Third-party deletion is tracked as a case, not as correspondence: opened on instruction or
+termination, with the supplier, the information classes, the instruction date, the contractual due date,
+the certificate received, the verification performed, and the closure. An open case past its due date
+escalates to the Head of Procurement at day 31 and to the CISO at day 45. Cases are reconciled quarterly
+against the supplier register, so a terminated supplier with no deletion case is found by the
+reconciliation rather than never at all.
+
+**Period record — 5 third-party deletion events:**
+
+| Supplier / service | Trigger | Instructed | Certificate received | Independent verification |
+|---|---|---|---|---|
+| Discovery-phase tooling (replaced 2026-Q2) | Termination (D2) | 2026-05-06 | 2026-05-17, 11 days, within 30 | Retrieval attempted post-confirmation: no data returned; access revoked same day and confirmed from our identity records |
+| Former recruitment platform | Termination (D2) | 2026-02-11 | 2026-03-05, 23 days | Account closed; login attempt confirmed no residual tenant |
+| Marketing analytics trial | Termination of trial (D2) | 2026-06-18 | 2026-06-24 | Retrieval test performed; sub-processor confirmation requested and received under D5 |
+| Managed SIEM — legacy index beyond its period | In-term instruction (D1) | 2026-04-02 | 2026-04-19 | Query against the deleted index range returned no results; verified by us, not reported by the supplier |
+| Customer erasure request touching two suppliers | In-term instruction (D1), from a §4 request | 2026-07-08 | Both received by 2026-07-27 | Retrieval verified with one; the second is API-only and evidenced by the provider mechanism, recorded as attested |
+
+0 events exceeded the contractual window; 0 certificates were absent; 1 required a second request before
+the sub-processor position was addressed, which is why D5 evidence is now requested explicitly in the
+initial instruction rather than expected to arrive with the certificate.
+
+### 6.7 Equipment, auxiliary storage and physical media
+
+The entity operates no data centre and no removable media. That fact makes several physical-media
+requirements inapplicable, but **inapplicable is a determination, not an omission** — it has to be scoped
+out on the record, with the reasoning and an accepted risk, and the boundary has to be stated so that the
+day the fact stops being true, the exception fails rather than persists silently. This section is that
+determination plus the procedure for the physical equipment we *do* hold.
+
+#### 6.7.1 Equipment leaving our control — the procedure
+
+Every device is treated as holding in-scope information unless proven otherwise, because a laptop that a
+user believed held nothing is a laptop nobody checked. The controlling requirement is that **the
+information is rendered unrecoverable before the equipment leaves our control, not after it arrives
+somewhere else.**
+
+| Event | Procedure | Verification | Who authorises |
+|---|---|---|---|
+| **Endpoint returned by a leaver** | Full-disk encryption is already mandatory (`SEC-STD-027`), so the primary method is **cryptographic erasure**: the platform's secure-erase destroys the volume key, after which the ciphertext is unrecoverable. The device is then re-imaged from the managed build. Local user data is not "deleted" and left as recoverable blocks | Erase completion recorded against the asset inventory entry; re-image confirmed by re-enrolment into management; the device is not re-issued until both are recorded | IT Operations; information owner authorises the disposal record (register row 22) |
+| **Endpoint sent to a repair vendor** | The disk is cryptographically erased before dispatch wherever the fault permits it. Where the fault prevents erasure — a device that will not boot — the device is **not sent**: the disk is removed and physically destroyed, and the chassis alone goes to the vendor, or the whole unit is retired. We do not send an unerasable disk to a third party under a contractual promise; the promise is not the control | Erase record, or the destruction record with the disk serial | IT Operations, with CISO approval for the destruction path |
+| **Endpoint retired or disposed of** | Cryptographic erase, then either re-use internally, donation, or destruction through the certified disposal vendor. Where the device is destroyed by the vendor, a **certificate of destruction naming the serial numbers** is required, and it is reconciled against the asset inventory so a device that left and produced no certificate is found | Certificate reconciled to inventory; inventory entry closed | Information owner + IT Operations |
+| **Equipment supplied by a vendor and returned to them at end of lease or end of contract** | Same as retirement: erase, or remove and destroy the storage component before return. Where the vendor's terms require the storage to be returned intact, the equipment is **not acquired for in-scope use** — this is assessed at acquisition, and it is why the current fleet is owned rather than leased | Erase or removal record before dispatch; return note | IT Operations, with Procurement |
+| **Auxiliary storage inside equipment** — the components people forget: SSD caches, embedded flash in printers and multifunction devices, firmware-resident configuration, battery-backed caches, TPM-held key material, and the storage inside a docking station or monitor with a firmware update partition | Enumerated at acquisition on the asset record, so removal or erasure is a listed step rather than a recollection. Multifunction devices are the specific case: **the HQ device holds an internal drive**, its storage is encrypted, its job-retention feature is disabled, and its drive will be removed and destroyed at retirement rather than returned with the unit | Asset record carries an "auxiliary storage" field, populated for 48/48 endpoints and for the 1 multifunction device; verified at the annual inventory | IT Operations |
+| **A device that cannot be erased or verified** | Physically destroyed. **Uncertainty resolves to destruction, not to re-use** — the cost of a destroyed laptop is bounded and the cost of a recovered disk is not | Destruction record with serial | CISO |
+
+Period record: 3 endpoint returns (all cryptographically erased and re-imaged, 1 additionally re-keyed
+after a repair-vendor visit); 1 device retired and destroyed by the certified vendor with a
+serial-level certificate obtained 2026-06-11 and reconciled to the inventory; 0 devices left our control
+without an erase or destruction record; 0 unaccounted assets at the annual inventory.
+
+#### 6.7.2 Physical media — the scoping determination
+
+| Question | Determination |
+|---|---|
+| **What is scoped out** | Removable media handling, media transport, media library management, and off-site media storage — as control activities. Not equipment disposal, which is §6.7.1 and is in scope |
+| **The factual basis** | No data centre and no server hardware in our custody: all processing is on the cloud provider's infrastructure and the provider's media sanitisation is attested (`SEC-POL-051` §4, §6). No removable media is used: USB mass storage, SD and optical writing are **blocked at the endpoint by application and device control**, not merely discouraged — so the channel is absent by enforcement rather than by convention. No tape, no courier, no off-site media vault; backups are cloud-resident and cross-region |
+| **How the basis is verified rather than asserted** | Device-control policy state verified on 48/48 endpoints at each monthly compliance report; 0 removable-storage mount events in the endpoint telemetry for the period (the absence of events is checked, not assumed); the asset inventory carries no media class; the annual inventory found no media |
+| **Residual risk accepted** | An endpoint's device-control policy could fail or be bypassed on a device with local administrator rights. Rated **low**: local admin is not granted as standard, the policy is tamper-protected, a mount event alarms, and full-disk encryption limits what a copy would yield. Accepted by the CISO as `R-2026-040`, reviewed annually |
+| **Compensating controls** | Device control with tamper protection; alarm on any removable-storage mount; DLP on egress paths; full-disk encryption; the acceptable-use prohibition with the artifact sampling that tests it (`OPS-REC-034` §2.1(d)) |
+| **Approval** | Scoping determination approved by the **CISO on 2026-08-20** and recorded in the Statement of Applicability with this reference. It is not a silent non-answer: the SoA carries the exclusion, its basis and its risk acceptance |
+| **The condition on which it lapses** | The determination is void, and the full media-handling control set must be established **before** the change takes effect, if any of the following occurs: removable media is enabled for any purpose; any server, appliance or storage hardware enters our custody; an office print or scan device with retained storage is introduced beyond the one already recorded; a courier or physical transfer of information is contemplated; or an on-premises backup is introduced. **Each of these is a review trigger in §9**, so the determination cannot outlive its premise by drifting — it fails on the event, not at the next annual review |
+| **Reviewed** | Annually, and on any of the trigger events above. Last reviewed 2026-08-20; the premise held, with one change recorded (the HQ multifunction device's internal drive, now on the asset record with its retirement handling stated in §6.7.1) |
+
+#### 6.7.3 Manufacturers' storage-media recommendations, and deterioration over the retention period
+
+Media wear out. A retention period is a promise that a record will still be readable at the end of it, so
+that promise has to be made against the physical characteristics of the medium holding the record — the
+manufacturer's stated operating and endurance limits — and against the fact that those characteristics
+degrade. The controlling design decision is stated first because it does most of the work:
+
+> **No record's retention depends on a medium the entity owns.** The record of record is always
+> provider-resident object storage. Endpoint and device storage holds working copies only, never the
+> authoritative copy, so an endpoint SSD that degrades or fails costs a working copy and cannot cost a
+> record. Where a retention period would outlive a medium's rated life, the record is **migrated before
+> the rating is reached, not read until it fails**.
+
+| Medium in use | The manufacturer's recommendation we operate to | How it deteriorates | What detects or prevents it | Verification |
+|---|---|---|---|---|
+| **Provider object storage** — every record of record, retention to 7 years (§2) | The provider's published durability and media-handling specification (`SEC-POL-051` §4, §6): media replacement, background integrity scrubbing and device retirement are the provider's engineered obligation, attested rather than asserted. Our operating obligation is to store with checksums enabled and to keep more than one copy of the longest-retained class | Bit rot and device failure inside the provider's fleet | End-to-end checksum verified on **every** read, so a degraded object surfaces as a failed read and never as silently wrong content; object versioning (§3.1); cross-region copy for the 7-year class. A failed integrity check pages the on-call rather than returning content | Annual restore test on a sample of the 7-year class proves the medium **and** the format are still readable, jointly with the key-and-format obligation in R6; 0 checksum failures and 0 unrecoverable objects in the period |
+| **Endpoint SSD** — 48 endpoints, working copies only | The manufacturer's rated endurance (drive-writes/TBW) and the stated operating and storage envelope for temperature and humidity | Flash wear from cumulative writes; accelerated by operating outside the thermal envelope | Wear-level and reallocated-sector attributes read from the drive's own health reporting at each monthly compliance report. A device is **retired at 90% of rated endurance, or on any growth in reallocated sectors, whichever comes first** — before failure, not after it. Retirement runs the §6.7.1 procedure | Monthly: health attributes collected for 48/48 endpoints; 0 devices past the 90% threshold this period, 1 device replaced on reallocated-sector growth (2026-05) with no data loss because the authoritative copy was provider-resident |
+| **HQ multifunction device internal drive** | The manufacturer's storage and handling specification for the unit, including its operating-environment range and its guidance on the encrypted internal drive | Wear, and the risk of retained job data outliving its purpose | Job retention disabled, so the drive holds no record to deteriorate; encryption at rest; drive removed and destroyed at retirement (§6.7.1) rather than returned with the chassis | Configuration state checked at the annual inventory; asset record carries the auxiliary-storage field |
+| **Office operating environment** for the equipment above | The temperature and humidity ranges the endpoint and device manufacturers state | Out-of-range conditions shorten rated life | HQ is a climate-controlled commercial office held inside the stated ranges; equipment is not stored in unconditioned space, and no equipment is stored long-term powered-off holding the only copy of anything | Confirmed at the annual inventory; no out-of-range condition recorded in the period |
+
+**Why the retention schedule permits only these media.** §2 names the allowable storage media per class, and
+this section is the reason that list is short: a medium is allowable only where its manufacturer's
+specification, its deterioration behaviour and its verification are all answerable. Removable media is not
+allowable for any class — it is blocked at the endpoint (§6.7.2), and one of the reasons is that its
+deterioration is unobservable to us once it leaves a machine.
+
+**Reviewed** annually with §6.7.2 and on any change to the allowable-media list; last reviewed 2026-08-20.
+Registered deficiency: none — the 2026-05 drive replacement was the procedure operating, not a failure of it.
+
+---
+
+## 7. Which periods are enforced by configuration and which by procedure
+
+Stated explicitly, because it determines the failure mode:
+
+| Enforced by configuration (fails only if configuration changes) | Enforced by the quarterly cycle (fails if the cycle is skipped) |
+|---|---|
+| Flow logs — 400 days | Customer evidence documents |
+| Log group expiry | Assessment results, verdicts, rationales |
+| Backup expiry | Run journals |
+| Alarm history | Scan evidence |
+| | Workforce records |
+| | Consent records past their exemption |
+
+**Registered deficiency:** the majority of classes are enforced procedurally rather than by lifecycle policy.
+A missed quarterly cycle would therefore extend retention beyond the stated period — an over-retention risk,
+not an under-retention one. Owner: Head of Platform Engineering, due **2026-12-31**, to convert the
+object-storage classes to lifecycle rules so that expiry is configuration rather than calendar discipline.
+
+---
+
+## 8. Registered deficiencies
+
+| Deficiency | Effect | Owner | Due |
+|---|---|---|---|
+| Most retention periods enforced by a quarterly manual cycle rather than lifecycle policy | A missed cycle over-retains | Head of Platform Engineering | 2026-12-31 |
+| Backup copies of deleted records persist up to 90 days | A deletion is not immediately complete across all copies; disclosed to requesters | Head of Platform Engineering | Accepted; reviewed annually |
+| Uploaded evidence is not parsed for personal information | Deletion of a specific individual's data from within a customer document cannot be performed without the controller identifying the document | Privacy Owner | 2026-10-31 |
+| Disposal verification is on a 10% sample rather than in full | An undestroyed item outside the sample would not be detected until the following quarter | Head of Platform Engineering | Accepted; reviewed annually |
+
+---
+
+## 9. Governance
+
+| Activity | Frequency | Owner | Evidence |
+|---|---|---|---|
+| Designation at receipt or creation | Continuous | Head of Platform Engineering | Class on the record |
+| Quarterly disposal cycle, with both destruction and presence verification | Quarterly | Head of Platform Engineering | Cycle record with counts and exceptions |
+| Retention period review against stated purposes | Annually | Privacy Owner with Head of Platform Engineering | Approved retention table (§2) |
+| Protection-during-retention control review | Quarterly | Head of Security Engineering | Control state report |
+| Legal hold review | Quarterly | Privacy Owner | Hold register |
+| Deletion request handling review | Quarterly | Privacy Owner | Ticket sample with timeliness |
+| Retention-period-to-enforcement-point reconciliation, both directions | Quarterly | Head of Platform Engineering | Mapping record with any unmapped period or mismatched value |
+| Equipment erase/destruction records reconciled against the asset inventory | Per event; reconciled at the annual inventory | IT Operations | Erase and destruction records with serials; inventory closure |
+| Auxiliary-storage field populated for every asset | At acquisition; verified annually | IT Operations | Asset records |
+| Physical-media scoping determination review, and on any trigger event in §6.7.2 | Annually and on event | CISO | Reviewed determination with the premise re-verified; SoA entry |
+| Removable-storage mount telemetry review (absence of events checked, not assumed) | Monthly | Head of Security Engineering | Endpoint compliance report; mount-event alarm records |
+| Third-party deletion clause verification (D1–D11) | At contracting and annually per supplier | Third-Party Risk Manager | Clause check record per agreement |
+| Third-party deletion case tracking and escalation | Per event; reconciled quarterly against the supplier register | Head of Procurement | Case record with instruction date, certificate and verification |
+| Independent verification of third-party deletion where an interface exists | Per event | Head of Platform Engineering | Retrieval-test result |
+| Restore test | Quarterly | Head of Platform Engineering | Test record with measured RTO/RPO |
+| Deficiency tracking to closure | Quarterly | Head of Platform Engineering | Deficiency register |
+| Reporting to the Audit Committee | Quarterly | Privacy Owner | Committee minutes |

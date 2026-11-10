@@ -1,0 +1,301 @@
+# Security Incident Response and Impact Analysis Procedure
+
+**Document ID:** SEC-PRO-014
+**Version:** 4.2
+**Owner:** AI Security Lead (security incidents); Data Protection Officer (personal-data impact
+determinations); General Counsel (notification decisions); the Incident Commander on duty owns the
+individual incident
+**Approved by:** CEO 2026-02-19; reviewed by the Audit Committee 2026-02-19
+**Next scheduled review:** 2026-12-31 (Annually, and after every Sev-1, every near miss with a control failure, and)
+every exercise — whichever comes first
+**Scope:** All security events affecting the compliance-evaluation service in AWS account 471885797689
+(us-west-2), the corporate environment, and the seven outsourced providers whose services touch entity or
+customer data. Applies to both legal entities and all five geographies.
+
+---
+
+## 1. Response procedures — the defined path from event to closure
+
+**The entity has procedures in place for responding to security incidents.** The procedure is a single
+documented path with named roles, defined severities and mandatory steps; the runbooks live in the
+repository next to the systems they cover, so they are current at the point of use rather than in a binder.
+
+**Roles.** Six personnel are certified **Incident Commanders** (raised from two after the 2025 competence
+review found incident command thin beyond two people — four were trained and two have since led a live
+incident). Twelve personnel are **on-call certified**, renewed annually with quarterly game days. The IC
+owns the incident and has authority to take production action, engage providers, and declare severity
+without further approval. Supporting roles: Technical Lead, Communications Lead, Scribe, and — engaged by
+name rather than by hoping someone thinks of it — the **DPO for any personal-data possibility** and the
+**General Counsel for any notification question**. The IC is explicitly *not* the person who found the
+event, so that discovery and response judgment are separated.
+
+**Severity criteria** (declared on the information available; **a severity is raised readily and lowered
+only with the IC's recorded reasoning**, because under-declaration is the failure mode this procedure is
+designed against):
+
+| Sev | Criteria | Response commitments |
+|---|---|---|
+| **Sev-1** | Confirmed or credible unauthorized access to customer evidence, assessment results or personal data; a wrong verdict issued to a customer; loss of tenant isolation; service unavailable beyond the availability tolerance; ransomware or destructive action; credential compromise with production reach | Page acknowledged **within 15 minutes**; IC assigned immediately; status updates every 30 minutes; executive notification within 1 hour; **customer notification within 24 hours of confirmation**; post-incident review **mandatory** |
+| Sev-2 | Suspected unauthorized access without confirmation; a security control confirmed absent or bypassed on a production system; loss or theft of a device; a provider incident with potential entity impact; degraded service within tolerance | Acknowledged within 30 minutes; updates every 2 hours; post-incident review mandatory where a control failed |
+| Sev-3 | A security event requiring investigation with no immediate indication of compromise; a policy violation with data-access implications | Next business day; review at the monthly control meeting |
+| **Near miss** | An event that did not cause impact but would have if one further control had failed | **Post-incident review mandatory** — treated as a Sev-2 for learning purposes, because a near miss is free information about a real weakness |
+
+**Mandatory phases**, each with a defined exit condition rather than a feeling of completion:
+
+1. **Detect and report** — from automated alerting (§3), a person, a customer, a researcher, or a provider.
+   A single phone number is published for device loss and urgent reports; the email address it replaced was
+   removed after a post-incident review found it added minutes to a device-loss report.
+2. **Triage and declare** — the on-call engineer triages against the severity criteria within the
+   acknowledgement window and assigns an IC. **Declaration is not gated on certainty**; an incident may be
+   declared and stood down.
+3. **Contain** — isolate, revoke credentials, block network paths, suspend an affected assessment class.
+   Containment actions are pre-authorized in the runbook so the IC does not need to seek approval mid-event;
+   the IC records what was done and why.
+4. **Analyze and determine impact** — §6, the substantive analysis phase.
+5. **Eradicate and recover** — remove the cause, restore from a tested path (the quarterly restore test is
+   what makes this credible), and verify.
+6. **Notify** — internal, customer, regulatory and provider notifications per §7's timers.
+7. **Post-incident review** — mandatory for Sev-1, Sev-2 with a control failure, and every near miss.
+   The review must state whether the risk register was wrong, and produce dated remediation with owners.
+8. **Close** — closure requires the remediation to be verified by **someone other than the owner** and the
+   deficiency register updated; an incident cannot be closed while its remediation is open.
+
+**Interfaces:** the procedure interlocks with the change procedure (an emergency change made during an
+incident still carries a blocking post-hoc review before the next deploy), the deficiency procedure
+(MON-PRO-011 — incident-derived findings enter the same register with the same 2-business-day capture rule),
+the privacy breach procedure (§7), the continuity plan, and each provider's incident-notification obligation
+in its requirements annex.
+
+## 2. Periodic evaluation of the effectiveness of the response procedures
+
+**The entity periodically evaluates the effectiveness of its incident response policies and procedures.**
+Evaluation is deliberately not limited to reviewing incidents that happened, because a period with few
+incidents would otherwise produce no evidence.
+
+| Evaluation activity | Cadence | What is tested | Result this period |
+|---|---|---|---|
+| **Quarterly game day** — an unannounced simulated incident against a real (non-production) environment | Quarterly | Detection, paging, IC decision-making, containment runbook accuracy, communication discipline | 4 held. **2026-Q1 exposed a stale runbook** — a containment step referenced a network construct that had been replaced; the runbook was corrected and a repository check added so runbooks referencing renamed resources fail the build |
+| **Annual full-scale exercise** including executive and legal participation, and a scenario requiring a notification decision | Annually | End-to-end incl. notification decision-making under time pressure, and the DPO's engagement | Held 2025-11. **Finding: the notification decision took 31 hours in the exercise against a 24-hour commitment**, because the legal-review step had no pre-drafted material. Remediation: pre-approved notification templates per scenario class and a standing 2-hour legal review slot on declaration of Sev-1. Re-tested in the 2026-Q1 game day at 6 hours |
+| **Tabletop for provider-originated incidents** | Annually | Whether the entity can respond when the failing component is not its own | Held 2026-01; produced the change requiring each provider's annex to name a notification contact and a maximum notification time |
+| **Purple-team detection validation** | Semi-annually | Whether the detections that response depends on actually fire | Added this period specifically because **R-039 (detection failure) is invisible without deliberate testing**; the first run confirmed 9 of 11 expected detections fired and drove two alerting changes |
+| **Metrics review** — MTTD, MTTA, MTTR, severity distribution, reopen rate, and **the proportion of incidents found by the entity versus reported by others** | Monthly at the control review; quarterly to the Audit Committee | Whether response is getting faster and whether the entity is finding its own problems | MTTD improved; **the entity was told about 2 of 6 events this period by outside parties (a researcher and a customer), which is recorded as an unfavourable detection indicator rather than as successful reporting channels** |
+| **Post-incident review quality check** | Quarterly sample by the Compliance Manager | Whether reviews reach root cause and produce verified remediation, or stop at a proximate cause | 1 review was returned as insufficient — it named an individual's mistake as the root cause without asking why the system allowed it |
+| **Independent assessment** | Annually by internal audit; externally within the penetration test scope | Procedure design against the criteria; sample of incidents against the procedure | Internal audit found severity was under-declared on one Sev-3 that met Sev-2 criteria; correction is the recorded rule that severity is raised readily and lowered only with reasoning |
+| **Coverage review against the risk register** | Annually and on register change | Whether every Critical/High risk with an incident pathway has a runbook | Runbooks added for prompt-injection response and for a provider sub-processor breach |
+
+**Evaluation findings are recorded as deficiencies and tracked to closure like any other** — the 31-hour
+notification decision, the stale runbook, the under-declared severity and the insufficient review are all
+in the register with owners and dates. An evaluation programme that produced no findings would be evidence
+that the evaluation was not real.
+
+## 3. Communicating detected security events to those responsible for the security program
+
+**Detected security events are communicated to the individuals responsible for the management of the
+security program.** Communication is routed by automation to named roles, not to a shared inbox that
+depends on someone reading it.
+
+| Source of the detected event | Routed to | Mechanism | Timing |
+|---|---|---|---|
+| Security monitoring and alerting (entity-operated) | On-call engineer; **AI Security Lead** for high-severity classes | Paging system, with the alert naming the runbook | Immediate; page acknowledged within 15 min for the Sev-1 classes |
+| **Managed SIEM provider** (depth of detection) | On-call engineer and the AI Security Lead simultaneously | Provider's alert integration into the entity's paging system — **not** a provider portal someone must check | Immediate, with the provider's annex naming a maximum notification time |
+| Configuration compliance and drift detection | Resource owner **and** the AI Security Lead | Automatic ticket plus alert | Immediate for security-relevant classes |
+| Break-glass / emergency access use | **People outside the identity function** — the AI Security Lead and the Compliance Manager — by design, since the identity administrators are the ones using it (the R-041 compensating control) | Alert on every use | Immediate |
+| Anomalous verdict shift, bulk read, or DLP egress | AI Security Lead and the accountable data owner | Alert | Immediate |
+| Log-configuration change (a tampering indicator) | AI Security Lead and Compliance Manager | Alert | Immediate |
+| A person — any employee, contractor or vendor individual | On-call via the published number, and to the AI Security Lead | Published single number for urgent reports; a form for non-urgent; **the ethics channel including anonymous reporting is a valid route and is monitored** | Immediate on suspicion, and the standing instruction is to report on suspicion rather than after self-investigating |
+| **Suspected personal-data involvement** | **The DPO, immediately on suspicion, in parallel with security** — never sequentially after security concludes | Page to the DPO, who acknowledges within 1 hour | Immediate |
+| A customer (via support, the named contact, or their own monitoring) | Customer Operations, who must raise a security event record within 1 hour; and to the AI Security Lead | Support workflow with a mandatory security-flag question | Within 1 hour of receipt |
+| **An external security researcher** | AI Security Lead directly, via the published disclosure address with a stated response commitment | Published vulnerability disclosure route | Acknowledged within 1 business day |
+| A provider or sub-processor | Named entity-side engagement owner and the AI Security Lead | Contractual obligation in the requirements annex | Per the annex's maximum notification time |
+| Executive and Board | Sev-1 within 1 hour to the CEO and the affected officers; the Audit Committee within 24 hours; **a 24-hour escalation call** for matters meeting the escalation criteria; quarterly reporting for all severities | Defined in GOV-PRO-006 | Per severity |
+
+**Two communication failures recorded this period**, because the control's weaknesses matter more than its
+design: a provider notified the entity of an event **later than its annex required** (recorded in the
+supplier record, raised with the provider, and its assessment cadence increased to quarterly), and a customer
+report arrived through a general support channel and took **4 hours** to be recognized as a security event —
+which is why the support workflow now carries a mandatory security-flag question and Customer Operations has
+a 1-hour raise obligation.
+
+## 4. Review by those responsible for the security program
+
+**Detected security events are reviewed by the individuals responsible for the management of the security
+program.** Review is a defined obligation with a named reviewer per event class, and the review is recorded
+so that "reviewed" is verifiable rather than assumed.
+
+| Review | Reviewer | Cadence | Recorded output |
+|---|---|---|---|
+| Individual high-severity event | On-call engineer at triage; **AI Security Lead within the acknowledgement window** | Per event | Severity declaration with reasoning; IC assignment |
+| **Every security event, including those closed at triage** | AI Security Lead | Weekly review of the full event queue | A sign-off that each closed-at-triage event was correctly closed — this exists because the events most likely to be mishandled are the ones nobody escalated |
+| Break-glass uses | Compliance Manager and AI Security Lead | Reviewed within 1 business day; **all uses reviewed quarterly by the Audit Committee** | Justification recorded per use |
+| Event trends, MTTD/MTTA/MTTR, the found-by-others proportion | AI Security Lead with the Compliance Manager | Monthly control review | Minuted conclusions and control changes |
+| Events with confidentiality implications | AI Security Lead **and the data owner** | Per event | The §6 impact determination |
+| Events with personal-data implications | **DPO, with the General Counsel** | Per event, within 1 hour of suspicion | The privacy impact determination and the notification decision (§7) |
+| Events implicating a member of management | **Audit Committee, in camera without management present** | Per event | Committee minute; where warranted, external investigators appointed |
+| Events implicating a provider | Third-Party Risk Manager with the AI Security Lead | Per event | Supplier record entry; corrective action; scope restriction where warranted |
+| Quarterly security program review | AI Security Lead to the Audit Committee, and to the AI Governance Oversight Committee for model-related events | Quarterly | Reporting pack; Board action register entries |
+| **Independent review of the security function's own handling** | Internal audit, reporting **without management present** | Annually | Findings into the deficiency register — the security function does not review itself (the compensating control for that segregation limitation) |
+
+## 5. Actions taken on detected security events
+
+**The entity takes actions on detected security events where necessary, and records the events where no
+action was necessary along with the reasoning.** Every event this period, with its determination and its
+action:
+
+| Event | Determination | Action taken | Control change |
+|---|---|---|---|
+| **External researcher disclosure** — inconsistent transport-security enforcement across storage buckets | A real weakness; **no evidence of exploitation** after log review of the affected paths | Acknowledged within 1 business day; the specific configuration corrected; **the configuration standard revised** and made policy-as-code so the gap cannot recur silently | Transport-security enforcement added as a scanned control; the residual inconsistency across remaining buckets is an **open deficiency with an owner and date** rather than a closed item |
+| **Customer's own assessment** of the entity identified absent boundary protection (no web application firewall or network firewall) | Valid gap; not an active compromise | Compensating controls confirmed (authorization on every request, restricted ingress design, rate limiting); boundary protection added to the control register as a required control with an implementation date | Recorded as **open** — the entity's assertion states this rather than claiming coverage |
+| **Unrestricted SSH ingress (0.0.0.0/0)** found on three security groups by configuration scanning | A real exposure on non-production-path resources; investigated for access attempts, none successful | Interim: instance-level restriction and monitoring; **the root cause was a default and a launch-wizard group created outside the IaC path** | The IaC-only requirement is now enforced by policy-as-code; **the three groups remain an open deficiency** with a named owner and date, reported to the Audit Committee |
+| **Administrative access breadth** — two identities with unrestricted administrative permissions | A standing risk, not an event; identified by the entity's own scanning | Scoped-role design agreed; break-glass two-person control applied in the interim | Open deficiency; **R-041 records the segregation limitation as accepted with compensating controls rather than solved** |
+| **Account and user MFA not in place** | A real control absence, and the telemetry that should have reported it was itself incomplete | Interim compensating controls: restricted ingress, two-person break-glass with alerting, session logging | Open deficiency with the highest priority in the register; **the entity reports this as not met rather than as unassessed** |
+| **Telemetry gap** — the configuration recorder's scope excluded identity resource types, and the findings aggregator returned no data | **A detection failure, which is more serious than the individual findings it hid** — treated as a near miss with a mandatory review | Recording scope corrected in the IaC; named compliance rules deployed; aggregator ingestion repaired | R-039's likelihood **re-scored upward**; purple-team detection validation introduced; a monthly reconciliation of the expected-versus-actual detection inventory added |
+| **Audit log store without versioning, and log stores without retention configuration** | An evidence-integrity weakness — an event that would impair investigation of any future event | Versioning enabled on the audit store; retention set on log stores | **Log-configuration change alerting** added so a future regression is itself an event |
+| **Datastore with encryption, point-in-time recovery and deletion protection all disabled** | Non-production data, but a pattern failure in provisioning | Remediation scheduled with an owner; the provisioning template corrected | Policy-as-code now refuses a datastore created without these settings |
+| Device loss — phone left in a taxi | No Confidential material; wiped 12 minutes after the report | Remote wipe and credential revocation; no notification required | The reporting route changed to a single phone number |
+| Case **D-2026-004** — sample data copied to a local directory | Policy violation; not an external compromise; no customer data involved | Handled under the conduct process; data deleted and verified | **Local copies now technically prevented**; the case is taught as an anonymized study |
+| Two near misses in monitoring and alerting | Would have caused impact had one further control failed | Mandatory reviews held | Two control changes; both reviews stated explicitly whether the risk register had been wrong |
+| Several alerts closed at triage as benign (expected maintenance, known scanning) | No action necessary | Closed with reasoning recorded | Reviewed in the AI Security Lead's weekly queue sign-off — **so a "no action" decision is still reviewed by someone other than the person who made it** |
+
+No Sev-1 occurred in the period. That is stated as a fact about the period rather than as evidence the
+controls are sufficient — the open findings above are the entity's own assessment of where they are not.
+
+## 6. Analyzing security incidents and determining system impact
+
+**The entity has procedures in place to analyze security incidents and determine system impact.** The
+analysis is a required, structured phase with a defined output; an incident cannot proceed to closure with
+the impact section unanswered, and **"unable to determine" is a permitted answer that escalates rather than
+a blank that closes**.
+
+**The impact determination template — every question is answered explicitly, including with "no" or "not
+determinable":**
+
+| Dimension | Questions answered | Sources of fact used |
+|---|---|---|
+| **Scope of systems** | Which systems, accounts, roles and network paths were reached? What could have been reached from there (lateral analysis), not merely what was? | Configuration inventory; identity graph; network path analysis; the IaC as the authoritative baseline |
+| **Data** | Which data stores were accessible? Were any read, and by whom, and how is that known — from a log, or from an absence of a log? What classification? Whose tenant? | Access logs; storage access logs; query logs; the classification register |
+| **Confidentiality** | §7 below — was customer confidential information used or disclosed? | Access logs; egress logs; DLP |
+| **Personal data** | §8 below — was personal data involved, whose, which categories, and is a legal obligation triggered? | Data map; the personal-data inventory per store; DPO's assessment |
+| **Integrity** | Was any data or configuration altered? **Was any assessment result altered or wrongly produced?** Can the result be re-derived and compared? | The absence of a human write path is itself part of the answer; result traceability to evidence and logic version; re-derivation |
+| **Availability** | What was unavailable, for how long, against which commitment and tolerance? | Service metrics against the availability tolerance |
+| **Root cause** | Why did it happen, and **why did the system permit it** — a human error is a symptom, not a root cause (the rule that caused one review to be returned as insufficient) | Timeline reconstruction; change records; the "five whys" required in the template |
+| **Control analysis** | Which control failed, was absent, or was present but insufficient? Which control detected it — and if none did, why not? **Was the risk register wrong?** | The control register; the detection inventory; the risk register |
+| **Attribution and intent** | Internal or external? Deliberate, negligent or accidental? Does the conduct process apply? Does law enforcement engagement apply? | Investigation evidence; kept separate from the technical timeline |
+| **Provider involvement** | Was a provider or sub-processor implicated? What are its contractual notification and cooperation obligations, and were they met? | The requirements annex; the supplier record |
+| **Evidence preservation** | Are logs, snapshots and images preserved before remediation destroys them, and for how long? | Preservation is a **step before eradication**, not after — with a legal-hold path via the General Counsel |
+| **Blast-radius and recurrence** | Could the same cause exist elsewhere unfound? What sweep was run to check? | A mandatory "look for the same thing elsewhere" sweep, which is how the transport-security inconsistency across other buckets was found |
+
+**Analysis capability and its limits.** Analysis draws on audit logging of the production account, storage
+and query access logs, the managed SIEM's retained copy, endpoint telemetry, and the IaC baseline for
+comparison. Two limitations are stated rather than left to be discovered: **the telemetry gap above meant
+that for part of the period identity-resource change history was not captured by the configuration
+recorder**, so an analysis covering that window would have had to rely on audit logs alone — this is exactly
+why the gap was treated as a near miss with a mandatory review; and log retention on some stores was not
+configured, which is why retention was set and log-configuration change alerting added. Where analysis
+cannot reach a conclusion, the incident record says so, the DPO and General Counsel are told, and the
+notification decision is taken on the **conservative assumption** rather than on the absence of proof.
+
+**Every Sev-1, every Sev-2 with a control failure and every near miss ends in a post-incident review** with:
+a factual timeline, the impact determination above, root cause, whether the risk register was wrong,
+whether the control set needs to change, dated remediation with named owners, and closure verified by
+someone other than the remediation owner. Reviews are blameless as to individuals and unsparing as to
+systems — and the review of case D-2026-004 changed the system (local copies prevented) as well as handling
+the individual.
+
+## 7. Confidential information — assessing impact, identifying what was affected, and preventing recurrence
+
+**Detected security events are evaluated to determine whether they could or did result in the unauthorized
+disclosure or use of confidential information.** This evaluation is mandatory for every event above triage,
+not only for events that look like data breaches, because the entity holds customers' own compliance
+evidence — material whose disclosure would harm them commercially and which they gave the entity precisely
+to have assessed.
+
+**The confidentiality evaluation, performed by the AI Security Lead with the data owner:**
+
+1. **What confidential information was within reach** of the systems, identities or paths involved — using
+   the classification register and the per-store inventory, so the question is answered from a record rather
+   than from memory.
+2. **Whether it was accessed** — determined from access, storage and query logs. If logging for the relevant
+   path was absent or incomplete, that is recorded as such and the evaluation proceeds on the conservative
+   assumption that access may have occurred.
+3. **Whether it left the environment** — egress and DLP records.
+4. **Whose information** — which customer tenants, since multi-tenancy means an isolation failure is
+   simultaneously a disclosure to a competitor; tenant isolation is a Critical control with a dedicated
+   quarterly test objective for this reason.
+5. **Whether use, as distinct from disclosure, occurred** — including use for a purpose outside the
+   customer's agreement, which is the failure mode of an internal event like D-2026-004.
+6. **A recorded conclusion** — disclosed / not disclosed / not determinable — with the evidence relied on.
+
+**Identifying the affected information when unauthorized use or disclosure has occurred.** The procedure
+requires identification to the level of the specific records and customers, not a category: the specific
+evidence documents, assessment results, or fields; the customer tenants; the date range; the recipients if
+known; and the basis for the determination. This is what makes notification accurate, and the entity commits
+to naming what is not known as well as what is.
+
+**Actions taken to prevent recurrence and address control failures.** For each of the two events this period
+with a confidentiality dimension:
+
+| Event | Affected confidential information identified | Action to address the control failure and prevent recurrence |
+|---|---|---|
+| **Case D-2026-004** — sample data copied to a local directory in breach of policy | Identified precisely: the specific sample data set, **entity-owned sample data containing no customer confidential information and no personal data** — confirmed from the data-set record and the access log, not assumed | Data deleted and deletion verified; handled under the conduct process; **the control failure was that the copy was possible at all**, so local copies of production and sample data are now technically prevented rather than prohibited; the case is taught as an anonymized study; retention and classification training updated |
+| **Researcher disclosure** — inconsistent transport-security enforcement created a path by which data in transit was insufficiently protected on some routes | **No confidential information disclosed** — determined from the access logs for the affected paths over the full exposure window; the conclusion and its evidentiary basis are recorded, along with the fact that the window predated some retention improvements | Configuration corrected; the standard revised and made policy-as-code; **the remaining inconsistent buckets are recorded as an open deficiency**; log-configuration change alerting added so the evidence needed for a future determination cannot silently disappear |
+
+**Confidentiality commitments and their consequences.** Where confidential information is or may be
+disclosed, the affected customer is notified within 24 hours of confirmation with what is known and what is
+not, the entity's contractual confidentiality commitments determine the remedies, and the incident is
+reported to the Audit Committee. The entity's obligations flow through to providers: every provider with
+access to confidential information holds confidentiality commitments **consistent with the entity's own**,
+and their compliance is assessed rather than assumed.
+
+## 8. Personal information — impact, legal compliance, identification and recurrence prevention
+
+**Detected security events are evaluated to determine whether they could or did result in the unauthorized
+disclosure or use of personal information, and whether there has been a failure to comply with applicable
+laws or regulations.** The DPO is engaged **immediately on suspicion and in parallel with the security
+response**, never after it concludes, and acknowledges within 1 hour. The DPO — not the security function —
+owns the personal-data determination, and reports to a Board committee rather than to management, so the
+determination cannot be shaped by the incident's owner.
+
+**The privacy evaluation, performed by the DPO with the General Counsel:**
+
+| Step | What is determined | Why it is separate from the security evaluation |
+|---|---|---|
+| 1. Personal data in scope | Which personal data was within reach, from the data map and the per-store personal-data inventory | Security's scope question is about systems; this one is about people |
+| 2. Categories and sensitivity | Identity, contact, employment, screening, or special-category data; and **personal data incidentally present inside customer-supplied evidence**, which is a category the entity does not control the content of | Sensitivity drives both the legal test and the harm assessment |
+| 3. Data subjects affected | Which individuals, how many, in which jurisdictions, and their relationship to the entity (personnel, customer personnel, data subjects of a customer) | Determines which laws apply and who must be told |
+| 4. Controller or processor role | Whether the entity is controller (its own personnel data) or processor (customer evidence) — which determines whether the entity notifies a regulator or **notifies the customer so the customer can** | This distinction is the most consequential in the whole procedure and is decided explicitly, in writing |
+| 5. **Failure to comply with law or regulation** | Whether the event constitutes or reveals a breach of an applicable obligation: security-of-processing requirements, breach-notification duties, transfer restrictions, retention limits, purpose limitation, or a contractual DPA obligation. Assessed against the **obligation inventory** maintained per jurisdiction across five geographies and two legal entities | A security event can be contained and still leave a legal non-compliance that must be recorded and, where required, notified |
+| 6. Risk to individuals | Likelihood and severity of harm — the test that governs whether notification is required, distinct from harm to the entity | Prevents the entity's interest from driving the notification decision |
+| 7. Notification determination | Regulator within **72 hours of awareness** where the threshold is met, with the clock started at discovery and **escalation at 50% elapsed**; individuals without undue delay where the threshold is met; the customer per its DPA where the entity is processor; **the decision is recorded with reasons whether or not notification is made** | A decision not to notify is a decision that must be defensible later |
+| 8. Sub-processor dimension | Whether a sub-processor was involved, and whether its notification obligation was met | **R-006** — a sub-processor breach is a recognized register risk with its own runbook |
+
+**Identifying the affected personal information.** Identification is to the record and individual level:
+which individuals, which categories and fields, the date range, whether the data was encrypted and whether
+the keys were also exposed, and where the information came from — including the case where personal data
+sits inside a customer's evidence document. Where the entity cannot determine which individuals were
+affected, that inability is itself recorded and the notification decision is taken on the conservative
+basis; the entity does not treat an incomplete log as a negative finding.
+
+**Instances and actions this period.**
+
+| Case | Evaluation outcome | Legal-compliance assessment | Actions to prevent recurrence and address the control failure |
+|---|---|---|---|
+| **One suspected privacy incident**, reported by a colleague rather than by the person involved | Reported immediately on suspicion; **DPO acknowledged within the 1-hour commitment**; investigated | Assessed against the obligation inventory: **no personal-data breach and no notification threshold met** — determination recorded with its reasons and the evidence relied on | The control that worked was a colleague reporting on suspicion, which is reinforced in the quarterly briefing; the investigation confirmed the reporting route and the DPO response time in live conditions |
+| Device loss (phone in a taxi) | Personal data possibility assessed by the DPO in parallel with the security response | **No personal data present**; encrypted and wiped 12 minutes after report; no obligation triggered | Reporting route simplified to a single phone number after the review found the email route added minutes |
+| Case D-2026-004 (sample data) | Assessed for personal-data content | **Entity sample data; no personal data and no customer confidential information** — confirmed from the data-set record | Local copies technically prevented; retention and handling training updated; taught as an anonymized case study |
+| **Retention conformance findings** — personal data held past its retention period | Not a disclosure event, but assessed by the DPO as a **compliance failure against the retention obligation** (**R-045**) | Recorded as a non-compliance with the retention requirement; assessed for notification and found not to meet the threshold; the assessment is recorded | Data deleted and the deletion evidenced **including at sub-processors**; the enforcement tightened so it does not recur; the quarterly retention conformance check retained as a detective control; upload-time and chat-time personal-data detection prompts kept in place |
+| **Telemetry gap** (recorder scope and aggregator) assessed for privacy consequence | No personal-data disclosure; but the DPO recorded that the gap **would have impaired the entity's ability to meet a 72-hour notification obligation** had an event occurred in that window | Recorded as a compliance-capability deficiency, reported to the Audit Committee | Recording scope corrected; log retention set; detection inventory reconciliation added monthly — remediation driven by the privacy consequence, not only the security one |
+
+**No statutory breach notification was required in the period.** That conclusion is the product of a
+recorded assessment in each case, not the absence of one — and the two cases where the entity's *capability*
+to notify was found wanting (the exercise's 31-hour decision and the telemetry gap) were remediated as
+seriously as an actual breach would have been.
+
+## 9. Review history
+
+| Version | Date | Change |
+|---|---|---|
+| 3.0 | 2024-12-18 | Established severities, IC role, phases and the post-incident review requirement |
+| 3.5 | 2025-08-20 | Added the confidentiality and personal-data evaluation as mandatory phases; DPO engaged in parallel rather than sequentially; near miss made a reviewable class |
+| 4.0 | 2025-11-28 | Post-exercise: pre-approved notification templates and a standing legal slot after the 31-hour notification-decision finding; IC bench raised from 2 to 6; runbook staleness check added to the build |
+| 4.1 | 2026-01-22 | Provider notification obligations named in each requirements annex after a late provider notification; support workflow security-flag question after the 4-hour customer-report recognition delay |
+| 4.2 | 2026-02-19 | Added purple-team detection validation and the monthly detection-inventory reconciliation after the telemetry gap; recorded the found-by-others metric; severity-raising rule recorded after the under-declaration finding; the open account findings recorded as determinations with owners rather than as closed items |

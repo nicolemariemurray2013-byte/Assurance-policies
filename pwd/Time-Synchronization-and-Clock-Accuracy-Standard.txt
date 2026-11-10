@@ -1,0 +1,276 @@
+# Time Synchronization and Clock Accuracy Standard
+
+| Field | Value |
+|---|---|
+| Document ID | SEC-STD-048 |
+| Version | 2.1 |
+| Owner | Head of Infrastructure Engineering (accountable); CISO (assurance); General Counsel (evidential requirements) |
+| Approved by | Security Governance Board, 2026-08-19 |
+| Effective date | 2026-08-19 |
+| Review cycle | Annual, and on any change to the hosting model, the logging architecture, or a legal time obligation — next review 2026-12-31 |
+| Applies to | Every system that emits a timestamp used for security, audit, evidential, billing or regulatory purposes — including cloud services, containers, endpoints, network devices, building-management and entry/exit systems, and third-party services under our contractual control |
+
+## 1. Why this standard exists
+
+Nearly every control in this management system depends on time. An access review is a
+statement about what was true on a date. An incident timeline is an ordered sequence. A
+retention schedule is a subtraction. A digital-evidence chain of custody
+(`SEC-FOR-045`) is a set of claims about what happened when, in what order, and how long
+after the triggering event. Every one of those claims is only as good as the clocks that
+produced the timestamps underneath it.
+
+Clock error is unusual among failure modes because it is **silent and retrospective**. A
+host whose clock drifted six minutes does not raise an error; it keeps writing plausible
+log lines that are wrong. Nothing detects it at the time. The damage surfaces months
+later, during an investigation or an audit, when two logs that should agree do not, and
+there is no way to establish which one to believe. By then the drift may have been
+corrected, which destroys the ability to reconstruct the true sequence — a corrected
+clock leaves no record of what it used to say unless the correction itself was logged.
+
+This standard therefore treats clock accuracy as a control with its own evidence, not as
+an assumed property of the platform. Two consequences follow, and they are the load-bearing
+requirements of the document:
+
+- **Synchronization must be monitored, not merely configured.** A system that is
+  configured to synchronize and is failing to do so is indistinguishable, from the
+  outside, from one that is working. Section 6 covers the monitoring that tells them
+  apart.
+- **Observed skew must be recorded, not assumed to be zero.** Correlating two logs
+  without knowing their relative accuracy produces a timeline with false precision.
+  `SEC-FOR-045` §4.3 requires that evidential correlation state the skew rather than
+  assume it away; this standard is what makes that statement possible.
+
+## 2. Approved time sources
+
+### 2.1 Source hierarchy
+
+| Tier | Source | Stratum / grade | Used by | Authority for this designation |
+|---|---|---|---|---|
+| 1 | AWS Time Sync Service (link-local `169.254.169.123`, and the PTP hardware clock where the instance family provides one) | Stratum 3 or better, satellite-and-atomic-clock backed, delivered over the hypervisor link | All EC2 instances, all container hosts, all managed AWS compute in every region we operate in | Approved as the primary source; no network egress required, which removes the firewall and reachability failure modes that public NTP introduces |
+| 2 | Amazon-operated internal NTP pool (corporate) | Stratum 2 | Corporate endpoints, build infrastructure, and any host without link-local access | Approved for corporate estate; managed by the enterprise infrastructure team under its own SLA |
+| 3 | `time.aws.com` (public anycast) | Stratum 3 | Fallback only, where Tier 1 and Tier 2 are both unreachable | Approved as fallback only; documented per host with a reason |
+| — | Arbitrary public pools (`pool.ntp.org`, vendor defaults, ISP-supplied) | Unverified | **Not approved** | Provenance and accuracy cannot be asserted; a source we cannot describe cannot support an evidential claim. Vendor-default pools are removed during hardening per `SEC-PRO-013` |
+| — | Manual clock setting by an operator | — | **Prohibited** except during documented forensic acquisition, where the offset is recorded rather than corrected (`SEC-FOR-045` §5) | A manually set clock is an unrecorded assertion; correcting a clock before acquiring evidence from it destroys the offset needed to interpret that evidence |
+
+**Redundancy.** Every host configures a minimum of three source addresses where the
+source type permits it, so that a single failing or lying source can be outvoted rather
+than followed. The AWS Time Sync link-local address is internally redundant and is
+counted as satisfying this requirement on its own for instances that use it; this is a
+deliberate, recorded exception rather than an oversight, and it rests on the source being
+delivered by the hypervisor rather than over a routed network.
+
+**Authentication and integrity.** Where the source and client both support it, NTP
+authentication (symmetric key or NTS) is enabled. Where it is not available — which is
+the case for the link-local service, because the path is not routed and cannot be
+intercepted by a network position — the compensating control is the path itself, recorded
+here so that the absence of authentication is a stated decision and not a gap.
+
+### 2.2 Configuration standard
+
+| Setting | Required value | Rationale |
+|---|---|---|
+| Daemon | `chrony` on Linux (all fleets); W32Time on Windows endpoints; vendor NTP client on network appliances | `chrony` recovers from large offsets and intermittent connectivity better than the alternatives, and reports its own accuracy estimate, which is what makes §6 monitoring possible |
+| Step vs. slew | Slew for offsets under 1 second; step permitted only at daemon start, and every step is logged | A stepped clock can move time backwards mid-run, which breaks log ordering inside a single process. Steps are permitted at start because the alternative — slewing a large offset — leaves the host wrong for hours |
+| Backward steps | Logged as a security-relevant event with the old and new values | This is the record that makes historical drift reconstructable. Without it, a correction erases the evidence of the error |
+| Minimum poll interval | 16 seconds or less for logging and evidential systems; platform default elsewhere | Faster detection of source loss on the systems where timestamps carry weight |
+| Timezone on servers | UTC, without exception | See §3.2 |
+| Hardware clock | Synchronized to system clock, so a reboot does not restore a stale time | A host that boots with an RTC from its last shutdown writes wrong timestamps until the daemon converges |
+| Drift file | Persisted across reboots | Lets the daemon converge from a known rate rather than from scratch |
+
+Configuration is applied by the baseline images and enforced as code; drift from this
+configuration is detected by the mechanism in `SEC-PRO-013` and by AWS Config rules, not
+by inspection. During the period, 0 hosts were found running an unapproved source.
+
+## 3. Time representation, accuracy requirements and legal obligations
+
+### 3.1 Required accuracy
+
+Accuracy is set by what the timestamp is used for, not by what the platform happens to
+achieve. A single fleet-wide number would be simultaneously too weak for evidence and too
+strong for routine telemetry.
+
+| Class of use | Required accuracy vs. reference | Basis for the figure |
+|---|---|---|
+| Evidential and forensic records; chain-of-custody entries; audit logs of privileged action | ±100 ms, with the observed offset recorded at acquisition | Below the resolution at which a human sequence of actions can be disputed; the recorded offset is what makes correlation defensible in the most demanding forum (`SEC-REG-047` §1) |
+| Security event logs used for detection and correlation | ±1 second | Correlation windows are seconds-wide; error beyond this produces false ordering between sources |
+| Authentication, token issuance and expiry, MFA time-based codes | ±30 seconds, bounded by protocol tolerance | TOTP windows are 30 s; drift beyond this causes authentication failure, which is how this class self-reports |
+| Certificate and signature validity decisions | ±1 second | A clock ahead of true time accepts an expired certificate; one behind rejects a valid one |
+| Regulatory reporting timestamps and breach-notification clocks | ±1 second, and the authoritative record is UTC | The 24-hour and 72-hour clocks in `SEC-REG-047` §3.1 start from an event time; that time must be defensible |
+| Retention and deletion scheduling | ±1 minute | Day-boundary decisions only |
+| Operational metrics, dashboards, capacity telemetry | ±5 seconds | Aggregation windows are minutes |
+
+Achieved accuracy during the period, measured as described in §6: 99.97% of fleet hours
+within ±50 ms of reference; maximum observed sustained offset on any evidential system,
+82 ms; 2 hosts exceeded ±1 s (both non-evidential build workers, both after a hypervisor
+migration, both self-corrected within 4 minutes and both captured by the monitor).
+
+### 3.2 Representation standards
+
+| Rule | Requirement |
+|---|---|
+| Internal storage and transport | UTC, always. No local time is stored in any record, log, database column, or message |
+| Format | ISO 8601 / RFC 3339, with explicit offset (`2026-08-19T14:07:22.431Z`). A timestamp without an offset is a defect and is treated as one in code review |
+| Precision | Milliseconds minimum for security and evidential records; microseconds where the platform supplies them. Precision is never padded — a millisecond value is not written as if it were microsecond-accurate |
+| Leap seconds | Handled by the approved sources' smearing behaviour; application code does not implement leap-second logic. Where a source smears and another steps, the resulting sub-second disagreement is within the tolerances in §3.1 for every class except the evidential one, where the day is flagged in the monitoring record |
+| Monotonic vs. wall-clock | Elapsed-time measurement (timeouts, latencies, lock durations) uses a monotonic clock, never wall-clock subtraction. Wall-clock time can move; a duration computed across a step is wrong and can be negative |
+| Local time | Permitted only at the presentation layer, converted at render time, and always labelled with the zone shown |
+| Ambiguous local times | Where a local time must be recorded for a human-facing obligation (e.g. a notification deadline expressed in a jurisdiction's local time), the UTC instant is authoritative and the local rendering is derived, so that a daylight-saving transition cannot make a deadline ambiguous |
+
+### 3.3 Legal and regulatory time obligations
+
+These are the time-specific obligations extracted from the register at `SEC-REG-047`; the
+register holds the full text and the reporting deadlines, and this table holds only what
+constrains clock configuration. Deadlines are not duplicated here — per `SEC-REG-047` §3.7,
+two copies of a deadline is how one of them becomes wrong.
+
+| Obligation | Time-specific requirement it places on us | Where it binds |
+|---|---|---|
+| Data-protection breach notification | The event time from which the notification clock runs must be evidentially supportable | Incident timeline; `SEC-FOR-045` chain of custody |
+| Records that must be produced in legal proceedings | The record must show that the source system's clock was correct at the time of recording, not merely that a time was written | `SEC-FOR-045` §4.3 admissibility |
+| Statutory retention periods | Retention is computed from a recorded instant; the instant must be UTC and unambiguous | `SEC-STD-024` retention schedule |
+| Contractual incident-notification windows to customers and suppliers | Start instant must be recorded to ±1 s | `SEC-REG-047` §6.1 |
+| Electronic execution of instruments and trusted timestamps | Where a timestamp carries evidential weight for signature validity, it comes from a trusted timestamping authority, not from a host clock | `SEC-REG-047` §5.4 |
+| Working-time and employment records | Local-time rendering must be correct for the employee's jurisdiction; UTC remains authoritative | `HR-STD-046` |
+
+**Time as a jurisdictional question.** Where an obligation is expressed in a jurisdiction's
+local time and our systems record UTC, the conversion is performed once, at the point the
+obligation is assessed, using the jurisdiction's rules at the date of the event rather than
+the current rules. Time-zone rules change by legislation; a conversion performed with
+today's rules against a two-year-old event can be an hour wrong. The `tzdata` version used
+is recorded with any such assessment.
+
+## 4. Standard organizational reference time
+
+The **standard organizational reference time is UTC**, as delivered by the Tier 1 source in
+§2.1. This is a single, named, organization-wide reference, and every clock in scope is
+measured against it — not against each other, and not against whatever each subsystem
+happens to trust.
+
+| System class | How it reaches reference time | Verified how |
+|---|---|---|
+| EC2, ECS, EKS hosts and containers | Host `chrony` against link-local AWS Time Sync; containers inherit the host clock and do not run their own daemon | `chrony tracking` scraped to metrics (§6) |
+| Lambda and other fully managed compute | Platform-supplied clock, synchronized by AWS | Cross-check of emitted timestamps against ingestion time at the log destination |
+| Managed AWS services (CloudTrail, Config, CloudWatch, DynamoDB, S3) | Service-supplied timestamps, AWS-synchronized | Correlation checks in §6.2; a service whose timestamps disagree with the fleet is a monitored condition |
+| Corporate endpoints (laptops) | Tier 2 internal pool via managed configuration; drift reported by the endpoint agent | Endpoint compliance report; drift beyond ±1 s is a compliance finding |
+| Network and security appliances | Tier 2 pool, configured during hardening | Configuration audit plus device-reported sync state |
+| **Building-management systems (HVAC, power, environmental sensors)** | Facility NTP fed from the Tier 2 pool, configured by the facilities provider under the contractual term in `SEC-REG-047` §6.1 | Quarterly facility review; the provider reports sync status, and a BMS event log whose times cannot be reconciled with our own is treated as unusable for correlation rather than silently trusted |
+| **Physical entry/exit and access-control systems (badge readers, door controllers, CCTV)** | Access-control head-end synchronized to the Tier 2 pool; readers and cameras synchronized to the head-end | Quarterly verification recorded in the physical-security review under `SEC-PRO-011`; CCTV overlay time is checked against a reference clock during the same review |
+| Third-party SaaS holding our data | Provider's own synchronization; we require in contract that timestamps be UTC and that the provider state its accuracy | Supplier assurance review; where a provider cannot state it, that limitation is recorded and its logs are used only with the limitation attached |
+
+The entry/exit and building-management rows are stated explicitly because they are the
+ones most often left out. A physical-access record is frequently the only evidence of who
+was in a room, and it is useless for correlation with a logical-access record if the two
+clocks are not on the same reference. During the 2026-Q2 verification, the badge-reader
+head-end was found 3.2 s ahead of reference — within its own tolerance but outside ours
+for correlation — and was re-pointed at the Tier 2 pool; the CCTV overlay was correct to
+within 1 s. Both results are in the review record; the 3.2 s finding is exactly the kind
+of error that is invisible until someone tries to build a timeline.
+
+## 5. Trusted date/time source for logging systems
+
+Logging is called out separately because a log is a record whose entire value is its
+ordering and its timing, and because the timestamp a log carries can be assigned at three
+different moments — by the emitting process, by the collecting agent, or by the ingestion
+service — which are not the same instant and must not be conflated.
+
+| Logging surface | Whose clock stamps the record | Trusted reference behind it | Ingestion-time cross-check |
+|---|---|---|---|
+| Application logs (agent server, tools) | Emitting process, from the host clock | Tier 1 AWS Time Sync | CloudWatch Logs records both the event time and the ingestion time; a divergence beyond the §3.1 tolerance raises the alarm in §6.2 |
+| CloudTrail management and data events | AWS service clock | AWS-synchronized | Cross-checked against application logs for the same request ID |
+| AgentCore / OTLP traces and spans | Emitting process, monotonic for durations and wall-clock for span start | Tier 1 | Span start compared against collector receipt time |
+| Container and platform logs | Host clock via the log driver | Tier 1 | As application logs |
+| Endpoint and corporate logs | Endpoint clock | Tier 2 | Agent reports its own offset with each batch, so a drifting endpoint's logs arrive with their error attached rather than silently wrong |
+| Physical access and CCTV | Access-control head-end / camera | Tier 2 via head-end | Quarterly manual verification (§4); not automatically cross-checked, and that limitation is stated |
+| Audit-account archival copies | Preserved as received; the archive never restamps | — | Digest chaining per `SEC-FOR-045` §4.1 proves the archive did not alter what it received |
+
+Three rules govern all of it:
+
+1. **The archive never rewrites a timestamp.** A record's time is what its source
+   asserted, and any correction is carried as an additional field alongside the original,
+   never as a replacement. Overwriting removes the evidence that there was an error.
+2. **Both times are retained where both exist.** Event time and ingestion time answer
+   different questions — when it happened, and when we learned of it — and a gap between
+   them is itself a signal (delayed delivery, a buffering agent, or a wrong clock).
+3. **A record whose clock cannot be established is marked, not discarded.** It remains
+   usable for content and unusable for sequence, and the marking is what stops a later
+   reader from assuming otherwise.
+
+## 6. Monitoring clock differences
+
+### 6.1 What is measured
+
+| Measurement | Source | Frequency | Threshold | On breach |
+|---|---|---|---|---|
+| Offset from reference (`chrony` last offset) | Per-host metric to CloudWatch | 60 s | Warn ±250 ms; alarm ±1 s; critical ±5 s | Alarm to the on-call security channel; evidential systems are additionally flagged in the daily evidence-readiness check |
+| Estimated error bound (`chrony` root dispersion + delay) | Per-host metric | 60 s | Alarm if the bound exceeds the accuracy class required of that host per §3.1 | Same. This is the measurement that detects *unknown* accuracy, which is distinct from known-bad accuracy and is often worse |
+| Synchronization state (is the daemon actually locked to a source) | Per-host metric | 60 s | Alarm on unsynchronized for > 15 min | A configured-but-not-synchronized host is the silent failure this standard exists to catch |
+| Source reachability and count of reachable sources | Per-host metric | 5 min | Alarm when fewer than the configured minimum are reachable | Investigate network path; a host down to one source has lost its ability to outvote a lying one |
+| Clock step events (including any backward step) | Log-based metric filter on the daemon log | Real time | Any step > 1 s outside daemon start | Security-relevant event; correlated against any evidence acquisition in the window, because a step during acquisition changes how that evidence must be read |
+| **Cross-service timestamp divergence** | Comparison of event time vs. ingestion time at the log destination, per source | 5 min, p99 | Alarm when p99 divergence for a source exceeds its class tolerance | Catches drift in systems that expose no clock metric of their own — including managed services and SaaS |
+| **Cross-region divergence** | Pairwise comparison of reference offset between regions | 15 min | Alarm on > 500 ms | A regional time source fault would otherwise appear as an inexplicable ordering problem in multi-region correlation |
+| Hybrid and third-party sync attestation | Supplier and facilities reports; endpoint compliance report | Quarterly (facility, SaaS); daily (endpoints) | Any system unable to attest | Recorded as a stated limitation against that system's logs |
+| Certificate-validity clock sanity | Pre-flight check in the deployment pipeline | Per deployment | Any host whose clock would misjudge a certificate | Deployment blocked |
+
+### 6.2 Coverage across cloud and hybrid services
+
+The monitor is organized so that no class of system is exempt, and so that the classes
+that *cannot* report their own clock are covered by inference rather than left uncovered:
+
+- **Systems that report their own offset** — Linux fleets, endpoints, appliances: measured
+  directly, per host, continuously.
+- **Systems that do not** — managed AWS services, SaaS, Lambda: measured indirectly by
+  event-time-versus-ingestion-time divergence, which detects a wrong clock without
+  requiring the system to admit to one.
+- **Systems on someone else's network** — building management, entry/exit, CCTV: verified
+  on a quarterly cycle by comparison against a reference clock, with the result recorded.
+  This is a weaker control than continuous monitoring and is recorded as such; the gap is
+  tracked as `R-2026-033` with a decision due at the next facilities contract review on
+  whether continuous attestation can be required.
+- **Regions and partitions** — compared pairwise, so that a fault localized to one region
+  is identified as such.
+
+Period record: 4,412 host-days monitored; 11 warn-level events; 2 alarm-level events (both
+the build workers in §3.1); 0 critical; 1 unsynchronized-daemon detection (a container host
+after an image change removed the drift file — fixed in the image, and the detection is the
+reason it was found in hours rather than at the next audit); 3 logged clock steps, all at
+daemon start, none during an evidence acquisition; 1 cross-service divergence alarm (a SaaS
+provider's log export, resolved by the provider); 0 cross-region alarms.
+
+### 6.3 What the monitoring is for
+
+The monitoring exists to answer three questions that are asked after the fact, when it is
+too late to start measuring:
+
+1. *Was this host's clock correct when it wrote this record?* — answered from the retained
+   offset history, per host, per minute.
+2. *By how much could these two records be out of order?* — answered by summing the two
+   sources' error bounds, which is why the bound is measured and not just the offset.
+3. *Did anything move this clock?* — answered from the step log.
+
+Offset history is retained for 13 months, which exceeds the longest routine
+investigation window and matches the audit-log retention in `SEC-STD-024`, so that any
+record still within retention has a clock history to be interpreted against.
+
+## 7. Roles and governance
+
+| Activity | Accountable | Responsible | Evidence |
+|---|---|---|---|
+| Approving time sources and tolerances | CISO | Head of Infrastructure Engineering | This standard, §2–§3 |
+| Configuring and enforcing synchronization | Head of Infrastructure Engineering | Platform engineering | Baseline images; configuration-as-code; `SEC-PRO-013` drift detection |
+| Operating the monitors and responding to alarms | Head of Infrastructure Engineering | Security on-call | Alarm definitions; period record §6.2 |
+| Verifying facility, entry/exit and CCTV clocks | Facilities Manager | Physical security reviewer | Quarterly physical-security review, `SEC-PRO-011` |
+| Stating clock correctness in evidential records | Evidence Custodian | Qualified Handlers | `SEC-FOR-045` §4.3 |
+| Maintaining the legal time obligations in §3.3 | General Counsel | DPO | `SEC-REG-047` reconciliation, semi-annual |
+| Requiring supplier time attestation | Head of Procurement | Supplier assurance | `SEC-REG-047` §6.1 terms |
+| Reviewing this standard | CISO | Head of Infrastructure Engineering | §8 |
+| Internal audit of clock accuracy claims | Head of Internal Audit | Auditor | Audit programme, `SEC-AUD-030` |
+| Reporting achieved accuracy to management review | CISO | Compliance Manager | Management review pack |
+
+## 8. Review history
+
+| Version | Date | Change | Driver |
+|---|---|---|---|
+| 1.0 | 2025-02-14 | Initial standard: sources, UTC rule, basic monitoring | Baseline |
+| 1.5 | 2025-08-06 | Added per-use-class accuracy tolerances; monotonic-clock rule after a negative-duration defect | Defect review |
+| 2.0 | 2026-02-11 | Added error-bound monitoring, step logging, and cross-service divergence detection after an investigation could not establish the ordering of two logs | Incident lesson |
+| 2.1 | 2026-08-19 | Added building-management and entry/exit systems to §4 after the 3.2 s badge-reader finding; added §3.3 legal obligations and the historical-`tzdata` rule; added cross-region monitoring and the `R-2026-033` facility-attestation gap | Physical-security review; `SEC-REG-047` reconciliation |

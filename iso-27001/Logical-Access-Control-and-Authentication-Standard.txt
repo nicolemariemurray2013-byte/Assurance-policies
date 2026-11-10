@@ -1,0 +1,775 @@
+# Logical Access Control and Authentication Standard
+
+**Document ID:** SEC-IAM-021
+**Version:** 4.3 (current) — **effective 2026-08-14**
+
+**Revision note.** Version 4.3 adds §8 (allocation of authentication information, the immediate change of vendor-supplied defaults, the two approved credential stores and the prohibition on any other, what personnel are advised and trained, and screening against known-compromised and personal values) and §9 (log-on screen behaviour and the authorized-use notice, throttling and lockout thresholds with their trade-off stated, logging of successful as well as failed authentication with the previous-sign-in notification to the user, and the position on biometrics with its invalidation path and always-available alternative technique). Version 4.2 revises §6.1, §6.3, and §6.4 so that each observable exception in the account is
+named at the point the requirement is treated, rather than reconciled after an absolute claim: the attached
+internet gateway and the account-level setting that makes it inert (§6.1), the external administrative channel and
+the two-person additional-authorization factor (§6.3), and the default network ACL (§6.4). The intent is that this
+standard reconciles with the account's actual credential report and network configuration rather than overstating
+them. It supersedes version 4.0 of 2026-02-09 and the interim 4.1 of 2026-04-13.
+**Owner:** Head of Security Engineering
+**Approved by:** CISO 2026-02-05; v4.3 approved by the CISO 2026-08-14; reviewed by the Audit Committee 2026-02-19 and 2026-08-14
+**Next scheduled review:** Annually (next by 2026-12-31), and on any change to the identity architecture, to the
+set of external access points, or after any access-related incident
+
+**Scope.** All logical access to the service: the AWS accounts that run it, the data stores that hold customer
+evidence and assessment results, the source repositories and build pipeline, the observability backend, and the
+vendor systems that hold service records. Applies to employees, contractors, vendor personnel, and to
+**non-human identities** — service roles, workload identities, and the agent software itself. The reference
+implementation is AWS account **471885797689**, region **us-west-2**.
+
+Companion documents: the asset inventory and classification standard (what is being protected, and the access
+point register); the cryptographic standard (how credentials and data are protected in transit and at rest);
+the media, endpoint and disposal standard (protection at the edge); the change management policy (the gate
+through which access-affecting changes pass).
+
+---
+
+## 1. Principles
+
+1. **No anonymous access.** Every request that reaches service data carries an authenticated identity — a
+   federated human, a role assumed by a workload, or signed software. There is no unauthenticated surface.
+2. **Least privilege, expressed as a role.** Entitlements are attached to roles that correspond to job
+   responsibilities, never assembled ad hoc per person.
+3. **Authorization before credential.** A credential is created only after the asset owner has authorized the
+   access it confers. The authorization is the record; the credential is the consequence.
+4. **Standing privilege is the exception.** Human access to production is short-lived and assumed, not held.
+5. **Removal is as engineered as grant.** The same workflow that creates access revokes it, driven by the same
+   authoritative source, so revocation cannot be forgotten.
+6. **Segregation of incompatible functions.** Whoever can change a control must not be the only one who can
+   verify it.
+
+---
+
+## 2. Identification and authentication (CC6.1)
+
+### 2.1 Who and what must be identified
+
+| Principal type | Identification | Authentication | Where enforced |
+|---|---|---|---|
+| **Employee / contractor (interactive)** | Corporate identity in the identity provider, issued from the HR record | Federated single sign-on with **multi-factor authentication**, then short-lived role assumption into the target account | Identity provider + role trust policy |
+| **Employee / contractor (programmatic)** | The same corporate identity, exchanged for short-lived credentials | Federated, MFA-backed session. Long-lived user access keys are **not issued through this path**; the only long-lived keys in the estate are the four individually enumerated identities in §2.3, which exist as break-glass and legacy identities rather than as issued workforce credentials | Identity provider |
+| **Break-glass administrator** | Named IAM user, one per break-glass holder | Long-lived access key held in escrow — **a deliberately retained recovery credential, enumerated in §2.3**; use requires a second person and raises an alarm (§7.4) | IAM + alarm |
+| **Service / workload** | IAM role, one role per workload, never shared between workloads | Role assumption from the workload's execution environment; no static secrets | Role trust policy |
+| **The agent software (as a caller)** | Environment and account claims inside a session token | **Asymmetric signature verification**: the token is RS256-signed by a KMS-held private key and verified by the service before any credential is vended. Software is authenticated, not merely trusted | Token verification in the credential-vending path |
+| **The service reading a customer environment** | A customer-provided read-only role, named in the environment record | Cross-account role assumption with an external-id-equivalent binding to the verified session token; credentials are short-lived | Customer role trust policy + vending service |
+| **Vendor / external party** | Identity in the vendor's system, mapped to a named individual | Vendor SSO with MFA where supported; scoped, rotated API credentials otherwise | Vendor configuration + vendor register |
+
+Authentication happens **prior to access** in every path, locally and remotely: there is no path where a
+request is served and the identity established afterwards.
+
+### 2.2 Documented identification and authentication requirements
+
+The requirements are stated once, here, and implemented by configuration rather than convention:
+
+- **Interactive access** requires federated identity plus MFA. In the reference account, **no IAM user has a
+  console password** — verified against the account credential report — so there is no password-authenticated
+  interactive path into the account at all, and interactive access is therefore necessarily federated.
+- **Password quality**, where a password exists anywhere in the estate, is enforced by account policy:
+  minimum length **14**, all four character classes required, maximum age **90 days**, reuse of the previous
+  **24** passwords prevented, and users permitted to change their own password. This is configured at the
+  account level and is machine-verifiable.
+- **Programmatic access** uses short-lived credentials obtained by role assumption. Long-lived access keys are
+  permitted only for the enumerated break-glass and legacy programmatic identities described in §2.3, are
+  inventoried individually, and are rotated on the schedule in §5.4.
+- **Session duration** is bounded: one hour for human role assumption, fifteen minutes for the agent session
+  token, and the minimum viable duration for vended cross-account credentials.
+- **Workload authentication never uses a shared secret.** A workload that needs to prove its identity does so
+  with a role it alone can assume, or with a signature over a KMS-held key.
+
+### 2.3 The enumerated long-lived programmatic identities, and why they are controlled rather than absent
+
+This standard does not claim that no long-lived credential exists. It claims that every one is **named,
+inventoried, minimised, monitored, and scheduled for retirement** — which is the controllable state, and the
+state an assessor can verify. As of the effective date, the reference account contains exactly **four IAM users**
+and **no others**, and the population is reconciled weekly:
+
+| Identity | Purpose | Console password | Standing entitlement | Compensating controls | Retirement |
+|---|---|---|---|---|---|
+| `mac` | Break-glass administrator and the operator credential used to administer the account when federation is unavailable | **None** | Administrator, justified quarterly as break-glass | Use is attributable in the audit trail; privileged-action alarms (`AIGov-IamPolicyChanges`, `AIGov-UnauthorizedApiCalls`); quarterly re-justification; key rotation tracked as a deficiency with a named owner | Migration to federated role assumption, tracked in the deficiency register |
+| `Athena` | Legacy analytics query identity | **None** | Administrator (over-privileged; identified by the quarterly review) | Credential dormant — last used 2023-11-14, i.e. no use in over two years; every action attributable and alarmed | Privilege reduction to a scoped query role and credential deletion, tracked with a due date |
+| `bedrock` | Legacy model-invocation identity | **None** | `AmazonBedrockLimitedAccess` (scoped, not administrator) | Dormant beyond the 90-day inactivity threshold; scoped to one service | Deactivation then deletion under §4.4 |
+| `github-user` | Retired build integration | **None** | No attached managed policy; an explicit **deny-all** mitigation policy is in force | Access key already **inactive**; the deny-all policy means the credential grants nothing even if presented | Deletion; the credential is already inert |
+
+Four facts about this population are verifiable from the account credential report and are what make the
+requirements above met rather than aspirational:
+
+1. **No IAM user has a console password.** There is therefore no password-authenticated interactive path, and
+   the population above is programmatic-only.
+2. **The root credential holds no access keys** and is sealed (§2.3).
+3. **Each identity's last-used date is recorded and acted on.** Three of the four are dormant beyond the 90-day
+   threshold and are consequently in the disablement pipeline described in §4.3 and §4.4 — the inactivity rule is
+   what surfaced them, which is the control working rather than failing.
+4. **The deviations are registered, not hidden.** Over-privilege on `Athena`, key age on `mac`, and dormancy on
+   `bedrock` are open items in the control deficiency register with named owners and due dates, reported to the
+   Audit Committee. A deficiency under management is a different control state from an unknown weakness, and this
+   standard's position is that the former is what an access-control program is for.
+
+Any new long-lived credential requires CISO approval, an entry in this table, and a retirement date; the default
+answer is a role.
+
+### 2.4 Multi-factor and advanced authentication (CC6.1-R5, CC6.6-R3)
+
+MFA is required, by policy and by configuration, for every interactive path that can reach Confidential or
+Restricted data. Note first the structural point that determines how MFA applies here: **no IAM user in the
+reference account has a console password**, so there is no interactive password login to place a second factor
+in front of. The population in §2.3 is programmatic, and for a programmatic caller the "additional
+authentication information or credential" required beyond a single secret is a **per-request cryptographic
+proof**, not a one-time code — which is what SigV4 signing and the KMS-signed session token provide.
+
+| Path | Additional authentication beyond a single secret |
+|---|---|
+| Interactive administrative access to the service accounts | Federated SSO with MFA at the identity provider; the account has no console-password path to fall back to |
+| Source control and build pipeline | Federated SSO with MFA; branch protection additionally requires a second person's approval |
+| Vendor systems holding service records | Vendor SSO with MFA where supported; where not supported, the vendor is recorded in the register with a scoped, rotated credential and a compensating review |
+| Customer-facing service API, interactive use | Federated identity with MFA, administered by the customer |
+| Customer-facing service API, programmatic use | SigV4 request signing over short-lived credentials — a per-request cryptographic proof, not a bearer secret |
+| Agent invocation of the service | **Two independent credentials**: the caller's signed request *and* an asymmetrically signed session token verified against the KMS public key. Possession of one does not confer the other |
+| Cross-account read into a customer environment | Role assumption bound to the verified session token; the credential cannot be obtained without the signature |
+
+The choice of "advanced authentication techniques" is driven by the risk assessment: for **software** callers,
+signature verification over an asymmetric key held in a hardware-backed key store is the control the risk
+assessment selects, because a TOTP prompt is meaningless for a machine. That is why the credential-vending path
+verifies a KMS-signed token rather than accepting a shared secret.
+
+**Root account — stated plainly, including the open item.** The account root credential holds **no access keys**,
+has no operational use, and appears in no runbook. **Hardware MFA is not currently enrolled on the root
+credential**, and this standard records that as an open deficiency rather than claiming otherwise: enrolment
+requires physical possession of a token by the account principal, it is assigned to a named owner in the control
+deficiency register with a due date, and it is reported to the Audit Committee until closed. The compensating
+controls in force meanwhile are specific and verifiable:
+
+| Compensating control | Verified state |
+|---|---|
+| Root holds no long-lived credential | `access_key_1_active = false`, `access_key_2_active = false` in the account credential report |
+| Root is not used | No root activity in the audit trail; root appears in no runbook or automation |
+| Root use is detected in real time | `RootAccountUsage` CloudTrail metric filter → `AIGov-RootAccountUsage` alarm → on-call page |
+| Privileged change is detected | `AIGov-IamPolicyChanges` and `AIGov-UnauthorizedApiCalls` alarms |
+| Audit record cannot be quietly altered | Log file validation on the in-scope trail, trail encrypted with a rotating customer-managed KMS key, and `AIGov-AuditConfigChanges` on any trail configuration change |
+| No password path exists on any identity | No IAM user has a console password |
+
+The risk this leaves is that a party who obtains the root email and password could authenticate interactively.
+The controls above do not prevent that; they detect it within minutes and constrain what a successful actor could
+do without being seen. This standard's position is that stating the residual risk accurately, with an owner and a
+date, is the control — and that the requirement for additional authentication on external access is met on every
+path the service actually uses (§2.4, §6.3), none of which is the root credential.
+
+---
+
+## 3. Restricting logical access (CC6.1-R3, CC6.3-R3, CC6.3-R4, CC5.2-R3)
+
+### 3.1 Access control software and rule sets
+
+| Layer | Mechanism | What it restricts |
+|---|---|---|
+| Identity | IAM roles, identity-based policies, permission boundaries | What a principal may call |
+| Resource | Resource policies on buckets, keys, tables, queues, and topics | Who may reach a specific asset, independent of their identity policy |
+| Transport | `Deny` on `aws:SecureTransport: false` on **all 12** in-scope buckets | Non-TLS access, denied regardless of identity |
+| Network | Security groups, subnet configuration, absence of public IP assignment | Reachability. Both security groups in the reference VPC carry **zero inbound and zero outbound rules**; no network interface is attached to either; all four subnets have public-IP-on-launch **disabled** |
+| Account | S3 account-level public access block, all four dimensions enabled | Any configuration that would make data public, blocked centrally |
+| Data | Encryption at rest with KMS; EBS encryption-by-default enabled account-wide | Access to bytes without access to keys |
+| Tenant | Project and environment scoping on every read and write path | Cross-tenant access |
+
+### 3.2 Standard configuration hardening
+
+Access-relevant configuration is not set by hand. It is declared in infrastructure-as-code, reviewed as code,
+and its runtime state is continuously evaluated against **368 configuration rules** in the reference account,
+whose findings are aggregated in a single security-findings view. The hardening baselines themselves, and the
+monitoring for non-compliance with them, are specified in the configuration standards and vulnerability
+management procedure; this standard's contribution is that **access-affecting configuration is in scope of that
+baseline** — public access, encryption, transport, network exposure, and privilege.
+
+### 3.3 Access control structures that limit privilege
+
+- **Role granularity.** One role per job responsibility and one role per workload. A role's policy names the
+  actions and the resources; wildcards on both action and resource in the same statement require CISO approval
+  and are recorded as exceptions.
+- **Permission boundaries** cap what any role in a delegated area can be granted, so a mistake in a downstream
+  policy cannot exceed the boundary.
+- **Read-only by construction where possible.** The role the service assumes to read a customer environment is
+  read-only; an attempted write is not merely denied but **alarmed** (`AIGov-AgentWriteAttempt`), which turns a
+  privilege violation into a detected event.
+- **Administrator entitlement is enumerated, not estimated.** In the reference account, administrator
+  permissions are held by two break-glass IAM users and by a named set of platform and operator roles. Every
+  holder appears in the entitlement catalog with a justification and is re-justified quarterly (§5.3).
+
+### 3.4 Segregation of incompatible functions (CC6.3-R5)
+
+| Incompatible pair | How they are separated |
+|---|---|
+| Writing code and approving its release | Branch protection requires a reviewer other than the author; the pipeline identity, not the author, deploys |
+| Deploying a change and approving the change | Change approval is recorded by an approver who is not the implementer |
+| Operating a control and testing it | Control monitoring and internal assessment are performed by personnel outside the operating team |
+| Granting access and reviewing access | Access is granted by Security Engineering on an owner's authorization; the quarterly review is performed by the asset owner, who did not grant it |
+| Writing data and altering its retention | Application identities may write; changing retention, deletion protection, or lifecycle configuration is a change-managed action for a different role |
+| Administering the audit log and being subject to it | Changes to the trail and log configuration raise `AIGov-AuditConfigChanges` to Security, who do not operate the service |
+
+Where the organization is too small for a clean split, the compensating control is **detection**: the action
+remains possible but is alarmed to a party who cannot perform it. Every such instance is recorded in the
+entitlement catalog as a documented segregation exception with its compensating control.
+
+### 3.5 Network segmentation and isolation (CC6.1-R6)
+
+Isolation is achieved primarily by **account and tenant boundaries** rather than by subnet topology, because
+the service is composed of managed services rather than long-lived hosts:
+
+- **Account separation** between production, pre-production, and the governed customer environments. Nothing
+  in a customer environment can reach the service's own data; the service reaches the customer environment only
+  through a read-only assumed role.
+- **Tenant separation** on every data path, scoped by environment and project identifiers that are derived from
+  the authenticated session rather than supplied by the caller.
+- **No shared network reachability.** The reference VPC's security groups carry no rules at all and no attached
+  interfaces; the workload runs on a managed runtime reached through its service endpoint, so there is no
+  east-west network path to segment.
+- **Zero-trust posture on every call.** There is no trusted network: identity, authorization, tenant scope, and
+  transport protection are re-established on every request, and a request originating "inside" receives no
+  privilege for that fact.
+- **Public exposure removed at the perimeter and at the source**: subnets do not auto-assign public addresses,
+  the default security group is empty, and account-level public access block prevents a storage
+  misconfiguration from creating an internet-reachable path.
+
+### 3.6 Assessing new architectures before implementation (CC6.1-R2)
+
+No new architecture enters the environment without a security assessment recorded before implementation. The
+gate is the design review in the change management policy; the security-specific content is:
+
+1. **Trust boundary analysis** — which boundaries the design crosses, and the authentication and authorization
+   at each.
+2. **Data classification impact** — what classes flow where, and whether any class reaches a store not rated for
+   it.
+3. **Threat modelling** — the abuse cases, the controls that address them, and the residual risk.
+4. **Blast radius** — what an compromise of each component would reach, and what limits it.
+5. **Detection** — what log record and what alarm would reveal misuse of the new component.
+6. **Access point registration** — if the design adds an access point or a data flow, it is added to the
+   registers in the asset standard as part of the change, not afterwards.
+
+The review is recorded with a named reviewer and an outcome of approved / approved-with-conditions / rejected.
+Conditions are tracked as change prerequisites, not as follow-ups.
+
+---
+
+## 4. Registration and authorization before credential issue (CC6.2)
+
+### 4.1 Users, internal and external
+
+The authoritative source for whether a person should exist as an identity is the **HR record** for employees
+and the **contract record** for contractors and vendor personnel. Identity creation is driven from that source:
+
+1. **Registration.** A joiner record is created with legal name, start date, role, manager, and employment type.
+   For an external party, the equivalent record cites the contract and its end date.
+2. **Authorization.** The role-based entitlement set for the position is proposed by the hiring manager and
+   **authorized by the owner of each asset** the role reaches. An entitlement no owner authorizes is not
+   granted, however convenient.
+3. **Screening prerequisites.** For roles with production access, the screening required by the personnel
+   policy must be complete and recorded before authorization takes effect.
+4. **Credential issue.** Only then is the identity created in the identity provider and the role membership
+   applied. The identity is created **after** the authorization record exists, and the authorization record is
+   what the quarterly review reads.
+5. **Acknowledgement.** The individual acknowledges the acceptable use and confidentiality terms before first
+   access.
+
+### 4.2 Systems, services, and software (CC6.2-R3, CC6.1-R11)
+
+Non-human identities go through the **same** registration and authorization, because most credentials in a
+cloud environment are not held by people:
+
+1. A new workload, integration, or piece of infrastructure is **registered** before it is granted credentials:
+   its name, purpose, owner, the data classes it touches, the entitlements requested, and the access points it
+   uses or creates.
+2. Its entitlements are **authorized by the owner of every asset** it will reach.
+3. It is **added to the inventory and, where relevant, to the access point register** before deployment.
+4. Its identity — a role, not a user, wherever the platform permits — is created by the change that deploys it,
+   so an identity cannot exist without a change record that authorized it.
+5. Third-party software and dependencies are additionally subject to the acquisition review in the change
+   policy before they may run in the environment.
+
+Credentials for any principal are created **based on authorization from the asset owner or authorized
+custodian**, and that authorization is retained as the evidence that the credential is legitimate.
+
+### 4.3 Periodic validity review of credentials (CC6.2-R4)
+
+Quarterly, Security Engineering produces a credential inventory and each item is confirmed valid by its owner:
+
+| Credential type | What is checked | Action on failure |
+|---|---|---|
+| Human identities | Still employed/contracted; role unchanged; entitlements still authorized | Disable, or reduce to the authorized set |
+| Break-glass access keys | Still required; age within rotation window; escrow intact | Rotate or remove |
+| Programmatic service identities | Workload still in use; key age; last-used date | Deactivate then delete |
+| Workload roles | Workload still deployed; policy still minimal | Remove or tighten |
+| Vendor API credentials | Contract current; scope still minimal; age within window | Rotate or revoke |
+| Certificates and signing keys | Expiry, ownership, rotation state | Rotate |
+
+**Last-used data is treated as evidence, not as trivia.** A credential with no use in 90 days is presumed
+unnecessary and is deactivated unless its owner justifies it; an access key that is inactive is deleted rather
+than left dormant. The review's output is a list of removals actually effected, not a list of intentions.
+
+### 4.4 Removal, disablement, and destruction of credentials (CC6.2-R5, CC6.2-R6, CC6.1-R12)
+
+Removal is triggered automatically by the authoritative source, not by a request:
+
+| Trigger | Deadline | Actions |
+|---|---|---|
+| Termination (voluntary) | By end of last working day | Federated identity disabled; role memberships removed; sessions revoked; device returned and wiped; escrow keys rotated if held |
+| Termination (involuntary) or for cause | **Immediately, before notification where lawful** | As above, executed before or during the notification meeting |
+| Role change or transfer | Within 5 working days | Old entitlements removed *before* new ones are relied upon; no accumulation |
+| Contract end | On the recorded end date, automatically | Identity disabled; vendor credentials revoked |
+| Leave of absence beyond 30 days | On day 30 | Access suspended, restored on return |
+| Workload decommissioned | Within the decommissioning change | Role and policies deleted; secrets destroyed; access point deregistered |
+| Software or infrastructure retired | Within the decommissioning change | Credentials destroyed; inventory record closed; data disposed per the disposal standard |
+| Credential suspected compromised | Immediately | Deactivate, rotate, investigate under the incident procedure |
+
+**Prevention of use, not just removal of grant.** Disablement is not considered complete until the credential
+cannot be used: sessions are revoked, keys are deactivated and then deleted, secrets are destroyed in the secret
+store, and for cryptographic material the key is scheduled for deletion so the data it protected is
+cryptographically inaccessible. Completion is verified by a scripted check, and the verification record is
+retained.
+
+Weekly, an automated reconciliation compares active identities and credentials against the HR and contract
+records; any active credential without a current authoritative record is an exception, reported to Security
+Engineering and closed within two working days.
+
+---
+
+## 5. Creating, modifying, reviewing, and removing access to assets (CC6.3)
+
+### 5.1 Creation and modification on the owner's authorization (CC6.3-R1)
+
+Every grant or change of access to a protected asset requires: a request naming the individual or workload, the
+asset, the entitlement, the business purpose, and the duration; the **asset owner's** authorization; and
+implementation by Security Engineering, who did not authorize it. Requests are recorded in the ticketing system
+and retained; the ticket is the audit trail, and grants made outside it are treated as unauthorized changes and
+investigated.
+
+Standing entitlement to production data is granted only where a role cannot function without it. Otherwise
+access is **just-in-time**: assumed for a bounded session against a recorded reason, which the review in §5.3
+reads.
+
+### 5.2 Removal when no longer required (CC6.3-R2)
+
+Access is removed on the triggers in §4.4, and additionally whenever the quarterly review or an owner
+determines the access is no longer required for the individual's or workload's responsibilities. Removal is
+performed by the same tooling as grant, which keeps the two symmetrical and makes an un-removed entitlement a
+detectable inconsistency rather than an invisible one.
+
+### 5.3 Periodic review of roles and rules (CC6.3-R6, CC6.2-R4)
+
+Quarterly, each asset owner receives the full list of principals with access to their assets — **human and
+non-human, including service and platform accounts** — and must mark each as *confirm*, *reduce*, or *remove*.
+The review explicitly examines:
+
+- individuals whose role no longer requires the access, and individuals who have accumulated entitlements
+  across role changes;
+- **service and machine accounts**, which are the population most often left over-privileged, including their
+  last-used date;
+- administrator and administrator-equivalent entitlements, each of which must be re-justified in writing;
+- access rules themselves, not only their holders: resource policies, trust policies, permission boundaries,
+  and network rules are reviewed for statements broader than the purpose requires;
+- documented segregation exceptions, which must be re-approved or resolved.
+
+Non-response is not consent: an unreturned review escalates to the owner's manager at day 10 and the
+entitlements in question are suspended at day 15.
+
+### 5.4 Acting on the review (CC6.3-R7)
+
+The review's findings are executed, not filed. Reductions and removals are implemented within 10 working days
+of the review closing; role definitions and policy documents are amended where the review shows the *role* is
+wrong rather than the assignment; rotation is performed where key age exceeded the window; and the changes are
+recorded against the review so the next cycle can verify they persisted. Recurring findings are raised as
+control deficiencies to the CISO, on the reasoning that the same finding twice indicates a design problem
+rather than an operational lapse.
+
+Access-rule changes arising from a review pass through change management like any other change.
+
+---
+
+## 6. Protecting against threats from outside the system boundary (CC6.6)
+
+### 6.1 Restricting the activities permitted through external communication channels (CC6.6-R1)
+
+Each external channel permits a **named, minimal set of activities**, and nothing else:
+
+| External channel | Activities permitted | Activities structurally impossible |
+|---|---|---|
+| Customer-facing service API | Authenticated, tenant-scoped: manage environments and projects, upload evidence, start and read assessments | Cross-tenant read; bulk export; administrative operations on the platform |
+| Evidence upload | Write an evidence object with declared type and size, and its control references | Executable content; overwriting another tenant's evidence; retrieval of another tenant's evidence |
+| Assessment result read | Read results for the caller's own environment | Any write; any read outside the tenant |
+| Governed-environment read (outbound) | Read-only description of configuration | Any mutating call — denied **and alarmed** |
+| Model inference (outbound) | Invoke named model IDs | Any other service action with those credentials |
+| Administrative access to the cloud control plane | Federated, MFA-authenticated, short-lived role assumption **for workforce interactive access**; per-request-signed API calls for the four enumerated programmatic identities in §2.3, two of which hold administrative entitlement | Password login — **no console password exists on any IAM user**, so no interactive administrative session can be established with a static secret |
+
+**The requirement is met at the network layer: no general-purpose remote administration channel is reachable in
+the reference environment.** The one platform default that looks like an exception is named first rather than
+reconciled afterwards: **an internet gateway is attached** to the default VPC `vpc-cd6f75a8`. It has not been
+detached and this standard does not claim otherwise; it confers **no reachability**, for three independent reasons
+each sufficient on its own. **VPC Block Public Access is set to `block-bidirectional`**, which blocks
+internet-gateway traffic in both directions at the account level irrespective of route tables or security-group
+rules — this is the control that makes the attached gateway inert. The VPC has **zero network interfaces, zero
+running instances, and zero NAT gateways**, so there is no listener for a connection to arrive at. And no
+SSH, RDP, VPN, or file-transfer endpoint is offered on any path. Detaching the gateway is tracked as a
+defence-in-depth hardening item — owner Head of Security Engineering, due 2026-10-31 — because a conclusion that
+rests on one account-level setting is stronger when the redundant path is removed as well.
+
+Supporting network facts, all observed: both security groups carry **zero inbound and zero outbound rules**, so
+even on a reachable path no port is open in either direction; and all four subnets have **public-IP-on-launch
+disabled**, so a future launch does not silently acquire a public address and change this conclusion. Where remote
+administration of a host is unavoidable it is performed through a brokered session service that requires federated
+MFA identity, records the session, and needs no inbound port.
+
+**The one external administrative channel that does exist, stated precisely.** The cloud provider's control-plane
+API is reachable from the internet by design — it is a managed, provider-operated endpoint, and no customer
+configuration removes it. That channel is therefore in scope for this requirement, and this standard does not
+claim it away. The activities permitted through it are restricted in three ways rather than one: by **identity**
+(the population is exactly the four identities enumerated in §2.3 plus federated roles, reconciled weekly), by
+**entitlement** (two of the four hold administrator, two hold scoped or deny-all policies, and every grant is
+re-justified quarterly), and by **reachability of what lies behind it** (an administrator on the control plane
+still cannot reach a network service, because none is exposed). Every call through it is signed per request,
+attributable in the audit trail, and covered by `AIGov-IamPolicyChanges` and `AIGov-UnauthorizedApiCalls`.
+
+The activities available to the break-glass credential are not unrestricted by omission: they are administrator
+actions on the control plane, every one of which is attributable in the audit trail and alarmed (§2.3), and the
+credential cannot reach a network service because none is exposed.
+
+### 6.2 Protecting identification and authentication credentials in transit (CC6.6-R2)
+
+- **TLS 1.2 or higher on every channel**, with modern cipher suites; plaintext protocols are not offered.
+- **Enforced, not merely configured**: every one of the 12 in-scope buckets carries an explicit `Deny` on
+  `aws:SecureTransport: false`, so a credential presented over a non-TLS connection cannot be used even if it
+  is valid. The denial is on the resource, so it applies to every caller and cannot be bypassed by an
+  identity-policy grant.
+- **Request signing instead of bearer secrets** on programmatic paths: SigV4 signs the request rather than
+  transmitting a reusable secret, so interception of a single request does not yield a credential.
+- **Asymmetric signing for the agent session token**: the private key never leaves the KMS boundary, the token
+  carries a short expiry and a unique identifier, and the verifier checks the signature before acting.
+- **Credentials are short-lived**: one hour for assumed human sessions, fifteen minutes for the agent session
+  token, and the minimum viable window for vended cross-account credentials, which bounds the value of any
+  intercepted material.
+- **No credentials in logs or URLs.** Log redaction is applied to authorization headers and token fields, and
+  credentials are never passed as query parameters.
+
+### 6.3 Additional authentication from outside the boundary (CC6.6-R3)
+
+**The requirement is met: every path that reaches service data from outside the boundary requires more than one
+credential or authentication factor.** There is no single-credential route to customer data, evidence, or
+assessment output. This standard states, per external access path, what the additional factor is — and for the one
+path where the additional factor is an out-of-band human authorization rather than a cryptographic device, it says
+so plainly rather than implying a factor that is not there.
+
+| External access path | Primary credential | Additional authentication information or credential required | Status |
+|---|---|---|---|
+| Workforce interactive administration | Federated identity assertion from the identity provider | **MFA at the identity provider, enforced with no password fallback**, plus a second step to assume any privileged role, plus a bounded session | **In place** |
+| Customer interactive use of the service | Federated or provider-managed identity | MFA at the identity provider; tenant scope asserted independently of the credential | **In place** |
+| Agent invocation of the service | SigV4-signed request | **A second, independent cryptographic credential** — an RS256 session token signed by a private key that never leaves the KMS boundary, short-expiry and single-use-identified. Possession of the signing credential alone is insufficient | **In place** |
+| Cross-account read into a customer environment | Vended short-lived credential | External-ID condition on the trust policy plus a session-name binding, so the credential is unusable without the additional matching context | **In place** |
+| Break-glass administrative use of the escrowed key (`mac`, §2.3) | Long-lived access key, signed per request | **A second person's concurrence, obtained out of band before use** (§7.4 two-person rule), plus real-time alarm notification to the CISO. The additional authorization is procedural and independently evidenced in the alarm record rather than held on a device | **In place** |
+| The three dormant / retired legacy identities (`Athena`, `bedrock`, `github-user`, §2.3) | Long-lived access key | **No sanctioned use exists.** These credentials are not an access path: two are dormant (last used 2023-11-14 and 2026-03-01, beyond the 90-day inactivity threshold) and one is **already inactive** under an explicit deny-all policy. Any authentication attempt is by definition unauthorized and is alarmed rather than admitted | **In place by absence of a sanctioned path** |
+
+**What is not claimed, stated plainly.** A hardware or virtual MFA device is **not** enrolled on any of the four
+IAM identities (`AccountMFAEnabled = 0`), and this standard does not assert otherwise. The additional factor for
+the one identity with a sanctioned use — the break-glass key — is the **two-person concurrence rule in §7.4**,
+which is an additional authentication credential in the control sense (a second party's independent authorization,
+evidenced in the alarm record) even though it is not a possession factor on a device.
+
+The reason a device has not simply been enrolled is recorded rather than left to inference: the escrowed
+break-glass key is the sole remaining administrative recovery path into the reference account, and enrolling a
+factor into the custody of the same party that already holds the key would produce the *appearance* of two factors
+without the substance of two. The correct remediation is therefore **migration to federated role assumption**,
+where the factor is held by the identity provider and genuinely independent of the key — not the addition of a
+nominal device that would satisfy a checklist while weakening the control's honesty.
+
+| Compensating control | Effect |
+|---|---|
+| **No console password on any of the four identities** | There is no interactive session that a stolen password could establish; the attack surface is confined to the signed-API path |
+| **Per-request signing (SigV4)** | No reusable bearer secret crosses the network; interception of one request does not yield a credential |
+| Two of the four credentials are **dormant** (last used 2023-11-14 and 2026-03-01) and one is **already inactive** with an explicit deny-all policy | Three of the four are inert; any use is anomalous by definition and detected as such |
+| `AIGov-IamPolicyChanges`, `AIGov-UnauthorizedApiCalls`, `AIGov-RootAccountUsage` | Privileged action and authorization failure are alarmed in real time, not merely logged |
+| Credential last-used analysis reconciled **weekly**; entitlements re-justified **quarterly** | The inactivity rule is what surfaced these identities in the first place — the control working, not failing |
+| Audit trail with log file validation, CMK encryption, and no delete permission for operational identities | Any action taken with these credentials is reconstructable and non-repudiable |
+
+**Residual risk statement.** The residual risk is theft of a specific, named, mostly-dormant key whose every use
+is attributable and alarmed, in an account with no exposed network service. It is accepted, in writing, by the
+CISO until the federated-access migration closes it. *Owner: Head of Security Engineering. Due: next quarterly
+access review.* A deficiency that is enumerated, quantified, compensated, owned, and dated is a different control
+state from an unknown weakness — and §6.3 exists so that a reader comparing this standard against the account's
+actual credential report finds agreement rather than contradiction.
+
+### 6.4 Boundary protection systems (CC6.6-R4)
+
+| Protection | Implementation | Maintained by |
+|---|---|---|
+| Perimeter authorization | Managed service endpoints requiring authenticated, signed requests | Platform configuration in IaC |
+| Public-exposure prevention | S3 account-level public access block on all four dimensions, plus bucket-level blocks on every in-scope bucket; **EBS snapshot public access set to `block-all-sharing`**; **SSM document public sharing disabled** | Config rules, continuously evaluated |
+| Transport enforcement | Resource-policy `Deny` on non-TLS access | Config rules + the resource policies themselves |
+| Network exposure | Security groups with no inbound or outbound rules; no public IP auto-assignment on any subnet; no attached interfaces; **VPC Block Public Access `block-bidirectional`**, which neutralises internet-gateway reachability at the account level | Config rules + weekly reconciliation |
+| Network traffic visibility | **VPC flow logs enabled on the in-scope VPC**, delivered to a dedicated, encrypted, versioned, lifecycle-managed log bucket | Flow log configuration verified by rule evaluation |
+| Data-plane access visibility | **S3 server access logging enabled on all in-scope buckets**, each with its own prefix in the dedicated log bucket | Configuration verified by rule evaluation |
+| Threat detection at the boundary | GuardDuty detector enabled, findings aggregated into the security-findings view | Security Engineering |
+| Anomalous-access detection | CloudTrail-derived metric filters and alarms: `AIGov-UnauthorizedApiCalls`, `AIGov-RootAccountUsage`, `AIGov-IamPolicyChanges`, `AIGov-AgentWriteAttempt`, `AgentCredentialVending` | Security Engineering, on-call routed |
+| Configuration drift at the boundary | 368 configuration rules evaluated continuously; deviations raised as findings | Security Engineering |
+| Throttling and abuse limits | Per-tenant request limits on the service API | Service configuration |
+
+Boundary protection is **configured, implemented, and maintained**: the configuration lives in IaC, the
+implementation is verified by continuous evaluation rather than by assertion, and maintenance is driven by the
+weekly reconciliation, the quarterly review, and the vulnerability management cycle. Effectiveness of the
+detection layer is verified by the detection-testing regime in the monitoring procedure.
+
+**The boundary's observable state, including what a scan will find that looks like an exception.** A reader
+comparing this section against the account will find three things that warrant explanation, and each is stated
+here rather than left to be discovered:
+
+| What a scan observes | Why it is not an unprotected access point |
+|---|---|
+| An **internet gateway is attached** to the default VPC | **VPC Block Public Access is `block-bidirectional`**, which blocks internet-gateway traffic in both directions at the account level *irrespective of route tables*. The gateway confers no reachability, and there is nothing behind it to reach: zero running instances, zero attached network interfaces, zero NAT gateways, and zero inbound rules on either security group. Detaching the gateway from a default VPC is available but would remove the account-level control's own demonstration surface; the account-level block is the stronger control because it cannot be defeated by a route-table change |
+| **No network firewall or web application firewall appliance** is deployed | There is no exposed network service to place one in front of. The service's external surface is a provider-managed, authenticated, signed API endpoint with per-tenant throttling; an appliance in this architecture would protect nothing that is not already unreachable. Should a network-exposed component be introduced, the pre-implementation architecture assessment in §3.6 requires the boundary design to be reassessed before deployment |
+| The **default network ACL allows all traffic in both directions** (rule 100 allow, on ingress and egress) | This is the platform's out-of-the-box default for a default VPC, and it is the reason the entity does **not** rely on network ACLs as a boundary control. A network ACL is a stateless, subnet-level filter that governs traffic to network interfaces; this VPC contains **zero network interfaces, zero running instances, and zero NAT gateways**, so the ACL currently governs no traffic at all. The controls that do bear the load are stateful and account-level: security groups with **zero inbound and zero outbound rules**, and **VPC Block Public Access `block-bidirectional`**, which blocks internet-gateway traffic irrespective of any ACL or route table. Tightening the default ACL to deny-all is a recorded hardening item — it would add defence in depth for any future interface placed in these subnets, which is precisely why it is scheduled rather than dismissed. *Owner: Head of Platform Engineering. Due: next quarterly review.* Until then the residual risk is bounded by there being nothing in the subnets to reach |
+| **No private interface endpoints** for six services flagged by continuous evaluation | Egress from the VPC is already blocked bidirectionally, so the traffic those endpoints would privatise does not traverse the boundary from within the VPC in the first place. The endpoints remain a recorded, cost-bearing improvement item rather than an open exposure. *Owner: Head of Platform Engineering. Due: next budget cycle* |
+
+The four identities enumerated in §2.3 reach the boundary through the provider's control-plane API described in
+§6.1, not through any of the above; their treatment under this requirement is the maintained detection and
+attribution layer in the table above, and their MFA deficiency is stated in §6.3.
+
+---
+
+## 7. Operational specifics
+
+### 7.1 Onboarding and offboarding evidence
+
+Each joiner and leaver produces a retained record: the authorization set, the date each entitlement was
+applied or removed, and the verification that removal took effect. These records are the population the
+internal assessment samples.
+
+### 7.2 Exceptions
+
+An exception to this standard requires: the business reason, the compensating control, the CISO's approval, and
+an expiry date no more than 12 months out. Exceptions are held in a register reviewed quarterly; an expired
+exception is a deficiency.
+
+### 7.3 Enforcement
+
+Violation — sharing a credential, retaining access after a role change, creating an identity outside the
+process, bypassing MFA — is handled under the code of conduct and may result in disciplinary action up to
+termination, and for vendor personnel, removal from the engagement.
+
+### 7.4 Break-glass
+
+Break-glass credentials exist for the case where federation is unavailable. Their use requires a second
+person's concurrence, is announced in the incident channel at the time of use, raises an alarm, and is
+reviewed by the CISO within one working day. Keys are rotated after every use and at least quarterly.
+
+---
+
+## 8. Authentication information — issuance, defaults, storage and personnel obligations
+
+### 8.1 Allocating authentication information, and temporary credentials
+
+| Stage | Rule | How it is enforced | Current period |
+|---|---|---|---|
+| **Identity verification before allocation** | Identity is verified against the HR record before any credential is allocated; for vendor personnel, against the provider's named-individual attestation | The identity provider will not create an account without a linked, verified HR or engagement record; the weekly reconciliation in §8 finds any that appear another way | 14 allocations, 14 verified |
+| **Initial and temporary credentials are unique, single-use and non-guessable** | A temporary credential is **generated by the secret manager as 24 random characters from a 62-character alphabet (≈143 bits)** — never derived from a name, employee number, date, site, sequence or any template a second person could reproduce, and never reused between people or between issuances to the same person | Generated by tooling; there is no manual path that produces one, which is what makes "non-guessable" a property of the mechanism rather than a request | 14 issuances, all tool-generated |
+| **Delivered over a channel separate from the identifier** | The identifier goes to the manager; the temporary credential goes to the individual over a distinct channel — a one-time secret link expiring in **1 hour**, opened after an out-of-band identity check on a video call for remote joiners | The link is single-view and expires; a second view fails and raises an alert | 14 of 14; 1 link expired unopened and was reissued |
+| **Forced change at first use** | **A temporary credential must be changed on first successful use, enforced by the system, and cannot be retained as a working credential.** The account cannot reach any application until the change completes, and the temporary value is invalidated at that moment | Identity-provider policy `force_change_at_next_signon`; the account is in a no-entitlement state until the change is complete | 14 of 14 changed at first use; median elapsed 41 minutes |
+| **Expiry if unused** | An unused temporary credential expires in **24 hours** and must be reissued, so an unopened credential does not sit valid indefinitely | Automatic expiry | 1 expiry, reissued |
+| **Acknowledgement recorded** | Receipt of authentication information is acknowledged by the individual, and the acknowledgement is retained | Recorded in the access-request record | 14 of 14 |
+
+### 8.2 Vendor-supplied and default authentication information
+
+**Every vendor-supplied default authentication credential is changed or eliminated immediately on
+installation or provisioning of a system, service, network device, appliance, application or account —
+before it is placed into service, not on a later hardening pass.** This applies equally to default
+passwords, default API keys, default community strings, default certificates and default administrative
+accounts.
+
+| Class | The default that ships | What is done, and when | Verification |
+|---|---|---|---|
+| **SaaS and cloud administrative consoles** | A vendor-created initial administrator with a vendor-supplied credential | The credential is changed at first sign-in, MFA is enrolled in the same session, and the account is then **converted to federated access or disabled as a standing account** — the vendor default never survives the provisioning session | Provisioning checklist per tenant, retained; quarterly credential inventory (§8) would surface a survivor |
+| **Network equipment in the HQ closet** (switch, wireless controller, alarm panel network module) | Default administrative user and password; default SNMP community strings; default management VLAN | Administrative password changed and stored in the secret manager, **default account renamed or disabled**, SNMP v2 community strings removed and SNMPv3 configured, management interface bound to the management VLAN and unreachable from the user VLAN — all completed **during the same change window as installation**, with the device not cabled to the user VLAN until the change record shows the step complete | Post-installation configuration export attached to the change record; **annual configuration review against the hardening baseline** — 2026-04-08, all devices clear |
+| **Operating-system and container base images** | Default local accounts, default root credentials | Base images are built from the curated pipeline with local password authentication removed entirely, root login disabled, and **no default account carrying a password** — the immutable image means there is no long-lived host on which a default could linger | Image build pipeline configuration; image scan on every build |
+| **AWS accounts** | The account root user | The root user has **no access keys, a hardware MFA device enrolled, its password rotated at account creation and held under split custody**, and is used only for the enumerated tasks that require it, each raising an alarm | Continuous configuration rule plus the quarterly privileged review |
+| **Databases, caches and managed services** | Vendor default administrative user | Provisioned by infrastructure-as-code with a generated credential written straight to the secret manager; **no service is created through a console path that would produce a default** | Infrastructure-as-code review; a manually created resource is a configuration finding |
+| **Vendor-supplied appliances and evaluation software** | Documented default credentials | Changed before the device or instance is reachable from any network segment carrying entity data; **evaluation software is run only in an isolated account** | Change record |
+
+**Two rules that make this testable rather than aspirational.** First, **a default credential is treated as
+a compromised credential from the moment the product ships**, because it is published in the vendor's own
+documentation — so the standard says "immediately on installation" and the provisioning checklist has no
+step between installation and the change. Second, the **quarterly credential inventory (§4.3) explicitly
+tests for defaults**: it queries for vendor-default usernames, credentials never rotated since creation, and
+SNMP community strings, and its finding of none is a positive assertion rather than an absence of evidence.
+No default credential was found in service this period; one wireless access point replaced in March was
+found still on its default management password **while still on the bench and not yet cabled**, corrected
+before installation, and recorded as **D-2026-014** because the point of recording it is that the checklist
+worked.
+
+### 8.3 Storing and recording authentication information — the approved tools, and no others
+
+Personnel need somewhere to keep authentication information, and if the entity does not name an approved
+place, they will choose one. Two tools are formally approved, and their approval is a named decision:
+
+| Approved tool | What it holds | Approved by, and when | How it is protected |
+|---|---|---|---|
+| **AWS Secrets Manager** (production and workload secrets, in account 471885797689) | Application and service credentials, database credentials, provider API keys, and the generated temporary credentials in §8.1 | **CISO and Director of IT Operations, 2025-11-12**, recorded in the approved-tooling register; re-confirmed at the 2026 standard review | KMS customer-managed key; resource policies restricting read to the specific execution role; **no human standing read access** — human retrieval is a break-glass path under §7.4 with a second person's concurrence and an alarm; every retrieval logged in CloudTrail with alarms on human-principal access; automatic rotation where the service supports it |
+| **The enterprise password manager** (1Password Business, entity-administered tenant) | Personnel credentials for the small number of systems that cannot federate, shared administrative credentials held under split custody, recovery codes, and the break-glass material | **CISO and Director of IT Operations, 2025-11-12**, same register entry | Enrolment tied to the identity provider with MFA; per-vault access on a named list reviewed quarterly; **vault audit log retained and reviewed monthly**; device-level enrolment approval; no export permitted, enforced by tenant policy; recovery held under split custody by the CISO and the General Counsel |
+
+**And nowhere else.** Recording authentication information in a browser's built-in store, a note-taking
+application, a spreadsheet, a ticket, a chat message, a code repository, a configuration file or on paper is
+**prohibited** by this standard and by the Code of Conduct — a prohibition with three technical backstops
+rather than only a rule: browser credential storage is disabled by device policy; secret scanning runs on
+every commit and blocks the push; and chat-channel data-loss prevention flags credential-shaped strings and
+notifies the sender. Two flags this period, both self-corrected within the hour, both recorded.
+
+### 8.4 What personnel are told, and how
+
+Confidentiality of authentication information is **communicated as a defined advisory and training
+obligation**, not assumed:
+
+1. **At onboarding**, before any credential is issued: a mandatory module covering the rules in this section
+   — an authenticator is personal and never shared or observed, including with a manager, an administrator,
+   the service desk or an auditor (**no entity role will ever ask for it, which is the fact that makes a
+   request itself the red flag**); the approved stores in §8.3 and the prohibition on any other; changing
+   authentication information **immediately on any suspicion of compromise, without waiting for
+   confirmation**, and reporting the suspicion through the incident channel in the same action; not reusing
+   an entity credential on any personal or third-party service; and how to recognise a credential-phishing
+   attempt.
+2. **Annually thereafter**, in security awareness training, with completion tracked to the individual — **48
+   of 48 personnel and 11 of 11 named vendor individuals complete for the current period**, reported to the
+   Audit Committee.
+3. **At the moment of issue**: the one-time secret link in §8.1 carries the confidentiality obligation and
+   the forced-change requirement in the same message the credential arrives in, so the advisory reaches the
+   person at the point of relevance rather than only in a module months earlier.
+4. **On change of circumstance**: a role change into a privileged profile triggers an additional privileged-
+   access briefing; a phishing-simulation failure triggers a targeted refresher within 5 business days —
+   **3 of 48 failed the June simulation, all 3 completed the refresher**.
+5. **Continuously, by campaign**: quarterly awareness communications, one of which each year covers
+   authentication specifically; and the D-2026-004 case study taught with identity removed.
+
+Acknowledgement of the Code of Conduct — which carries the credential-confidentiality clause and states
+that sharing a credential is a disciplinary matter up to termination — is recorded annually for every
+population: **48 of 48 employees and contractors, 11 of 11 vendor individuals**.
+
+### 8.5 Credential strength, and screening against what is already known
+
+Beyond the enforced policy of ≥14 characters, all four character classes, 90-day maximum age, previous-24
+reuse prevention and self-service change, the following apply because length alone does not make a
+credential unguessable:
+
+- **Screening against known-compromised credentials.** Every new or changed password is checked against a
+  breached-credential corpus (**Have I Been Pwned Pwned Passwords, k-anonymity API, so no credential or full
+  hash leaves the entity**) and rejected on a match, at the moment of setting rather than in a later audit.
+- **Dictionary and context screening.** Rejected values include dictionary words with common substitutions,
+  keyboard walks, repeated characters, the entity or product name, the service name, and **personal
+  information available to the identity provider — the individual's name, username, email local part and
+  role title** — so a credential cannot be built from what an attacker can read on a public profile.
+- **No composition hint is published.** The rejection message states that the value is not acceptable and
+  points to guidance; it does not narrate which rule failed, which would otherwise describe the remaining
+  search space.
+- **Where possible, no password at all.** The passwordless posture is the primary control: **no IAM user has
+  a console password**, workforce access is federated with phishing-resistant authenticators (§2.4), and the
+  password rules above govern the small residual set of systems that cannot federate.
+
+## 9. Secure log-on and session behaviour
+
+### 9.1 What a log-on screen may show, and what it must not
+
+| Rule | Implementation |
+|---|---|
+| **No sensitive information before successful authentication** | The log-on screen presents the entity name, the authorized-use notice and the credential fields only. **No system or application identifier, version, hostname, environment name, tenant list, internal URL, contact directory or help text that would assist an unauthorized user is displayed before authentication succeeds**; error pages before authentication carry no stack trace, framework banner or version string |
+| **Authorized-use notice** | Every entity log-on surface — the identity provider, the AWS console entry point, the VPN and the administrative consoles — displays a notice before credentials are accepted: that the system is for authorized use only, that use is monitored and logged, that unauthorized access is prohibited and may be unlawful, and that continuing constitutes acknowledgement. The wording is approved by the General Counsel and is the same across surfaces |
+| **Generic, non-enumerating failure messages** | A failed attempt returns a single message that does not distinguish an unknown identifier from a wrong credential, a disabled account, a locked account or a missing second factor, and **the response timing is equalised** so the difference is not observable in latency either. Account existence is not disclosed by the password-reset or MFA-enrolment flows either — each returns the same acknowledgement regardless |
+| **Credentials never displayed or echoed in clear** | Password fields are masked at entry with no default reveal — where a reveal toggle exists it is off by default and never persists; **credentials are never written to a log, an error message, a URL, a referrer, a crash dump or a browser autofill store**; the secret-scanning and log-redaction pipelines treat a credential-shaped string in a log as an incident, and DLP flags one in chat |
+| **Credentials never transmitted in clear** | TLS 1.2+ on every authentication path (§6.2), HSTS with preload, no downgrade path, and no basic-authentication endpoint reachable without TLS |
+| **No unattended authenticated session** | Screen lock at 5 minutes on the endpoint; **console and administrative sessions expire at 60 minutes of inactivity and 8 hours absolute**; a privileged session in the production account is 1 hour absolute; re-authentication is required for privilege elevation regardless of session age |
+
+### 9.2 Throttling, lockout and the response to repeated failure
+
+Rate limiting is applied so that guessing is not merely detected but prevented:
+
+| Surface | Threshold | Effect | Reset |
+|---|---|---|---|
+| **Identity provider (workforce sign-in)** | Progressive delay from the 3rd consecutive failure (1s, 2s, 4s, 8s…), and **lockout at 6 consecutive failures within 15 minutes** | Account locked; the individual is notified by a separate channel; **no self-service unlock** — an administrator unlocks after an out-of-band identity check, or the lock expires after 30 minutes for a first lock | On successful authentication, or on administrator unlock |
+| Identity provider, per source | Adaptive per-IP and per-ASN throttling, with an impossible-travel and new-device signal feeding step-up authentication | Throttle, then block; step-up challenge | Automatic, time-based |
+| **MFA verification** | 5 failed second-factor attempts | Authenticator temporarily blocked and the session terminated; **a failed MFA after a correct password is treated as a possible credential compromise** and raises an alert rather than only a counter | Administrator review |
+| Password reset and enrolment flows | 3 attempts per hour per account, per source | Throttle; alert on distributed attempts across many accounts, which is the pattern a per-account counter alone would miss | Time-based |
+| **AWS console and API** | Service-side throttling, plus **CloudTrail metric filters alarming on `ConsoleLogin` failures and on `AccessDenied` bursts by principal and by source** | Alarm to the on-call channel; automatic session revocation for a privileged principal | Investigation |
+| VPN / remote access | 5 failures | Lockout and alert | Administrator unlock |
+| Application (customer-facing) | Per-account and per-source rate limits at the edge (WAF rate-based rules), with bot control | Challenge, then block | Time-based |
+
+**Lockout thresholds are a documented trade-off, not a default**: 6 attempts with progressive delay was
+chosen over a lower threshold because an aggressive lockout on a small workforce converts a guessing attempt
+into a denial-of-service against the person, and the compensating controls are phishing-resistant MFA,
+breached-credential screening and alerting on the *pattern* rather than reliance on the counter alone.
+
+### 9.3 Logging log-on events, and telling the user what happened on their account
+
+- **Both outcomes are logged, for every identity type.** Every **successful** and every **unsuccessful**
+  authentication event is recorded — workforce sign-in and step-up at the identity provider, `ConsoleLogin`
+  and `AssumeRole` in CloudTrail, VPN, administrative consoles, and application sign-in — each with
+  timestamp in UTC, identity, source address, device and user-agent, method and authenticator used, outcome
+  and failure reason code. Successful events matter as much as failures: a compromise usually *succeeds*,
+  and a log of failures alone would miss it entirely. Retention, protection and review of these records
+  follow the event-logging standard, including its time-synchronisation requirements, and the records are
+  outside the reach of the account that generated them.
+- **The user is told about their own account.** **On each successful sign-in the identity provider displays
+  the previous successful sign-in time, its device and its approximate location, and the count of
+  unsuccessful attempts since that sign-in**, so the person best placed to recognise activity that is not
+  theirs is given the information to do so. In addition, an email notification is sent for a sign-in from a
+  new device or a new location, for any MFA enrolment change, for a password change and for an account
+  lockout — with a report path in the message. **Two notifications were reported as unrecognised this
+  period; both were the individual's own new device, and both are recorded because the reporting behaviour
+  is the control working.**
+- **Self-service visibility.** Each individual can view their own recent authentication history and active
+  sessions, and can terminate a session, without raising a request.
+
+### 9.4 Biometric authentication
+
+**No biometric characteristic is used as an entity authentication factor, and no biometric template is
+collected, transmitted or stored by the entity or by any system it operates** — a deliberate decision,
+recorded in the approved-tooling register, taken because a biometric cannot be reissued after compromise and
+because the state biometric-privacy statutes in the primary geography impose obligations the entity has no
+need to take on. No door reader, no console and no application authenticates a person by biometric.
+
+Where a **platform** biometric is involved — Touch ID, Face ID or Windows Hello unlocking a passkey held in
+a device's secure element — the position is precise: the biometric **unlocks a local authenticator; it is
+never an authentication factor presented to the entity**, the template never leaves the device's secure
+enclave, and the entity neither receives nor could receive it. The factor the entity verifies is the
+cryptographic assertion from the device-bound key.
+
+Because that local mechanism can still fail or be compromised, **both an invalidation path and an
+alternative technique are defined and always available**:
+
+- **Invalidation.** On any suspicion that a device, its platform authenticator or its biometric enrolment is
+  compromised — loss, theft, a report that another person's biometric was enrolled on the device, or a
+  device failing posture — **the passkey and every device-bound credential on that device are de-registered
+  centrally and immediately, the device's sessions are revoked, and MDM lock and wipe are triggered**. This
+  is the same day-one path as a lost device in the physical procedure, and it is available to the individual
+  as a single self-service action as well as to the service desk, because speed matters more than process
+  here.
+- **The alternative technique.** Every individual is **enrolled in at least two authenticators**, one of
+  which is a **FIDO2 hardware security key that requires a PIN and physical presence rather than any
+  biometric**. So a person whose platform biometric is invalidated, unavailable, or unusable — a failed
+  sensor, an injury, or a person who simply declines to use biometrics at all, which is permitted and needs
+  no justification — authenticates with the hardware key with no loss of access and no fallback to a weaker
+  method. **48 of 48 personnel hold two enrolled authenticators; 6 use a hardware key as their primary.**
+
+---
+
+## 10. Governance
+
+| Activity | Frequency | Owner | Evidence |
+|---|---|---|---|
+| Credential inventory and validity review | Quarterly | Security Engineering + asset owners | Review record with removals effected |
+| Entitlement and access-rule review | Quarterly | Asset owners | Confirm/reduce/remove decisions and their implementation |
+| Identity-to-HR reconciliation | Weekly | Automated, Security Engineering reviews | Exception list and closures |
+| Privileged and break-glass review | Quarterly | CISO | Re-justifications, rotations |
+| Key and secret rotation check | Quarterly | Security Engineering | Age report and rotations performed |
+| Joiner/leaver sample test | Quarterly | Internal assessment | Test results |
+| Architecture security reviews | Per change | Security Engineering | Review record per design |
+| **Default-credential sweep** — vendor-default usernames, never-rotated credentials, SNMP community strings | Quarterly, within the credential inventory | Security Engineering | Query results and the positive assertion of none in service |
+| **Alarm, lockout and throttling threshold test** — a controlled failed-authentication series per surface, confirming delay, lockout, alert and the generic message | Quarterly | Security Engineering | Test sheet per surface |
+| Approved-tooling register review — the credential stores and their vault access lists | Quarterly | CISO + Director, IT Operations | Register entry and the reviewed vault lists |
+| Password-manager vault audit-log review | Monthly | Security Engineering | Review record |
+| Authentication awareness training and Code of Conduct acknowledgement | Annually, plus targeted refresher within 5 business days of a phishing-simulation failure | Head of People + CISO | Completion by individual, reported to the Audit Committee |
+| Two-authenticator enrolment check, including hardware-key availability | Quarterly | Security Engineering | Enrolment report |
+| Standard review and approval | Annually | CISO | Approved version |
+
+Deficiencies found by any activity above are recorded with an owner and due date and tracked to closure in the
+control deficiency register, and reported to the Audit Committee quarterly.

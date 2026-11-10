@@ -1,0 +1,646 @@
+# Network Security, Network Services and Segregation Standard
+
+**Document ID:** SEC-NET-047
+**Version:** 3.0 — **effective 2026-03-16**, superseding v2.0 of 2025-05-20
+**Owner:** Head of Platform Engineering
+**Approved by:** CISO 2026-03-11, per the approval authority in GOV-POL-040 §3
+**Next scheduled review:** 2026-12-31 (Annually, and on any change to the network topology, the cloud account structure,)
+the carrier or network-service supplier set, the office footprint, or the introduction of any new
+trust boundary
+**Scope:** Every network the entity operates or relies on — the production VPC in AWS 471885797689/us-west-2,
+the two office networks (HQ, EU suite), the remote-access path used by 42 of 48 personnel, the wireless
+networks including the guest network, the management network for utility and network devices, and the
+third-party and public networks the entity's traffic crosses. Covers network devices, network services obtained
+from providers, network segregation, and web filtering.
+
+**Related:** OPS-EQP-045 (equipment siting, cabling, utility-device isolation), SEC-END-043 (endpoint devices
+and remote working), SEC-PHY-044 (physical protection of the server closet), SEC-IAM-021 (identity and access),
+SEC-CRY-024 (cryptography and key management), SEC-CFG-025 (secure configuration and patching), SEC-MON-026
+(logging and monitoring), SEC-DLP-027 (information transfer), ENG-SDL-048 (secure architecture and
+development), TPR-PRO-016 (supplier risk), GOV-CLS-018 (classification and handling), OPS-CHG-028 (change
+management).
+
+---
+
+## 1. The networks in scope, and the classification each may carry (8.20-R2)
+
+The **type and classification level of information each network can support is identified and is the input to
+its control set** — not an afterthought. Where a network is not permitted to carry a classification, that is
+enforced technically rather than stated as an expectation:
+
+| Network domain | Purpose | Highest classification permitted | Enforced by |
+|---|---|---|---|
+| **Production VPC** — private subnets across 3 AZs, us-west-2 | Customer workloads, evidence storage, the assessment agent | **Restricted** | Account isolation; private subnets with no inbound internet path; security groups default-deny; TLS 1.2+ everywhere; encryption at rest with entity-managed keys |
+| **Production public subnets** — load balancer tier only | TLS termination and ingress | Restricted **in transit only**, never at rest | No instance, no data store, and no persistent storage in a public subnet; WAF in front |
+| **Cloud management plane** | Console and API administration | Restricted (control-plane actions) | SSO with MFA, no long-lived keys, session recording, CloudTrail |
+| **Office user VLAN** (HQ, EU) | Personnel endpoints on premises | **Internal** | 802.1X device authentication; egress-only; **no route to production** — production is reached only through the same remote-access path used off-premises, so being in the office confers no network privilege |
+| **Management VLAN** | Network devices, UPS card, environmental sensors, leak detector | Internal (device configuration) | Reachable only from the monitoring collector and named admin jump path; no internet by default (OPS-EQP-045 §3.6) |
+| **Guest VLAN** | Visitors; meeting-room wall ports; AV | **Public only** — no entity information at all | Internet-only, client isolation, no route to any entity resource; **meeting-room ports are patched here deliberately** so physical port access confers nothing |
+| **Wireless — personnel SSID** | Endpoints | Internal, same as the user VLAN it lands on | WPA3-Enterprise / EAP-TLS with device certificates |
+| **Wireless — guest SSID** | Visitors | Public only | WPA3-Personal with a rotating passphrase, mapped to the guest VLAN, restrictions **at least as strong as the personnel SSID** (§5.5) |
+| **Remote-access path** | 42 remote personnel, and everyone for production access | Up to Restricted, rendered not stored | Always-on device-certificate VPN plus identity-aware proxy; posture check; MFA |
+| **Public internet and third-party networks** (home ISPs, co-working operators, cellular, hotel, conference) | Transport only | **None** — treated as hostile transport | Everything above it is encrypted end-to-end; no trust derives from the transport (§6) |
+
+**The design decision that underpins the whole standard:** the entity does **not** operate a trusted corporate
+network that grants access to production. Office and home networks are both treated as untrusted transport, and
+authorization comes from identity plus device posture, not from network location. That choice is what makes a
+48-person, five-geography, remote-first entity defensible, and it is why several requirements below are answered
+by *removing* a trust relationship rather than by protecting one.
+
+---
+
+## 2. Responsibilities, procedures and coordination (8.20-R4, 8.20-R5, 8.20-R8)
+
+### 2.1 Responsibilities and procedures for managing networking equipment and devices (8.20-R4)
+
+| Domain | Accountable role | Documented procedures |
+|---|---|---|
+| Production VPC, security groups, NACLs, load balancers, WAF, VPC endpoints, flow logs | **Head of Platform Engineering** | Infrastructure-as-code repository; change procedure OPS-CHG-028; the reviewed-and-approved-by-a-second-engineer rule; the security-group exception procedure |
+| Office network devices — firewall/router, switch, wireless controller, access points | **Director IT Operations**, with Platform Engineering owning the configuration baseline | Device build standard; firmware currency procedure; baseline-drift procedure; the quarterly closet inspection (OPS-EQP-045) |
+| Remote-access path — VPN, identity-aware proxy, posture policy | Head of Platform Engineering with the Identity owner | Enrolment and revocation procedures (SEC-IAM-021); posture-policy change procedure |
+| Management VLAN and utility devices | Director IT Operations | Device commissioning checklist including credential change and cloud-feature disablement (OPS-EQP-045 §3.6) |
+| Web filtering policy | CISO owns the policy; IT Operations operates it | Category policy, exception procedure, review cadence (§9) |
+| Carrier and network-service providers | Director IT Operations, with the Third-Party Risk Manager | Supplier assessment and monitoring (§7) |
+
+Every procedure named above exists as a written procedure with an owner and a review date; the list is
+reconciled against the procedure repository at each annual review, so a named procedure cannot quietly become
+folklore.
+
+### 2.2 Separation of network operations from ICT system operations (8.20-R5)
+
+The requirement asks for separation **where appropriate**, and the honest answer at 48 people is a partial
+separation with a compensating control, stated as such:
+
+- **Where it is achieved:** office network operation (IT Operations) is separated from production system
+  operation (Platform Engineering) — two different teams, two different toolchains, two different privilege
+  sets, and neither team's standing credentials reach the other's domain. The **configuration baseline for
+  office network devices is owned by Platform Engineering while operation is IT Operations'**, which is a
+  deliberate split so that the operator is not also the sole author of what "correct" means.
+- **Where it is not:** within production, the engineers who operate the network layer (VPC, security groups,
+  load balancers) are the same engineers who operate the compute and application layers. At this scale a
+  dedicated network operations function would be one person, which would create a single point of failure
+  rather than a segregation.
+- **The compensating controls, which are what actually carry this requirement:** network configuration is
+  **entirely infrastructure-as-code with mandatory second-engineer review** — no engineer can change a network
+  boundary alone; **console network mutation is denied** in the standing role, so out-of-band changes require an
+  audited break-glass elevation; **drift detection** compares live state to code every day and alerts on
+  divergence; **CloudTrail alarms** fire on security-group and NACL modification outside a change window; and
+  the **quarterly access review** and the annual internal assessment sample network changes for review evidence.
+- The reasoning, the residual and the compensating set are recorded in the risk register as **R-014
+  (concentration of network and system privilege in one team)**, accepted by the CISO with the review-and-drift
+  controls as the condition — a documented acknowledgement of a control that does not fully meet the ideal,
+  which is what ENG-SDL-048 §4 requires of any such gap.
+
+### 2.3 Coordination of network management activities (8.20-R8)
+
+Network management is **coordinated so that controls are applied consistently across the whole processing
+infrastructure** rather than diverging per domain:
+
+- A single **weekly platform and operations forum** covers both domains, with the network change slate reviewed
+  jointly; a change touching both (for example the 2025-11 network refresh) has one plan and one owner.
+- A **common control baseline** is stated once and mapped to each domain, so "default deny", "TLS in transit",
+  "device authentication", "logging to the SIEM" and "no standing admin" have the same meaning in the office and
+  in production even though the technology differs. The mapping table is maintained with this standard and is
+  what an assessor reads to see consistency.
+- **One change process** (OPS-CHG-028) covers both; there is no informal path for office network changes, which
+  is where inconsistency usually enters.
+- **One monitoring destination** — all network telemetry from both domains lands in the same SIEM with the same
+  retention, so cross-domain correlation is possible and a gap in one domain's coverage is visible next to the
+  other's (§8).
+- Coordination with providers is scheduled rather than incidental (§7.2), and carrier maintenance windows are
+  entered in the same change calendar as entity changes so a provider window and an entity change cannot
+  collide unnoticed — which they did once, in 2025-08, and which is why the calendar merge exists.
+
+---
+
+## 3. Network documentation (8.20-R3)
+
+**Up-to-date documentation is maintained, including network diagrams and the configuration of devices.** The
+control that makes it *up to date* is that documentation is a gating artefact of change, not a periodic
+catch-up:
+
+| Artefact | Contents | How currency is enforced |
+|---|---|---|
+| **Production network diagram** | VPC, 3 AZs, public/private subnet layout, load balancer and WAF, VPC endpoints, NAT egress, the identity-aware proxy, and every trust boundary with its enforcement point | **Generated from the infrastructure-as-code state** and refreshed on merge; a hand-drawn diagram cannot drift because there is no hand-drawn diagram |
+| **Production network configuration** | Security groups, NACLs, route tables, endpoint policies, WAF rules | **The code is the configuration** — version-controlled, reviewed, with full history and attribution; drift detection reports any live divergence daily |
+| **Office network diagram** (per site) | Carrier entries, firewall, switch, VLANs and their purposes, access points, patch panel, management devices, the demarcation with the landlord | Maintained in the network documentation repository; **a network change is not closed until the diagram and the as-built cabling drawing are updated** — a checklist gate, verified when sampling changes at internal assessment |
+| **Office device configurations** | Firewall/router, switch, wireless controller, access point and UPS-card configurations | **Backed up nightly to the version-controlled configuration repository**, so every configuration has a dated history and a post-maintenance comparison is possible (OPS-EQP-045 §5.7) |
+| **VLAN and address plan** | Every VLAN with purpose, trust level, permitted classification, address range and gateway policy | Reviewed at each annual review; §1 and §5 are extracts from it |
+| **Firewall rule register** | Every rule with its business justification, requester, approval and review date | **Rules carry an expiry**; a rule with no justification is removed at review, and the 2026-02 review removed 4 rules that no longer had one |
+| **Data-flow inventory** | What crosses which boundary, at what classification, with which protection | Reviewed annually and on any new integration; the input to §1's classification table |
+
+**Access to the documentation is itself controlled** — the repository is restricted to Platform Engineering and
+IT Operations with read access to the CISO and internal assessment, because a complete network diagram is a
+gift to an attacker (the same reasoning as the label-removal rule in SEC-MED-046 §6.5).
+
+---
+
+## 4. Securing, hardening and controlling network devices (8.20-R1, R9, R10, R11, R12, R13, R14, R15)
+
+### 4.1 Devices are secured, managed and controlled (8.20-R1)
+
+| Control | Office network | Production |
+|---|---|---|
+| Managed, inventoried, owned | All 7 devices in the asset register with a named owner; no unmanaged device permitted, and an unauthorised attachment is both physically inspected for and technically blocked (OPS-EQP-045 §4.4) | Every network object exists only as code; an object with no code is drift and alerts |
+| Administrative access | **No shared accounts**; named administrators via SSO with MFA; **no standing admin** — elevation is requested, time-bound and logged; local emergency credential sealed and its use alarmed | SSO with MFA, role assumption, no long-lived keys; break-glass sealed and alarmed |
+| Change | Under OPS-CHG-028 with second-person review | Infrastructure-as-code with mandatory review |
+| Patching | Firmware reviewed monthly against advisories, applied within 30 days, **7 days for a Critical or actively exploited CVE** | AMI and managed-service patching under SEC-CFG-025 |
+| Backup and recovery | Nightly configuration backup, restore tested annually | Redeployable from code; tested by the quarterly environment rebuild |
+| Physical | Locked closet, named access list, dual authorization (SEC-PHY-044 §4) | Inherited from AWS |
+
+### 4.2 Device and system authentication; detecting and restricting connections (8.20-R9)
+
+- **802.1X with device certificates** on all office wired ports and on the personnel SSID: a device without a
+  valid, MDM-issued certificate does not obtain a data VLAN. Unauthenticated devices are placed in a **quarantine
+  VLAN with no route anywhere**, and the event alerts.
+- **Detection**: the wireless controller reports rogue SSIDs and unexpected clients; switch MAC tables are
+  reviewed monthly for unexpected addresses; new-device-on-network events land in the SIEM. Between them,
+  connection of equipment is *detected* as well as restricted — the requirement asks for both, and detection is
+  the half that is usually missing.
+- **Meeting-room and other common-area ports are patched to the guest VLAN**, so plugging into a wall socket
+  authenticates nothing and reaches nothing but the internet.
+- **Production**: every system-to-system connection authenticates — mutual TLS or SigV4 between services, IAM
+  roles rather than network position, and the identity-aware proxy authenticating every human request. Instance
+  identity is established by the instance profile, and an instance not created by the pipeline has no role and
+  therefore no access.
+- **Endpoint posture** is part of authentication in substance: encryption, patch level, MDM enrolment and EDR
+  health are checked at every remote-access session establishment, and a failing device is refused rather than
+  warned (SEC-END-043 §2).
+
+### 4.3 Restricting and filtering connections (8.20-R10)
+
+| Boundary | Filtering |
+|---|---|
+| Internet → production | **WAF** with managed rule groups plus entity rules; a **public application load balancer as the only ingress**; no instance holds a public address; no inbound path to a private subnet exists at all |
+| Production east–west | **Security groups default-deny**, referencing each other by group rather than by CIDR, so a rule cannot silently widen when addresses change; NACLs as a coarse second layer |
+| Production → internet | Egress through NAT with an **allowlist of required destinations**; **VPC endpoints** for AWS services so that provider traffic never traverses the internet |
+| Office → internet | Stateful firewall, default-deny inbound with **no inbound rules at all** (there is nothing to reach), egress filtered by category and destination (§9) |
+| Office → production | **No path.** Deliberately absent, so office presence grants nothing |
+| Guest → anything entity | Blocked at the gateway with client isolation |
+| Management VLAN → anything | Collector and jump path only; no internet by default |
+| Remote → production | Identity-aware proxy plus VPN, per-application authorization, not a flat network tunnel |
+
+### 4.4 Hardening network devices (8.20-R11)
+
+Every device is built from a **written hardening baseline** and its live configuration is compared to that
+baseline, so hardening is a verified state rather than a build-day event:
+
+- Default credentials changed at commissioning, verified at each maintenance sign-off;
+- **Unused physical ports administratively disabled** (7 spare switch ports, all disabled, 2 reserved per
+  OPS-EQP-045 §3.4);
+- unused services and features disabled — HTTP admin, Telnet, SNMPv1/v2c, CDP/LLDP toward untrusted ports, UPnP,
+  WPS, vendor cloud management (OPS-EQP-045 §3.6);
+- administrative interfaces bound to the management VLAN only, never to a WAN or user interface;
+- SNMPv3 with authentication and privacy where monitoring requires it; syslog to the SIEM over TLS;
+- NTP from a trusted source with authentication where supported, because log correlation depends on time;
+- configuration encrypted at rest in the backup repository;
+- **certificate-based rather than password-based device administration** where the platform supports it;
+- baseline reviewed annually against the vendor's hardening guide and the applicable CIS benchmark, with
+  deviations recorded and justified — currently **3 recorded deviations**, each with a reason and a compensating
+  control, rather than a claim of full benchmark compliance that a scan would contradict.
+
+### 4.5 Segregation of administration channels (8.20-R12)
+
+**Network administration traffic is segregated from other network traffic:**
+
+- Office device administration is reachable **only from the management VLAN**, via a **jump path that itself
+  requires SSO, MFA and a time-bound elevation**; an administrator on the user VLAN cannot reach a device's
+  management interface, and the attempt is logged and alerted.
+- The management VLAN carries no user traffic and has no internet route by default; utility devices on it are
+  isolated from each other (OPS-EQP-045 §3.6).
+- **Production administration is entirely out-of-band relative to data traffic**: administration is API/control
+  plane through SSO-federated roles, not a network path into the data plane; there is **no bastion host with a
+  public address and no SSH into instances** — instance access is via the provider's session service, brokered,
+  authenticated, authorised per-session and **session-recorded**, which is a stronger segregation than a
+  management subnet because there is no reachable management port at all.
+- Administrative sessions are logged distinctly from user activity so that administration is separately
+  reviewable (§8).
+
+### 4.6 Provisions for temporarily isolating critical subnetworks under attack (8.20-R13)
+
+Isolation capability exists, is **pre-authorised**, and is **rehearsed** — an isolation plan that has never been
+executed is a hope:
+
+| Isolation action | Mechanism | Pre-authority | Rehearsal |
+|---|---|---|---|
+| **Cut all internet ingress to production** | Apply the pre-staged deny WAF rule / remove the listener via a single tagged pipeline action | On-call incident commander, without waiting for a change board | **Exercised in the quarterly incident simulation**; 2 of the 4 simulations this period used it, median time to effect 3 minutes |
+| **Isolate a single workload or subnet** | Swap to a pre-staged deny security group; the group exists in code so it cannot need authoring during an incident | Incident commander | Exercised 2026-02 |
+| **Quarantine a single endpoint** | MDM/EDR network containment | IT Operations on-call | Exercised, and used once for real on a suspected-phishing device |
+| **Isolate an office site** | Disable the site's WAN interface or its 802.1X authorisation; because the office has no production route, an office compromise is already contained by design | IT Operations on-call | Tabletop |
+| **Revoke a party's access** | Disable the identity or the device certificate — usually faster and more precise than a network cut, and preferred where the threat is identity-borne | Incident commander | Exercised |
+| **Sever a supplier integration** | Disable the integration's credential and its egress allowlist entry | Incident commander | Tabletop |
+
+The runbook states the **decision criteria and the accepted service impact** for each action, because the failure
+mode is not the absence of a switch but hesitation over whether one is permitted to throw it. The pre-authority
+is explicit: **during a declared security incident the incident commander may isolate without prior approval**
+and reports afterward.
+
+### 4.7 Disabling vulnerable network protocols (8.20-R14)
+
+| Protocol | Position |
+|---|---|
+| Telnet, FTP, TFTP, rsh, rlogin | **Disabled and blocked**; no exception |
+| **SMBv1**, NetBIOS, LLMNR, mDNS across trust boundaries | Disabled on endpoints by MDM policy and blocked at the gateway |
+| SNMPv1 / v2c | Disabled; SNMPv3 only |
+| **SSL 3.0, TLS 1.0, TLS 1.1** | Disabled everywhere, including on the load balancer, which enforces **TLS 1.2 minimum with a restricted cipher suite policy** and prefers 1.3 |
+| Insecure cipher suites, RC4, 3DES, export ciphers, anonymous and null cipher suites | Disabled by the negotiated policy, verified by external TLS scanning at each quarterly vulnerability scan |
+| WEP, WPA, WPA2-TKIP, WPS | Not available on either SSID; **WPA3 only** |
+| HTTP for administration | Disabled; the **one exception is the leak detector, which supports only HTTP** — recorded as a limitation with the compensating control that it is reachable solely from the collector on the isolated management VLAN (OPS-EQP-045 §3.6) |
+| IPv6 | Disabled where not in use rather than left enabled and unmonitored — an unmonitored enabled stack is a bypass of every IPv4 rule |
+| Legacy VPN protocols (PPTP, L2TP without IPsec, IKEv1) | Not used; the remote-access path is modern and certificate-based |
+| Verification | Protocol posture is verified by the **quarterly internal and external vulnerability scans** and by the annual penetration test, so the list above is a tested claim rather than an intended configuration |
+
+### 4.8 Virtualized and software-defined networking (8.20-R15)
+
+**Almost the entirety of the entity's network is software-defined** — the production VPC is a virtual network —
+so this requirement is central rather than peripheral, and the controls specific to it are:
+
+- **The network is defined only as code**: no console-created network object is legitimate; drift detection
+  treats one as an alert. This is the primary SDN control, because the risk of a software-defined network is
+  that a boundary can be moved in seconds by an API call.
+- **Control-plane authorization is the network's real perimeter**: permission to call `AuthorizeSecurityGroupIngress`,
+  `CreateRoute`, `ModifyVpcPeeringConnection`, `CreateVpcEndpoint` or `AttachInternetGateway` is treated with the
+  same seriousness as physical access to a firewall — restricted to a reviewed role set, denied to standing
+  roles, requiring break-glass elevation, and **alarmed on every use**.
+- **No VPC peering, no transit gateway, no VPN to a third party, and no shared VPC** — the account is
+  deliberately an island, so there is no inter-tenant virtual path to govern. Any future peering would require a
+  documented risk assessment and CISO approval, which is recorded as the trigger.
+- **Segmentation is enforced at the security-group layer with group-referencing rules**, so virtual segmentation
+  does not degrade as addresses change.
+- **VPC flow logs** are enabled on all subnets and delivered to the SIEM, giving the virtual network the same
+  observability a physical one would have from switch telemetry.
+- **No SD-WAN and no software-defined overlay in the offices** — the office network is conventional and small;
+  saying so prevents a control claim about technology the entity does not run.
+- The **provider's own SDN substrate** is inherited and assured through its audit reports; the entity does not
+  claim to control the hypervisor network.
+
+---
+
+## 5. Segregation of networks (8.22)
+
+### 5.1 Segregation into domains, and the criteria used (8.22-R1, 8.22-R3)
+
+Groups of information services, users and information systems are segregated into **separate network domains**,
+and the domains are chosen on stated criteria — **trust level, criticality, sensitivity and organizational
+function** — with the choice justified against the inputs 8.22-R3 names (the access-control policy, access
+requirements, the value and classification of the information, and the cost and performance impact of the
+gateway technology):
+
+| Domain | Criterion that creates it | Trust | Gateway to it |
+|---|---|---|---|
+| Production private subnets | Criticality + Restricted sensitivity | Highest | Identity-aware proxy (human), security groups (system); **no network path from any office** |
+| Production public subnet | Function: ingress termination only | Low; treated as exposed | WAF + ALB; no data at rest |
+| Cloud management plane | Criticality of control-plane actions | Highest | SSO + MFA + role assumption; alarmed |
+| Non-production (development/test) | Sensitivity: must not hold operational data | Medium | **Separate AWS account** — an account boundary, not a subnet boundary, because a shared account is one IAM mistake away from being one domain (ENG-SDL-048 §7) |
+| Office user VLAN | Organizational unit + Internal sensitivity | Low | 802.1X in; egress-only out |
+| Management VLAN | Criticality of device control | High | Collector + jump path only |
+| Guest VLAN | Trust: none | None | Internet only, client-isolated |
+| Quarantine VLAN | Function: unauthenticated or failing devices | None | No route |
+| Remote-access path | Function: crosses untrusted transport | Conditional on identity + posture | VPN + proxy + posture check |
+
+**The cost-and-performance element of 8.22-R3 is genuinely weighed rather than recited:** the entity chose an
+**account boundary** between production and non-production even though a VPC boundary would have been cheaper to
+operate, because the assessed value of the data justified it; conversely it chose **VLAN separation rather than
+physically separate switching** in the offices, because at 34 desks the incremental assurance of separate
+hardware did not justify the cost and the operational complexity, and the office network carries no Restricted
+information. Both decisions, and their reasoning, are recorded here so that a reviewer sees a decision rather
+than a default.
+
+### 5.2 Well-defined perimeters, controlled at a gateway (8.22-R2)
+
+Each domain's perimeter is **explicitly defined** in the VLAN/address plan and the infrastructure code, and
+every permitted crossing traverses a **gateway that enforces policy**: the ALB/WAF for internet-to-production,
+the identity-aware proxy for human-to-application, security groups for system-to-system, the office firewall for
+office-to-internet, and the switch's inter-VLAN policy for VLAN crossings. Crossings that are **not** permitted
+are absent from the routing table rather than denied by a rule — office-to-production has no route at all, and
+guest-to-anything-entity has no route at all — because an absent path cannot be misconfigured open by a rule
+edit. Every gateway's rule set is in the firewall rule register with justification and expiry (§3), and
+**inter-VLAN routing is default-deny**.
+
+### 5.3 Cross-boundary verification
+
+Segregation is **tested, not assumed**: the quarterly internal vulnerability scan is run **from each domain** so
+that reachability is measured from the guest VLAN, the user VLAN and the non-production account rather than
+inferred from configuration; the annual penetration test includes an explicit segregation-bypass objective from
+the guest network; and the daily drift detection catches a route or group that would open a crossing. This
+period's scan from the guest VLAN reached **only the internet**, and the penetration test's segregation
+objective was **not achieved** by the tester — which is the finding that matters, and it is recorded with the
+tester's method so the claim is auditable.
+
+### 5.4 Wireless segregation and radio coverage (8.22-R4)
+
+Wireless receives special treatment, including the **radio-coverage adjustment** the requirement names:
+
+- Both SSIDs terminate on VLANs that are segregated from each other and from the management VLAN; wireless is
+  not a shortcut into a wired trust zone.
+- **Transmit power is deliberately reduced** on the access points nearest the exterior walls and the shared
+  corridor, tuned at fit-out and re-measured at the annual site assessment, so that usable coverage stops
+  approximately at the demised premises rather than reaching the street, the lift lobby and the neighbouring
+  tenant. A coverage survey is on file for both sites, and the HQ survey was **repeated after the 2025-10
+  corridor works** because construction changes propagation.
+- Access points are **wall- or ceiling-mounted within the suite**, none in the corridor or a shared area, and
+  each is physically secured and labelled with its switch port (OPS-EQP-045 §4.5).
+- **Rogue AP and evil-twin detection** runs continuously on the wireless controller, with alerts to the SIEM;
+  2 alerts this period, both traced to neighbouring-tenant equipment and closed as such.
+- Because coverage reduction is mitigation rather than containment, the **real control is that wireless carries
+  no trust**: the personnel SSID requires EAP-TLS with an MDM-issued device certificate, and the network behind
+  it still has no route to production.
+
+### 5.5 Guest wireless, and the at-least-as-strong rule (8.22-R5)
+
+Guest wireless is **segregated from personnel wireless**, and — as 8.23-R5 requires — the guest network is
+subject to **restrictions at least as strong as those applied to personnel**, which is verified rather than
+assumed by mapping the two policies side by side:
+
+| Restriction | Personnel SSID | Guest SSID | At least as strong? |
+|---|---|---|---|
+| Authentication | EAP-TLS device certificate | Rotating passphrase, rotated monthly and on any visitor-volume event | Different in kind; the guest network compensates with **zero access rights**, so weaker authentication grants nothing |
+| Reachable resources | Office user VLAN, internet | **Internet only** | **Stronger** |
+| Client isolation | Off (printing, AirPlay to meeting-room AV) | **On** | **Stronger** |
+| Web filtering | Full category policy | **Same policy applied, plus stricter categories** | **At least as strong** |
+| Bandwidth | Unshaped | Rate-limited per client | Stronger |
+| Session | Persistent | Time-limited, re-authentication required | Stronger |
+| Logging | Connection + flow logs to the SIEM | **Same** | Equal |
+| Route to entity resources | None to production; user VLAN only | **None at all** | **Stronger** |
+
+The guest passphrase is issued by reception per visit and is not printed on a permanently displayed card;
+meeting-room wall ports land on the same guest VLAN so a wired visitor is treated identically to a wireless one.
+**Personnel are not permitted to use the guest network to bypass filtering** — MDM network profiles mean an
+entity endpoint joins only the personnel SSID, and a device seen on the guest VLAN with an entity certificate is
+an alert.
+
+---
+
+## 6. Protecting information crossing public, third-party and wireless networks (8.20-R6)
+
+Controls **safeguard the confidentiality and integrity of data passing over public, third-party and wireless
+networks, protect the connected systems and applications, and — with additional controls — maintain the
+availability of network services and connected computers**. All three limbs are answered:
+
+### 6.1 Confidentiality and integrity in transit
+
+- **TLS 1.2 minimum, 1.3 preferred**, on every external connection, with a restricted cipher policy, HSTS,
+  certificate transparency monitoring and automated renewal (SEC-CRY-024). Externally verified at each quarterly
+  scan.
+- **Always-on device-certificate VPN** on every endpoint, so an endpoint on a home, hotel, café, conference or
+  co-working network — the condition for 42 of 48 personnel and for anyone travelling — carries no cleartext
+  entity traffic. This is the mechanism the endpoint standard and the physical standard refer to when they
+  describe co-working and travel use: **the operator's network is treated as hostile transport**.
+- **Mutual TLS or SigV4 between services**, so integrity and authenticity do not rely on being "inside" the VPC.
+- **Restricted information is rendered, not transferred** — the brokered session means the most sensitive
+  material crosses the network as a view rather than as a file (the no-local-copy control from **D-2026-004**).
+- **Wireless**: WPA3 on both SSIDs; the personnel SSID's EAP-TLS provides per-session keys and server validation,
+  which removes the credential-interception and evil-twin paths that a passphrase network leaves open. Wireless
+  profiles are **pushed by MDM** so a user cannot be socially engineered into trusting a look-alike network, and
+  auto-join of open networks is disabled by policy.
+- **Third-party integrations** cross the boundary only over TLS with authenticated endpoints, from an
+  allowlisted egress destination, with the data minimised to what the integration needs (SEC-DLP-027).
+- **Provider traffic avoids the public internet entirely** where possible, via VPC endpoints.
+
+### 6.2 Protecting the connected systems and applications
+
+WAF with managed and entity rule groups; default-deny security groups; the identity-aware proxy authorising every
+request; EDR on every endpoint; DNS filtering (§9) that blocks command-and-control resolution even when a
+malicious payload has executed; posture-gated access so a compromised endpoint loses access rather than
+retaining it; and the architectural fact that a compromised office network reaches no production system.
+
+### 6.3 Availability of network services and connected computers
+
+The "additional controls as required" limb is answered proportionately and with its reasoning:
+
+| Availability control | Where | Note |
+|---|---|---|
+| **Multi-AZ deployment across 3 AZs** | Production | The entity's own control over facility-level failure |
+| Managed DDoS protection at the edge; WAF rate-based rules | Production | Volumetric and application-layer |
+| Health checks and automatic instance replacement | Production | Availability from redeployability rather than from repair |
+| **Dual carriers on physically diverse entries** | HQ | OPS-EQP-045 §3.5 |
+| Cellular failover; personal-hotspot tethering as a documented fallback | EU suite; all personnel | Proportionate to 9 desks and to a remote-first workforce |
+| **Single-region** | Production | The **accepted residual R-022**, conditional on the quarterly restore test — stated here rather than omitted, because an availability section that lists only strengths is not an honest one |
+| Office power resilience limited to orderly shutdown | Offices | A recorded decision, because no production dependency exists (OPS-EQP-045 §3.1) |
+
+---
+
+## 7. Security of network services (8.21)
+
+### 7.1 Security mechanisms, service levels and service requirements (8.21-R1)
+
+For **every** network service, internal or externally provided, the security mechanisms, service levels and
+service requirements are **identified and implemented**, and they are recorded in one table so that an
+unspecified service is visible by its absence:
+
+| Network service | Provider | Security mechanisms required and implemented | Service level | Requirements |
+|---|---|---|---|---|
+| HQ internet, carrier A | External | Dedicated circuit; entity-terminated firewall; **no provider-managed CPE inside the entity's trust boundary**; provider cannot see plaintext because everything above it is encrypted | Availability target and repair time in contract; circuit ID on the emergency sheet | Diverse route from carrier B; notification of maintenance; no unilateral CPE change |
+| HQ internet, carrier B | External | As above | As above | Physically diverse entry — the point of the second carrier |
+| EU internet | External | As above, plus cellular failover | Contracted availability | Failover tested |
+| Cellular data (entity mobiles) | External | Treated as public transport; VPN over it | Standard | eSIM management via MDM |
+| **Cloud networking — VPC, ALB, WAF, NAT, endpoints, DDoS protection** | AWS | Provider's controls plus the entity's configuration of them; the split is stated in the shared-responsibility allocation | Provider SLA | Region and AZ constraints; encryption in transit; flow logs |
+| DNS resolution (recursive, filtered) | External | DNSSEC validation; DNS-over-TLS to the resolver; filtering policy (§9); **logging of all resolutions to the SIEM** | Availability | No provider use of query data beyond service delivery, contractually |
+| Authoritative DNS and TLS certificates | External | Registrar lock, DNSSEC signing, MFA on the registrar account, certificate transparency monitoring | Availability | **Registrar and DNS treated as tier-0** — a DNS takeover defeats most other controls |
+| VPN and identity-aware proxy | External (SaaS) | Certificate-based, MFA, posture integration, tenant isolation, admin audit log export | Contracted availability | SSO-federated administration; log export to the entity's SIEM |
+| Wireless controller | On premises | §4.4 hardening | — | — |
+| Landlord-provided network | **Not used** | The entity joins no landlord network as a trusted client (OPS-EQP-045 §2.7) | — | Recorded so its absence is deliberate |
+
+### 7.2 Determining and monitoring providers' ability to manage services securely (8.21-R2)
+
+- Every external network-service provider is assessed at onboarding and **reassessed annually** under
+  TPR-PRO-016, at a depth set by criticality: the cloud provider, the DNS/registrar and the VPN/proxy vendor are
+  **tier-0 or tier-1** and receive full review; the office carriers are lower tier because the entity's design
+  assumes they are untrusted transport — which is itself the reason their assessment can be lighter, and the
+  reasoning is recorded rather than left as an inconsistency.
+- **Third-party attestations** are obtained and *read*, not merely filed: the provider's SOC 2 Type II / ISO
+  27001 certificate scope, exceptions and complementary user-entity controls are reviewed, and the CUECs are
+  mapped to entity controls — the step that most organisations skip and that makes an attestation meaningful.
+  **All 4 attestations were obtained and reviewed this period; 1 provider's report carried an exception
+  relevant to the entity** (a change-management exception at the VPN vendor), which was assessed, discussed with
+  the vendor, and recorded with the vendor's remediation date.
+- **Right to audit** is contracted with the tier-0 and tier-1 providers, and the entity's position is stated
+  honestly: for a hyperscale cloud provider the right is satisfied through the attestation regime rather than by
+  an on-site audit the entity would neither be granted nor be able to execute, and that substitution is a
+  documented, accepted position rather than an unexercised clause.
+- **Ongoing monitoring** rather than annual-only: provider status feeds and security bulletins are subscribed
+  and reviewed; availability against SLA is measured from the entity's own telemetry rather than from the
+  provider's dashboard; provider incidents affecting the entity are recorded as entity incidents (2 this period,
+  both provider-side, both with a recorded impact assessment); and the vendor register holds each provider's
+  next assessment date so a lapse is visible.
+
+### 7.3 Rules on the use of networks and network services (8.21-R3)
+
+Rules on the use of networks and network services are **formulated and implemented**, and they state
+specifically **which networks and network services may be accessed**:
+
+| Rule | Implementation |
+|---|---|
+| **Which networks personnel may join with an entity device** | The personnel SSID; a home network meeting the location self-assessment; an approved co-working operator's network; a cellular hotspot. **Open public Wi-Fi may be used only with the VPN established before any other traffic**, and auto-join of open networks is disabled by MDM. Ad-hoc, peer-to-peer and unmanaged tethering to unknown devices are prohibited |
+| **Which network services may be accessed** | Entity applications through the identity-aware proxy; approved SaaS in the sanctioned-service list; the internet subject to the filtering policy (§9). **Unsanctioned SaaS is not permitted**, and the sanctioned list is published so the rule comes with a route |
+| Which services may **not** be accessed | Anonymising proxies, Tor, unapproved VPNs (which would bypass entity inspection), unapproved remote-access and remote-control tools, peer-to-peer file sharing, unapproved cloud storage, and consumer AI services with unapproved data handling — the last named explicitly, and paired with the sanctioned alternative |
+| Who may administer network services | §2.1's named roles only, via elevation |
+| Guest use | §5.5; visitors accept an acceptable-use notice at the captive portal |
+| Vendor personnel | Brokered session only, from their employer's managed device, except the 3 issued entity laptops |
+| Enforcement and exception | Filtering and MDM enforce the rules technically; the **documented exception process** (§9.4) exists so a legitimate need has a path other than circumvention |
+| Communication | Issued and acknowledged at onboarding and annually — **48/48 personnel, 11/11 vendor individuals** |
+
+### 7.4 Security features of network services (8.21-R4)
+
+Each feature the requirement names is addressed:
+
+| Feature named | Position |
+|---|---|
+| **Technology applied for security — authentication, encryption, connection controls** | Certificate-based authentication on the personnel SSID, wired 802.1X, and the VPN; SSO with MFA for every service; TLS 1.2+ with a restricted cipher policy for encryption; connection controls at the WAF, security groups, firewall and inter-VLAN policy (§4.3) |
+| **Technical parameters for secured connections** | Specified rather than left to defaults, and held in the configuration baseline: minimum TLS version and cipher list; certificate key types, sizes and lifetimes; VPN cipher suite, perfect forward secrecy and rekey interval; EAP method and server-certificate validation on the SSID; DNSSEC validation and DNS-over-TLS; session timeouts and re-authentication intervals; MTU and keepalive values where they bear on reliability. These parameters are in code and verified by the quarterly external scan |
+| **Caching and its parameters** | Addressed explicitly, because it is the element usually ignored. **The CDN and browser caching policy is that no authenticated or classified response is cacheable**: `Cache-Control: no-store` on authenticated responses, `private` where a browser may hold a response, cache keys that include the identity dimension so one tenant's response cannot be served to another, a defined TTL for public static assets only, and **cache invalidation on deployment**. DNS caching honours authoritative TTLs, which are kept short enough for an incident-time change to take effect. Proxy caching of entity traffic by a provider is prevented by end-to-end TLS. The tenant-isolation aspect of cache keying is covered again as an application requirement in ENG-SDL-048 §3 |
+| **Procedures to restrict access to network services or applications where necessary** | The isolation provisions in §4.6, the web-filtering block and exception path in §9, per-application authorization at the identity-aware proxy (so a single application can be withdrawn without touching the network), egress allowlist changes, and identity or device-certificate revocation. Each has a named authority and is exercisable during an incident without a change board |
+
+---
+
+## 8. Logging and monitoring of network activity (8.20-R7)
+
+**Appropriate logging and monitoring is implemented to record and detect actions that affect, or are relevant
+to, information security**, and the coverage is stated per source so that a blind spot is visible:
+
+| Source | Logged | Retention | Detections built on it |
+|---|---|---|---|
+| **VPC flow logs**, all subnets | Accepted and **rejected** flows | 90 days hot, 1 year archived | Unexpected egress destination; port-scan patterns; traffic to a known-bad address; a rejected flow pattern indicating lateral movement attempts |
+| WAF | Requests, matches, blocks | 90 days / 1 year | Attack-pattern spikes; a single source's block rate; rule-evasion attempts |
+| Load balancer | Access logs | 90 days / 1 year | Anomalous response codes and latency; enumeration |
+| **CloudTrail** (network control plane) | Every API call | 1 year+ | **Alarm on security-group, NACL, route-table, IGW and endpoint modification outside a change window**; break-glass use |
+| Identity-aware proxy and VPN | Session establishment, identity, device, posture result, per-application authorization | 1 year | Impossible-travel; posture-failure clusters; access from an unexpected geography; certificate reuse |
+| **Office firewall** | Connection and block logs | 90 days | Blocked outbound to a filtered category or a bad destination; unexpected inbound attempts |
+| **Switch and 802.1X** | Authentication success/failure; port link events; MAC table changes | 90 days | Unauthorised device connection; quarantine placements; a new MAC on a port |
+| Wireless controller | Associations, failures, rogue AP and evil-twin detections | 90 days | Rogue SSID; deauthentication-flood patterns; guest-VLAN entity certificate |
+| **DNS resolver** | All queries and their disposition | 90 days | **Command-and-control resolution attempts**; DNS tunnelling; newly registered domain contact |
+| Endpoint EDR and MDM | Process, network and posture telemetry | 90 days | Malware, containment triggers, blocked mass-storage attempts |
+| Utility devices on the management VLAN | Access to their interfaces | 90 days | Any access from outside the collector/jump path |
+
+- All sources land in a **single SIEM** with **time synchronised from a trusted authenticated source**, so
+  cross-source correlation is possible — which is the point of centralising rather than merely retaining.
+- **Log integrity**: delivery over TLS, write-once archival storage with object lock, alerting on **log-source
+  silence** (a source that stops reporting is treated as an incident, because silencing telemetry is a standard
+  early step in an intrusion), and administrator access to the SIEM restricted and itself logged.
+- **Review**: automated detections alert 24/7 to the on-call channel; a **monthly human review** covers
+  administrative sessions, firewall rule changes, 802.1X failures, guest-network anomalies and the top blocked
+  destinations, because there are patterns no rule is written for yet. The monthly review this period produced
+  3 follow-ups, including the port-error-counter finding that traced to a failing patch lead (OPS-EQP-045 §4.3).
+- **Detection efficacy is tested**, not assumed: the quarterly incident simulation includes at least one action
+  expected to generate an alert, and a simulation where the alert does not fire is a finding. **4 of 4
+  simulations produced their expected alerts this period.**
+
+---
+
+## 9. Web filtering (8.23)
+
+### 9.1 Managing access to external websites (8.23-R1)
+
+Access to external websites is managed by **three complementary techniques**, so that a single bypass does not
+remove the control:
+
+1. **DNS-layer filtering** on the entity resolver — applies to every endpoint everywhere, on premises or remote,
+   because the resolver is delivered by MDM policy and cannot be changed by the user. Blocks by domain
+   category, reputation and threat-intelligence feed, and blocks **newly registered domains**, which are
+   disproportionately malicious.
+2. **Secure web gateway / firewall filtering** — category and destination filtering with TLS inspection where
+   lawful and proportionate; **inspection is deliberately excluded for banking, healthcare and legal categories
+   and for employee-personal use**, an exclusion required in two of the entity's five jurisdictions and
+   disclosed to personnel rather than operated silently.
+3. **Browser controls and endpoint anti-malware** — MDM-managed browser policy enforcing safe-browsing
+   protection, **blocking the ability to click through a certificate or malware warning**, blocking unapproved
+   extensions by allowlist, disabling password saving to the browser store in favour of the managed password
+   manager, and EDR on the device to catch what reaches it.
+
+Coverage is fleet-wide (**52/52 laptops, 12/12 entity mobiles, and the work profile on 31 personal phones**), and
+because DNS filtering follows the device, a person working from a home or hotel network is filtered identically
+to one at HQ.
+
+### 9.2 Types of website identified as permitted or not (8.23-R2)
+
+The entity has identified the types of website personnel should and should not access, and **each category the
+requirement names at minimum is addressed explicitly**:
+
+| Category the requirement names | Position |
+|---|---|
+| **Websites with an upload function not justified by business need** | **Blocked as a category** — consumer file-sharing, paste sites, anonymous upload services, unapproved cloud storage, and unapproved consumer AI services that accept file upload. Sanctioned alternatives are named in the policy so the block comes with a route, and upload to sanctioned services is DLP-inspected (SEC-DLP-027). This is the category most often left unaddressed, and it is the one most directly tied to data exfiltration |
+| **Known or suspected malicious websites** | Blocked by reputation and by threat-intelligence feed at both DNS and gateway layers; suspected-but-unconfirmed domains are blocked pending assessment rather than allowed pending proof |
+| **Command and control servers** | Blocked at the **DNS layer specifically**, so resolution fails even if a payload has already executed on the endpoint; C2 resolution attempts alert to the SIEM as a probable-compromise indicator rather than being silently dropped |
+| **Malicious websites acquired from threat intelligence** | Feeds from the provider, the sector information-sharing community and CISA/national advisories are ingested automatically; the CISO reviews additions monthly |
+| **Websites sharing illegal content** | Blocked by category, and an attempt is escalated under the disciplinary and legal-reporting procedure rather than merely logged |
+| Additionally identified by the entity | Anonymising proxies, Tor and unapproved VPNs (they would bypass this control); remote-access and remote-control tools; cryptomining; peer-to-peer; adult and gambling content (acceptable-use grounds); unapproved consumer AI services (data-handling grounds); typosquat and look-alike domains of the entity's own and its providers' brands, which are **actively monitored** and blocked on discovery |
+| Explicitly **not** blocked | Personal webmail, social media, news and job-search sites are **permitted** — a deliberate decision, because over-blocking drives circumvention and because the exfiltration risk from webmail is addressed by DLP and by the fact that Restricted data cannot be held locally to attach. Recording what is deliberately allowed, and why, is part of having a defensible policy |
+
+### 9.3 Rules for safe and appropriate use, kept up to date (8.23-R3)
+
+- The **acceptable-use rules for online resources** form a section of the acceptable-use policy in GOV-POL-040's
+  register: what may be accessed, what may not, that entity credentials are never reused on an external site,
+  that classified information is never entered into an unsanctioned web service (**named explicitly for consumer
+  AI services**, with the sanctioned alternative given), that browser advisories are never overridden (§9.5),
+  that personal use is permitted within reason and is not inspected in the excluded categories, and how to
+  report a suspicious site or a suspected mistake.
+- **Kept up to date** by a defined cadence rather than by intention: category policy reviewed **quarterly**
+  against the block/allow telemetry and the exception register; threat-intelligence feeds updated
+  automatically; the rules reissued and re-acknowledged annually; and an out-of-cycle update on a material
+  change. **This period's four quarterly reviews produced 3 category changes** — consumer AI services moved
+  from monitored to blocked-with-a-sanctioned-alternative, one paste-site category tightened, and one
+  over-blocked developer-documentation subcategory **unblocked** after 5 exception requests showed the block was
+  wrong. Acting on the exception data is what keeps the policy honest.
+
+### 9.4 Training, the contact point, and the exception process (8.23-R4)
+
+Training is provided on the secure and appropriate use of online resources, and it covers each element the
+requirement names:
+
+| Element | How it is delivered |
+|---|---|
+| **The entity's rules for web access** | Onboarding module and the annual awareness refresh; the rules are also surfaced *at the moment of the block* — the block page states the category, the reason, and what to do next, which is the most effective training moment available |
+| **The contact point for raising security concerns** | One channel, stated everywhere: the security channel and the security mailbox, both monitored, both named on the block page, in the module and on the incident card. **A single, obvious contact point** rather than three competing ones |
+| **The exception process for accessing a restricted web resource for a legitimate business reason** | Documented and linked from the block page: request via the security channel with the URL and the business reason; assessed by IT Operations with CISO approval for higher-risk categories; granted **narrowly — by domain, not by category — and time-bound with an expiry**; recorded in the exception register with its justification. **11 requests this period: 8 granted (7 domain-scoped and time-bound, 1 permanent after review), 3 refused with an alternative offered.** The register is reviewed quarterly and expired exceptions are removed |
+| **Guidance not to override a browser advisory reporting that a site is not secure** | Taught explicitly **and enforced technically** — the managed browser policy **removes the click-through option** for certificate and malware interstitials, so the guidance is not left to willpower. Personnel are told what to do instead: report it, because a certificate warning on a site the entity uses is itself a security signal. One report this period turned out to be a provider's genuine certificate misconfiguration, which the entity reported to the provider |
+| Reinforcement | Simulated phishing includes credential-harvesting pages that the filtering blocks, so people see the control working; awareness content cites the entity's own real events (the 7 blocked mass-storage attempts, the found USB in the lift lobby, the airport shoulder-surf report) rather than generic examples |
+
+### 9.5 Where filtering does not reach, stated plainly
+
+Filtering does not cover **personal devices without a work profile on personal networks** (outside the entity's
+authority), and TLS inspection does not cover the **excluded privacy categories** in §9.1. Both are recorded as
+known limits with their compensating controls — DNS-layer filtering still applies to any device holding the work
+profile, and the excluded categories remain subject to DNS reputation blocking even without payload inspection.
+Stating the edges is what makes the coverage claim credible.
+
+---
+
+## 10. Roles, evidence and independent testing
+
+| Role | Responsibility |
+|---|---|
+| Head of Platform Engineering | Owns this standard, the production network architecture and its code, the segregation model, the remote-access path, and the logging pipeline |
+| Director IT Operations | Office network operation, device firmware and hardening compliance, filtering operation, carrier relationships, the management VLAN |
+| CISO | Approves the standard and the filtering policy; owns the exception registers, the isolation pre-authority, the deficiency and risk registers (including R-014 and R-022), and the monthly log review |
+| Third-Party Risk Manager | Network-service provider assessments, attestation review and CUEC mapping, right-to-audit positions |
+| General Counsel | Lawfulness of TLS inspection and monitoring per jurisdiction; disclosure wording; carrier and provider contract terms |
+| Incident commander (on-call rota) | Exercises the isolation provisions under §4.6's pre-authority |
+| Internal assessment | Annually: verifies diagrams and the rule register against live configuration; samples network changes for second-person review evidence; **re-runs reachability from the guest VLAN, the user VLAN and the non-production account rather than reading the configuration**; verifies the hardening baseline deviations are still justified; confirms the isolation provisions were rehearsed; verifies log-source coverage and the silence alerting; samples web-filtering exceptions for expiry and justification |
+| External testing | **Annual penetration test** with an explicit segregation-bypass objective from the guest network and an external-perimeter objective; **quarterly internal and external vulnerability scans**; external TLS configuration scanning |
+
+| Evidence | Where it is held |
+|---|---|
+| Generated production network diagram and the infrastructure-as-code history | Configuration repository |
+| Office network diagrams, VLAN/address plan, device configuration backups (nightly), as-built cabling drawing | Network documentation repository |
+| Firewall rule register with justification, approval and expiry; 2026-02 review removing 4 rules | IT Operations |
+| Hardening baselines and the 3 recorded deviations with compensating controls | Configuration repository |
+| Drift-detection reports and CloudTrail network-mutation alarms | SIEM |
+| 802.1X and certificate issuance records; quarantine-VLAN events | Identity provider; SIEM |
+| Wireless coverage surveys (both sites; HQ repeated after the 2025-10 works); rogue-AP alerts | IT Operations |
+| Segregation test results: per-domain scans; penetration test segregation objective not achieved | Assessment file |
+| Isolation rehearsal records (4 quarterly simulations; 2 used production ingress cut) | Incident file |
+| Provider assessments, attestations with CUEC mapping, and the reviewed VPN-vendor exception | Vendor register |
+| Network-use rules with acknowledgements (48/48, 11/11) | Awareness platform |
+| Filtering policy, quarterly review records and the 3 category changes; block/allow telemetry | CISO file; IT Operations |
+| Web-filtering exception register (11 requests: 8 granted, 3 refused) | CISO file |
+| SIEM log-source coverage report, silence alerts, monthly review records with 3 follow-ups | SIEM |
+| Vulnerability scan and penetration test reports with remediation tracking | Assessment file |
+| R-014 (privilege concentration) and R-022 (single region) with their accepted conditions | Risk register |
+
+## 11. Review history
+
+| Version | Date | Change |
+|---|---|---|
+| 1.0 | 2024-06-10 | Established the network architecture, the segregation model and the office device baseline |
+| 2.0 | 2025-05-20 | Removed the last office-to-production network path, making identity and posture the sole basis of access; introduced 802.1X on wired ports; guest VLAN restrictions brought to at-least-as-strong; DNS-layer filtering extended to remote devices |
+| 3.0 | 2026-03-16 | Annual review. Segregation moved from configuration review to **measured reachability testing from each domain**, with the penetration test given an explicit bypass objective; isolation provisions given pre-authority and a rehearsal record after a simulation showed hesitation over authority rather than absence of capability; **log-source silence alerting added**; caching parameters specified explicitly, including identity-dimension cache keying, after the previous version addressed encryption but not caching; TLS-inspection privacy exclusions documented and disclosed rather than operated silently; consumer AI services moved to blocked-with-a-sanctioned-alternative and one over-blocked developer-documentation subcategory unblocked on the strength of exception data; SDN control-plane authorization written up as the network's real perimeter; R-014 recorded as an accepted, compensated concentration of network and system privilege rather than an implied full separation |

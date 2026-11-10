@@ -1,0 +1,260 @@
+# Security Awareness, Training and Competence Programme
+
+**Document ID:** SEC-AWR-041
+**Version:** 2.0
+**Owner:** CISO
+**Approved by:** CISO and Head of People Operations
+**Approval date:** 2026-08-14
+**Next scheduled review:** 2026-12-31
+**Scope:** All personnel — 48 employees, 11 individuals engaged through 4 contracting vendors, and 6
+non-employee directors and advisors — across all locations and all information classifications. The
+programme covers awareness (what everyone must know), role-specific training (what a role requires),
+and competence (evidence that a role-holder can actually perform the control they own).
+
+---
+
+## 1. Why this programme exists, and what it is accountable for
+
+Every control in the ISMS is performed by a person or watched by one. A control that nobody has been
+told about is a control that operates by luck. This programme is the entity's mechanism for making
+each obligation **known, understood, practised and evidenced** — and for producing the records that
+show it, because an unrecorded briefing is indistinguishable from one that never happened.
+
+The programme owns four outcomes:
+
+| Outcome | What it means | How it is evidenced |
+|---|---|---|
+| **Awareness** | Every person knows the rules that apply to them and the channels available to them | Completion records per module per person, with dates |
+| **Understanding** | They can apply the rules, not just recite them | Comprehension assessment with a pass threshold, plus simulation results |
+| **Competence** | A person who OWNS a control can perform it | Role competence matrix, assessment against a named skills profile, development plan for any gap |
+| **Currency** | Both the content and the people stay current as threats, laws and policies change | Content review triggers, annual refresh, continuing-education obligation and its hours record |
+
+**Nobody is exempt.** Directors, advisors, contractors, vendor personnel with access, and the CEO
+complete the same core curriculum as employees. Where a contracting vendor runs equivalent training,
+the entity accepts it only against a mapped-content review recorded in the vendor file — and the
+entity's own acceptable-use, classification and reporting modules are always taken directly, because
+those are the entity's rules and no third party teaches them.
+
+---
+
+## 2. Curriculum — the core modules everyone completes
+
+| # | Module | Length | Who | Cadence | Assessment |
+|---|---|---|---|---|---|
+| **C1** | Information security fundamentals and the ISMS: what is protected, why, and each person's part in it | 45 min | All | Onboarding (before access) + annual | 12 questions, 80% to pass |
+| **C2** | **Acceptable use of information and assets, by classification level** | 40 min | All | Onboarding + annual | 15 questions incl. 6 scenario items, 80% to pass |
+| **C3** | **Information classification, labelling and handling** | 35 min | All | Onboarding + annual | 10 questions incl. 4 label-the-artifact exercises |
+| **C4** | **Recognising and reporting security events** — including malware, phishing and social engineering | 40 min | All | Onboarding + annual, plus event-driven refresher | 12 questions + one live report-a-test-event exercise |
+| **C5** | **Authentication information and credential confidentiality** | 25 min | All | Onboarding (before any credential is issued) + annual | Signed acknowledgement + 8 questions |
+| **C6** | **Protecting information on screens, in transit and in conversation** | 30 min | All | Onboarding + annual | 10 questions incl. screenshot and public-place scenarios |
+| **C7** | Privacy, personal data and data-subject obligations | 35 min | All | Onboarding + annual | 10 questions, 80% to pass |
+| **C8** | Code of conduct, ethics and the confidential reporting channels | 30 min | All | Onboarding + annual | Signed acknowledgement |
+
+**Onboarding sequencing is enforced technically, not merely expected.** C1, C2, C3, C5 and C8 must be
+complete before the identity provider releases any entitlement beyond the training platform itself;
+the joiner workflow will not advance without the completion records. C5 in particular gates credential
+issue — a person cannot hold a credential before being told what they owe in return for it.
+
+### 2.1 Role-specific modules
+
+| # | Module | Audience | Cadence |
+|---|---|---|---|
+| **R1** | Secure development: the entity's secure-coding standard, threat modelling, dependency and secret hygiene | 9 engineers | Onboarding + annual, plus on standard revision |
+| **R2** | Production operations and change control: deployment rules, environment identification, break-glass conduct | 7 with deploy or break-glass paths | Onboarding + semi-annual |
+| **R3** | **Supplier and vendor engagement: rules of engagement, expected behaviour, what may and may not be shared, and how to escalate a supplier's security concern** | 14 personnel who deal with suppliers (Procurement, Engineering leads, Finance, Legal) | Onboarding + annual |
+| **R4** | Incident response for responders: the runbook, evidence preservation, communications discipline | 6 named responders | Onboarding + semi-annual + after each exercise |
+| **R5** | Data-subject request handling | 4 (Privacy, Support) | Onboarding + annual |
+| **R6** | AI-system-specific obligations: intended use, impact, and the AI concerns channel | All personnel touching the AI system (22) | Onboarding + annual |
+| **R7** | Physical security and the facility procedure, including delivery handling | 12 with facility badges | Onboarding + annual |
+| **R8** | Board and advisor briefing: oversight duties, risk appetite, the threat landscape | 6 directors and advisors | Semi-annual |
+
+---
+
+## 3. Acceptable use — what the programme communicates, specifically
+
+C2 is the entity's mechanism for communicating the acceptable-use rules that the Information Asset
+Inventory and Data Classification Standard and the Responsible Use Policy (AIMS-POL-018) establish.
+Communication is not a link to a policy: the module states each rule, gives a worked example of
+compliance and of breach, and tests it.
+
+| Topic communicated in C2 | The rule as taught |
+|---|---|
+| **Permitted use by classification** | Public / Internal / Confidential / Restricted — for each level, where it may be stored, who may see it, whether it may leave a managed device, and whether it may be printed (it may not) |
+| **Customer evidence** | Restricted. Never copied to an endpoint, never pasted into a chat or a model prompt outside the product path, never used for testing or demonstration |
+| **Prohibited use** | Personal cloud storage, personal email, unapproved SaaS, unapproved AI tools, personal removable media, credential sharing, security-control bypass tooling |
+| **Assets** | Devices are the entity's, are managed, and are returned on exit; the acceptable-use terms survive the device |
+| **Monitoring** | What is logged, why, the legal basis, and the explicit statement that logs are not used for performance or attendance management |
+| **Consequence** | Breach is handled under the disciplinary process; the module states this plainly rather than implying it |
+
+**Comprehension is measured, not assumed.** C2's scenario items are scored separately from the recall
+items, and the scenario sub-score is reported per cohort, because a person can pass a recall test on
+rules they cannot apply. Current period: **48/48 personnel and 11/11 vendor individuals completed C2**;
+mean scenario sub-score 91%; **2 people scored below 70% on the scenario half, were re-briefed 1:1 by
+the CISO and re-tested (both passed)**, recorded as **D-2026-016**.
+
+---
+
+## 4. Classification and labelling training
+
+C3 exists because labelling fails in practice more often than it fails in policy. The module teaches
+the four levels, the label mechanics for each medium (document header, repository topic, S3 object
+tag, evidence record field, email marking), the rule that **an unlabelled artifact is treated as
+Confidential until labelled**, and the escalation path when the correct level is unclear.
+
+The exercise half requires the learner to label six real (redacted) artifacts drawn from the entity's
+own corpus and to justify two of the six. **Completion this period: 48/48 employees, 11/11 vendor
+individuals, 6/6 directors.** Mislabelling found in the quarterly artifact sample is fed back into the
+module's exercise set — the July sample found 3 mislabelled artifacts out of 40 (**D-2026-018**), and
+two of the three are now exercise items.
+
+---
+
+## 5. Screens, transit and conversation
+
+C6 covers the exposure paths that no technical control fully closes:
+
+| Path | What personnel are told |
+|---|---|
+| **Screens in public** | No work on Confidential or Restricted material in a public place without a privacy filter; no seat with a sightline to a screen; screen lock within 60 seconds |
+| **Screenshots and photographs of screens** | **Capturing a screen showing Confidential or Restricted information — by screenshot, phone camera or screen-share recording — is prohibited except through an approved support workflow that redacts before capture.** The prohibition is stated in the acceptable-use terms, taught here with two worked examples (a support ticket and a demo recording), and audited: the quarterly artifact sample includes shared screenshots and recordings, and the DLP rules alert on image attachments in support channels |
+| **Screen sharing** | Share a window, never a desktop; close evidence viewers before joining; no recording of a session showing customer evidence |
+| **Conversations** | **Confidential and Restricted matters are not discussed in public places, in transit, on public transport, in shared or co-working space, or on any consumer voice or messaging channel.** The reminder is issued at onboarding, in the annual refresh, and as a standing line in the meeting-room booking confirmation for rooms booked as Confidential |
+| **Transfer channels** | The approved transfer mechanisms and the rule that an unapproved channel is a reportable event, not a shortcut |
+
+---
+
+## 6. Malware, phishing and social engineering
+
+C4 is the entity's user-awareness control for malicious software, and it teaches recognition rather
+than mechanism:
+
+- **Identifying a malware-carrying email, file or program**: the indicator set (unexpected attachment,
+  mismatched sender domain, macro or script prompt, archive-in-archive, executable disguised by a
+  double extension, an installer offered outside the software catalogue, a link to a look-alike
+  authentication page), each with a real example drawn from what the entity has actually received.
+- **What to do and what NOT to do**: do not open, do not forward, do not "test it in a VM", do not
+  reply, do not attempt to determine whether it is genuinely malicious. Report it, and let the
+  responders handle it. **Personnel are explicitly told not to attempt to prove or investigate a
+  suspected weakness or malware sample themselves** — the module says so in those terms, because a
+  well-meant investigation destroys evidence, can execute the payload, and can look
+  indistinguishable from an attack in the logs.
+- **Endpoint protection**: what the EDR agent does, what the user sees when it acts, and that
+  disabling or interfering with it is prohibited and detected.
+- **Phishing simulation**: monthly, all personnel. Anyone who submits credentials or opens a payload
+  receives a **targeted refresher within 5 business days**. Current period: 3 of 48 failed the June
+  simulation, all three completed the refresher, and none failed the July or August simulation.
+  Reporting rate — the metric that matters more than the failure rate — is **71% of simulated
+  phishing reported through the C4 channel within 4 hours**.
+
+---
+
+## 7. Reporting: making the obligation and the channels known
+
+Awareness of *how to report* is the deliverable here; the reporting procedures themselves live in the
+incident and concerns procedures.
+
+| What personnel are told | Detail |
+|---|---|
+| **That reporting is an obligation** | Every person is responsible for reporting an observed or suspected information security event, weakness, or policy breach — promptly, and without waiting to be certain. The obligation is stated in the employment terms, in C1, in C4, and in the annual acknowledgement |
+| **What to report** | The full event range, with examples for each: ineffective control, access or authentication anomaly, suspected malware, phishing, lost or stolen device, mis-sent information, unapproved tool or channel, physical security event, supplier security concern, suspected privacy breach, AI-system harm or unexpected behaviour, and any suspected weakness |
+| **The designated point of contact** | The security channel and its single escalation number, both memorised in C4's exercise; the named duty responder rota; and the out-of-hours path |
+| **How** | Four channels, no manager permission required: the security channel, the security mailbox, the duty responder number, and the **confidential ethics line — anonymous, externally operated, available to all personnel, and covered by a stated anti-retaliation protection with an investigation and feedback commitment** |
+| **That no investigation is expected of them** | Personnel must not attempt to prove, exploit or investigate a suspected weakness or vulnerability. Reporting is complete when it is reported |
+| **What happens next** | Acknowledgement targets, that the reporter is told the outcome, and that a report made in good faith is never a mark against the reporter even when the concern turns out to be nothing |
+
+The **anti-retaliation** statement is not decorative: retaliation against a reporter is itself a
+disciplinary matter, the ethics line's operator reports attempted identification of a reporter
+directly to the Board's chair, and the annual acknowledgement asks each person to confirm they know
+the channel exists and is protected. **48/48 confirmed for the current period.**
+
+---
+
+## 8. Competence — for the people who own controls
+
+Awareness is for everyone; competence is for role-holders, and it is assessed rather than assumed.
+
+| Element | How it works |
+|---|---|
+| **Skills profile per security role** | Each named security role (CISO, AI Security Lead, AI Operations Lead, incident responders, deployment approvers, evidence reviewers) has a written profile listing the knowledge, technical skills and judgement the role requires, and the artifacts that demonstrate each |
+| **Assessment** | Annual assessment of each role-holder against their profile by the role's manager, plus a second opinion from outside the reporting line for the CISO and the AI Security Lead |
+| **Gap handling** | Any gap produces a dated development plan with a named action, an owner and a target date; the plan is reviewed at the next quarterly ISMS review, not deferred to the next annual cycle |
+| **Independence of the evaluator** | A person does not assess their own competence, and no person is the sole assessor of the control they themselves depend on |
+| **Records** | Profile, assessment, gap, plan, and closure — retained 7 years |
+
+### 8.1 Keeping security role-holders current — the continuing-education obligation
+
+This is a standing obligation on **all** personnel, not only the board:
+
+| Population | Obligation | Current-period record |
+|---|---|---|
+| **All personnel** | **8 hours of recorded security or privacy continuing education per year**, over and above the core curriculum | Mean 12.4 h; 46/48 met the 8-hour minimum; **2 personnel short (5.5 h and 6 h) with a dated catch-up plan — D-2026-020** |
+| **Named security role-holders** | **24 hours per year**, of which at least 8 must be external (conference, course, certification maintenance, or a security community forum), plus documented tracking of threat-landscape developments relevant to the role | CISO 41 h; AI Security Lead 33 h; AI Operations Lead 27 h; all met |
+| **Engineers** | 16 hours per year including at least one secure-development course or exercise | Mean 21 h; 9/9 met |
+| **Directors and advisors** | Semi-annual briefing plus 6 hours per year of governance-level security education | 6/6 met |
+| **Currency mechanism** | Role-holders subscribe to and are expected to read the named advisory sources; participation in the security community groups the entity belongs to is part of the 8 external hours; a monthly 30-minute internal threat-landscape briefing is delivered by the CISO and recorded for those who cannot attend | 12 briefings delivered; mean attendance 39/48 live, 48/48 including recording |
+| **Certification maintenance** | Where a role-holder holds a certification the entity relies on, its maintenance requirement is tracked as part of the 24 hours and its lapse is a deficiency | No lapse this period |
+
+Hours are recorded per person in the learning record with the activity, date and duration, and the
+record is what the annual competence assessment reads — an unrecorded hour does not count.
+
+---
+
+## 9. Keeping the content current
+
+| Trigger | Response | Deadline |
+|---|---|---|
+| A policy or standard in the ISMS is revised | The owning module is reviewed against the change and updated where the change affects what personnel must do | 30 days |
+| **A law or regulation applicable to the entity changes** | Legal and the CISO jointly review affected modules; a change to an obligation personnel act on triggers a targeted communication, not only a module edit | 30 days |
+| A significant incident, near-miss or deficiency | The lesson becomes module content or an exercise item | Next quarterly refresh |
+| A phishing-simulation theme succeeds | That theme becomes an exercise item and a targeted briefing | 30 days |
+| A new threat pattern reported by the community groups the entity participates in | Assessed for relevance; where relevant, a briefing note and a module update | 60 days |
+| Annual scheduled review | Full curriculum review against the risk register, the control set and the year's incidents | Annually |
+
+**Content-review record for the current period:** 7 module updates (C2 twice, C4 three times, C6, R3),
+each with a dated reason recorded in the learning platform's version history.
+
+---
+
+## 10. Programme records, metrics and deficiencies
+
+| Record | Retained | Where |
+|---|---|---|
+| Per-person, per-module completion with date and score | 7 years | Learning platform |
+| Signed acknowledgements (acceptable use, credentials, code of conduct, reporting) | 7 years, and for 6 years after exit | People Operations record |
+| Onboarding gate evidence (training complete before entitlement) | 7 years | Joiner workflow record |
+| Phishing-simulation results and refresher completion | 3 years | Security platform |
+| Competence profiles, assessments, gaps and development plans | 7 years | People Operations record |
+| Continuing-education hours per person | 3 years | Learning record |
+| Content-change history with reasons | Life of the programme | Learning platform |
+
+| Metric | Target | Current |
+|---|---|---|
+| Core curriculum completion, all populations | 100% | **100% (48/48, 11/11, 6/6)** |
+| Training complete before first entitlement | 100% | 100% (7 joiners) |
+| Comprehension pass rate at first attempt | ≥90% | 94% |
+| Simulated-phishing report rate within 4 h | ≥60% | 71% |
+| Continuing-education minimum met | 100% | 96% (2 short, D-2026-020) |
+| Competence assessments completed on schedule | 100% | 100% |
+| Module updated within deadline of its trigger | 100% | 100% (7/7) |
+
+**Open deficiencies:** D-2026-016 (two low scenario sub-scores, re-briefed and re-tested — closed),
+D-2026-018 (3 mislabelled artifacts in the July sample — corrective action in progress, due
+2026-09-30), D-2026-020 (two personnel short of the continuing-education minimum — catch-up plans due
+2026-09-30).
+
+**What this programme does not do**, stated so a reader does not infer more than is here: it does not
+run technical control validation (that is the monitoring procedure), it does not itself operate the
+reporting channels (that is the incident and concerns procedures), and it does not replace the
+disciplinary process. Its deliverable is that the people who operate this ISMS know what they are
+responsible for, can demonstrate they understand it, and are kept current — and that there is a record
+proving it.
+
+---
+
+## 11. Review history
+
+| Version | Date | Reviewer | Outcome |
+|---|---|---|---|
+| 1.0 | 2025-10-02 | CISO | Initial programme: core curriculum, onboarding gate, annual refresh |
+| 1.1 | 2026-01-20 | CISO, Head of People Operations | Added the monthly phishing simulation, the 5-business-day targeted refresher, and per-cohort scenario sub-scoring |
+| 2.0 | 2026-08-14 | CISO, Head of People Operations, approved by both | Added the role-specific curriculum (§2.1) including supplier rules-of-engagement training; the acceptable-use communication and comprehension detail (§3); classification and labelling training with the labelling exercise (§4); screens, screenshots and conversation exposure (§6 of v1 renumbered §5); the malware-recognition and do-not-investigate content (§6); the reporting-obligation, channel-awareness and anti-retaliation content (§7); the competence framework, skills profiles and the organization-wide continuing-education obligation with recorded hours (§8); the content-currency triggers including law and regulation change (§9); and the full records, metrics and deficiency register (§10) |

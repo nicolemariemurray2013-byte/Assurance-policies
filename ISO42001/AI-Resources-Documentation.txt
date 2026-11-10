@@ -1,0 +1,228 @@
+# AI Resources Documentation
+
+**Document ID:** AIMS-REG-006
+**Version:** 4.0
+**Owner:** AI System Accountable Owner (Platform Engineering); maintained jointly with the Data
+Steward, AI Development Lead and AI Operations Lead
+**Approved by:** Chief AI Officer
+**Approval date:** 2026-03-02
+**Review interval:** quarterly, and on any material change to the AI system inventory
+**Next scheduled review:** 2026-12-31
+**Scope:** The AI systems operated in AWS account **471885797689**, region **us-west-2** — the
+Amazon Bedrock agent and Bedrock AgentCore runtime that perform automated compliance evaluation,
+together with all supporting data, tooling, computing and human resources.
+
+---
+
+## 1. Purpose and method of resource identification
+
+This register **identifies and documents the resources required for activities at each AI system
+life-cycle stage** and for other AI-related activities relevant to the organization. Resources are
+identified at three trigger points: (a) at inception of any new AI system, (b) at each quarterly
+review, and (c) on any material change (new model, new data source, new tool, new dependency).
+
+Resources are recorded **regardless of who provides them** — the organization, its customers, or
+third parties — because inherited resources carry inherited risk. Each entry below names the
+provider explicitly.
+
+### 1.1 Resources by life-cycle stage
+
+| Life-cycle stage | Resource classes required | Register section |
+|---|---|---|
+| Inception / requirements | Human (product, legal, Responsible AI) | §6 |
+| Data acquisition and preparation | Data, tooling, computing | §3, §4, §5 |
+| Design and development | AI system components, tooling, computing, human | §2, §4, §5, §6 |
+| Verification and validation | Tooling (evaluation), data (test sets), human | §3, §4, §6 |
+| Deployment | Computing, provisioning tooling, human | §4, §5, §6 |
+| Operation and monitoring | Computing, monitoring tooling, human | §4, §5, §6 |
+| Change management | Tooling, human | §4, §6 |
+| Decommissioning and data deletion | Data (retention/disposal), human | §3, §6 |
+
+## 2. AI system components
+
+| Component | Type | Provider | Notes |
+|---|---|---|---|
+| Bedrock agent (compliance evaluation agent) | Managed agent runtime | **Third party — AWS** | Orchestrates the multi-node evaluation graph |
+| Bedrock AgentCore runtime | Managed container runtime | **Third party — AWS** | Hosts the agent server process |
+| Anthropic Claude Sonnet (evaluation nodes) | Foundation model, accessed via Amazon Bedrock | **Third party — Anthropic, via AWS** | Not trained or fine-tuned by us; used by inference only |
+| Anthropic Claude Opus (auditor node) | Foundation model, accessed via Amazon Bedrock | **Third party — Anthropic, via AWS** | Authors the authoritative compliance verdict |
+| Evaluation graph and tool implementations | First-party application code | **Organization** | Version-controlled; peer-reviewed before release |
+| Customer-supplied evidence documents | Input data | **Customer** | Supplied by the assessed organization; see §3 |
+
+## 3. Data resources
+
+### 3.1 Provenance and last update
+
+| Data resource | Provenance | Provider | Last updated |
+|---|---|---|---|
+| Control and framework catalogue (ISO/IEC 42001 requirement text) | Licensed standards content, curated into the managed framework catalogue | Organization (curated) | 2026-02-27 |
+| Customer evidence documents | Uploaded by the assessed organization through the evidence store | **Customer** | Continuously, per assessment |
+| AWS resource configuration records | Read from the assessed account's AWS APIs and AWS Config at scan time | **Third party — AWS**, on customer authority | Continuously, per assessment |
+| Evaluation prompt and rubric content | Authored in-house | Organization | 2026-03-02 |
+| Evaluation regression corpus (held-out labelled assessments) | Assembled in-house from de-identified historical assessments | Organization | 2026-02-14 |
+| Foundation model pre-training data | Not accessible to, controlled by, or licensed to the organization | **Third party — Anthropic** | Not applicable; documented as a supplier dependency (§ AIMS-PRO-010) |
+
+The organization does **not** train or fine-tune foundation models. No customer data is used for
+model training; this is a contractual commitment to customers and is enforced technically by using
+inference-only Bedrock APIs.
+
+### 3.2 Categories, roles and intended use of data
+
+| Category / role | Data | Intended use |
+|---|---|---|
+| **Training** | None | The organization performs no model training or fine-tuning |
+| **Validation** | Evaluation regression corpus (labelled subset, 30%) | Tuning prompts, rubrics and thresholds during development |
+| **Test** | Evaluation regression corpus (held-out subset, 70%, never used for tuning) | Pre-release verification and validation of evaluation accuracy |
+| **Production (inference input)** | Customer evidence documents; AWS configuration scan records | Producing a compliance verdict for the customer's control |
+| **Production (output)** | Assessment results, per-requirement verdicts, rationales, remediation tasks | Delivered to the customer; retained as the audit record |
+| **Operational telemetry** | Event logs, traces, metrics | Traceability, monitoring, incident investigation |
+
+### 3.3 Labelling and data preparation processes
+
+- **Labelling.** Regression-corpus items are labelled with the expected per-requirement verdict by
+  two qualified compliance analysts independently; disagreements are adjudicated by the Responsible
+  AI Lead. Inter-rater agreement is recorded per labelling round (last round: 0.94 Cohen's kappa).
+- **Preparation.** Customer evidence is decoded, content-type validated, classified by evidence type,
+  and normalized to text before analysis. Scan records are normalized into a documented
+  `ScanEvidence` structure grouped by account and region, preserving the verbatim API response so a
+  verdict can always be traced back to the raw observation.
+- **De-identification.** Historical assessments entering the regression corpus have customer
+  identifiers, account numbers and resource ARNs replaced with stable synthetic tokens.
+- **Exclusion.** Evidence that fails an integrity check is rejected rather than repaired, and is
+  never silently substituted.
+
+### 3.4 Data quality characteristics, retention and disposal, and known bias
+
+**Quality characteristics tracked:** completeness (does the evidence bear on every requirement),
+accuracy (does the extracted claim match the source text), timeliness (scan freshness — scan
+evidence is always collected fresh and never reused across assessments), consistency
+(inter-run agreement on identical inputs), and traceability (every verdict cites its source excerpt
+or raw API record).
+
+**Retention and disposal:**
+
+| Data | Retention | Disposal |
+|---|---|---|
+| Customer evidence documents | For the life of the customer agreement + 7 years (audit-record obligation) | Deleted on documented customer request or at retention expiry, via the evidence-store deletion workflow |
+| Assessment results and per-requirement verdicts | 7 years | Automated expiry |
+| Scan evidence | Retained with the assessment it supports; never reused as current evidence for a later assessment | Automated expiry with the assessment |
+| Operational event logs | 400 days minimum | Lifecycle expiry |
+| Regression corpus | Until superseded; reviewed annually for continued relevance | Deleted when superseded |
+
+**Known or potential bias issues:**
+
+1. **Document-style bias** — verbose, well-formatted policies risk scoring better than terse but
+   equally compliant ones. Mitigation: rubrics score on the presence of required elements, not
+   length or polish; the regression corpus deliberately includes terse compliant documents.
+2. **Service-coverage bias** — scan coverage is richer for long-established AWS services than for
+   newer ones, which can under-credit accounts built on newer services. Mitigation: a requirement
+   the scan cannot read is treated as a coverage gap resolved by documentation, never as a failure.
+3. **English-language bias** — evaluation quality is best characterized for English-language
+   evidence. Mitigation: documented as a technical limitation; non-English evidence is routed to
+   human review.
+4. **Recency bias in the corpus** — the corpus over-represents recent frameworks. Mitigation:
+   annual rebalancing review.
+
+## 4. Tooling resources
+
+### 4.1 Algorithms, models, data conditioning, optimization and evaluation methods
+
+| Tooling category | What is used |
+|---|---|
+| **Algorithm types** | Large-language-model inference within a directed multi-node evaluation graph; deterministic rule-based scoring of per-requirement statuses; no gradient-based training |
+| **Machine learning models** | Anthropic Claude Sonnet (context gathering, scanning, analysis nodes) and Claude Opus (auditor node), accessed via Amazon Bedrock; model identifiers are configuration, recorded per release |
+| **Data conditioning tools / processes** | Evidence decoding and text normalization; evidence-type classification; scan-record normalization into the documented `ScanEvidence` structure; de-identification pipeline for corpus entries |
+| **Optimization methods** | Prompt and rubric optimization against the validation split, with the test split held out; no model weight optimization. Changes are accepted only on a measured, non-regressing test-split result |
+| **Evaluation methods** | Per-requirement verdict accuracy against labelled ground truth; precision/recall on gap detection; run-to-run consistency on identical inputs; adversarial and prompt-injection test suites; deterministic scoring-formula unit tests |
+
+### 4.2 Provisioning and design/development/deployment tooling
+
+| Purpose | Tool | Provider |
+|---|---|---|
+| Source control and peer review | Internal source control and code-review system | Organization |
+| Build, dependency management, reproducible artefacts | Internal build system | Organization |
+| Automated test and evaluation execution | Unit/integration test framework; evaluation regression harness | Organization |
+| Infrastructure provisioning (infrastructure as code) | Declarative infrastructure definitions, version-controlled and peer-reviewed; no manual production provisioning | Organization |
+| Continuous delivery with staged promotion | Internal deployment pipeline (alpha → beta → gamma → production) | Organization |
+| Runtime hosting | Amazon Bedrock AgentCore | **Third party — AWS** |
+| Observability | OpenTelemetry instrumentation; CloudWatch metrics, logs and traces | Organization + **AWS** |
+| Model access | Amazon Bedrock | **Third party — AWS** |
+| Local end-to-end verification | Local invocation harness driving the real evaluation graph against a non-production stage | Organization |
+
+## 5. System and computing resources
+
+**Resource requirements.** The evaluation workload is inference-bound rather than compute-bound: a
+single control assessment consumes on the order of 1–3 vCPU-minutes of container compute, under 2 GB
+of memory, and is dominated by foundation-model inference latency (typically 75–150 seconds
+end-to-end per control). Peak demand is driven by framework-level assessments that fan out across
+controls and accounts.
+
+**Where the resources are located.** All AI system computing resources are **cloud computing**, in
+AWS account 471885797689, region us-west-2. There are **no on-premises and no edge computing
+resources** in scope: no model runs on customer premises or on end-user devices.
+
+| Resource class | Implementation | Location |
+|---|---|---|
+| Compute (agent runtime) | Bedrock AgentCore managed container runtime | Cloud — AWS us-west-2 |
+| Model inference | Amazon Bedrock managed endpoints | Cloud — AWS us-west-2 |
+| Storage | Amazon S3 (evidence store and staged scan evidence); Amazon DynamoDB (assessment, journal, lock and coordination records) | Cloud — AWS us-west-2 |
+| Network | Amazon VPC with private subnets and VPC endpoints for AWS service access; TLS in transit throughout | Cloud — AWS us-west-2 |
+| Asynchronous messaging | Amazon SQS (metering and dispatch) and Amazon SNS (notification) | Cloud — AWS us-west-2 |
+| Analytics | Amazon Athena workgroup over assessment history | Cloud — AWS us-west-2 |
+| Security monitoring | AWS CloudTrail (API activity), Amazon GuardDuty (threat detection) | Cloud — AWS us-west-2 |
+
+**Relevant impacts of the hardware used to run AI workloads.** Inference runs on AWS-managed
+accelerated hardware whose specification is not exposed to or controlled by the organization; the
+practical impacts we track and manage are: (a) **energy consumption and greenhouse-gas emissions**
+attributable to inference, which dominate the AI system's environmental footprint and are reported in
+the societal impact assessment; (b) **shared-tenancy performance variability**, which can lengthen
+assessment latency and is absorbed by asynchronous invocation rather than by user-facing timeouts;
+(c) **regional capacity constraints** for specific models, mitigated by a documented fallback model
+configuration; and (d) **no hardware disposal obligation** for the organization, since all compute is
+provider-managed — e-waste and hardware end-of-life sit with AWS under the shared responsibility
+model.
+
+## 6. Human resources
+
+### 6.1 Human resources by activity, and their competences
+
+Documented for **development, deployment, operation, change management, maintenance, transfer,
+decommissioning, verification and integration**:
+
+| Activity | Role(s) | Required competences |
+|---|---|---|
+| Development | AI Development Lead; software engineers | LLM application engineering, prompt and rubric design, secure coding, the evaluation domain |
+| Verification and validation | AI Development Lead; compliance analysts (labelling); Responsible AI Lead | Evaluation methodology, statistical interpretation of accuracy and agreement metrics, ISO/IEC 42001 domain knowledge |
+| Integration | Software engineers; AI Operations Lead | AWS service integration, API and contract compatibility, infrastructure as code |
+| Deployment | AI Operations Lead (SRE) | Staged release, rollback, infrastructure as code, change control |
+| Operation and monitoring | AI Operations Lead; on-call engineers | Observability, alert triage, drift and performance monitoring, incident command |
+| Change management | AI Development Lead; AI System Accountable Owner | Impact analysis, regression evaluation, release authorization |
+| Maintenance | Software engineers; Data Steward | Dependency and model-version currency, data quality upkeep |
+| Transfer (to a customer or another operator) | AI System Accountable Owner; General Counsel | Technical documentation handover, contractual and privacy obligations |
+| Decommissioning | Data Steward; AI Operations Lead | Data deletion and retention obligations, dependency teardown |
+| Human oversight of outputs | Compliance analysts; Responsible AI Lead | Authority and competence to override or withhold an AI-produced verdict |
+
+### 6.2 Trustworthiness expertise
+
+Named expertise is maintained for each trustworthiness topic, so oversight is informed rather than
+nominal:
+
+| Topic | Role holding the expertise | Competence basis |
+|---|---|---|
+| Safety | Responsible AI Lead | Responsible-AI practitioner training; owns the impact assessment process |
+| Security | AI Security Lead | Security engineering background; adversarial and prompt-injection testing |
+| Privacy | Chief Privacy Officer, supported by the Data Steward | Data-protection qualification; privacy impact assessment |
+| Fairness and explainability | Responsible AI Lead | Bias evaluation methodology; owns fairness evaluation gates |
+| Human oversight | Compliance analysts | Domain qualification in the assessed frameworks; explicit authority to override AI output |
+
+Competences are recorded per person in the AI Competence Register (AIMS-REG-004), assessed on hire
+and annually, and gaps are closed by training or by not assigning the activity. Every role in this
+section maps to an accountable role in AIMS-POL-003.
+
+## 7. Review history
+
+| Version | Date | Reviewer | Outcome |
+|---|---|---|---|
+| 3.0 | 2025-11-14 | AI System Accountable Owner | Quarterly review; tooling section expanded |
+| 3.1 | 2026-01-09 | Data Steward | Added known-bias items 3 and 4; refreshed retention table |
+| 4.0 | 2026-03-02 | AI System Accountable Owner, approved by CAIO | Full review across all five resource classes; added provider attribution to every entry, hardware-impact analysis (§5) and trustworthiness expertise map (§6.2) |

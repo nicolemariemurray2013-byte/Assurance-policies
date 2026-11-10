@@ -1,0 +1,129 @@
+# AI Data Provenance Process
+
+**Document ID:** AIMS-PRO-024
+**Version:** 2.3
+**Owner:** Data Steward
+**Approved by:** Chief AI Officer
+**Approval date:** 2026-03-02
+**Next scheduled review:** 2026-12-31
+**Scope:** Provenance of all data used in the compliance-evaluation AI system in AWS account
+471885797689 (us-west-2), across the life cycles of both **the data** and **the AI system**.
+
+---
+
+## 1. Defined and documented provenance process
+
+The organization **defines and documents this process for recording the provenance of data used in its
+AI systems.** Provenance here means a recorded, verifiable answer to: where did this data come from,
+who has held it, what has been done to it, and on what authority — maintained from the moment data
+enters the organization until it is deleted, and for as long as any AI output depends on it.
+
+**Why it is enforced rather than aspirational.** Every published verdict must be traceable to the
+evidence that produced it (objective RD-1). A verdict whose evidence has no provenance is not
+defensible, so provenance completeness is an admission gate for corpus data (AIMS-STD-022 Q-9) and an
+automatic property of operational evidence.
+
+### 1.1 Scope across two life cycles
+
+| Life cycle | Provenance spans |
+|---|---|
+| **Data life cycle** | Creation or acquisition → validation → transformation → use → transfer or sharing → archival → deletion. The record survives the data: the fact of deletion, and what was deleted, is itself a provenance event retained after the data is gone |
+| **AI system life cycle** | Requirements → design → data preparation → development → V&V → release → operation → change → decommissioning. At every stage, the data relied upon at that stage is identified with its provenance, so a historical release can be reconstructed as it actually stood |
+
+### 1.2 Roles
+
+| Role | Provenance duty |
+|---|---|
+| **Data Steward** | Owns the process; admits or rejects data on provenance grounds; owns the provenance register |
+| AI Development Lead | Records transformations and split assignments; ensures the system emits provenance for operational data |
+| AI Security Lead | Determines and reviews verification measures (§3) for externally sourced or high-risk data |
+| Legal & Privacy | Confirm rights basis and lawful acquisition as provenance facts |
+| AI Operations Lead | Ensures provenance events are logged and retained per AIMS-STD-013 |
+
+## 2. Provenance events recorded
+
+The following events are recorded, with **who, when, on what authority, and what changed** for each.
+Applicability is stated per data class rather than assumed.
+
+| Provenance event | What is recorded | Applicability in this system |
+|---|---|---|
+| **Creation** | Origin, author or generating system, creation timestamp, original form | Requirement text (catalogue release); synthetic/adversarial cases (author, date); scan evidence (API called, resource, account, region, collection timestamp); results and journals (generating runtime version and model identifier) |
+| **Acquisition** | Source, rights basis, acquiring role, date, approval | Corpus contributions (contract reference and permission); customer evidence (uploader, upload timestamp, declared content type) |
+| **Update** | What changed, by whom, when, why; the prior version retained | Corpus entries are versioned, never overwritten; evidence re-upload under the same title creates a **new version** rather than replacing v1; requirement text changes only through a catalogue release |
+| **Transcription** | Source form → transcribed form, method, operator, verification | Applicable to text extracted from supplied documents for analysis: the extraction method is recorded and the **original file is retained**, so any transcription is checkable against the source |
+| **Abstraction** | Summarization or aggregation performed, method, and the link back to the unabstracted source | Applicable to rationale and summary generation: the abstraction is always stored **beside** the raw evidence, never in place of it, so an abstraction never becomes the only record |
+| **Validation** | Check performed, result, validator, timestamp | Integrity and content-type checks; de-identification review; dual labelling and inter-rater agreement; adjudication; coverage validation on results |
+| **Transfer of control** | Who relinquished and who assumed control, when, under what terms | Corpus contribution under contractual permission (customer → organization); assessment record export to the customer; supplier boundary when content is sent to the model provider for inference |
+| **Data sharing without transfer of control** | Recipient, purpose, scope, terms, retention obligation | Customer evidence content sent to the model provider for inference — shared for processing, **control not transferred**, no training use, recorded as a standing provenance fact per model identifier; evidence packs released to external auditors under NDA |
+| **Transformation** | Each transform applied, its parameters, its order, and the pre-transform state | De-identification, format normalization, labelling, split assignment, chunking for analysis — recorded per entry (AIMS-PRO-023) |
+| Access | Who read the data and when | Access to evidence and corpus stores is logged; log access is itself logged |
+| Deletion / expiry | What was deleted, when, on what authority, and confirmation | Retention-job outcomes and customer deletion requests; the record of deletion is retained 7 years |
+| Legal hold | Scope, start, release | Suspends expiry for the records in scope |
+
+### 2.1 Where provenance is held
+
+| Data class | Provenance carrier |
+|---|---|
+| Evaluation corpus | Provenance register plus per-entry metadata under version control |
+| Requirement text | Catalogue version, tracked per assessment |
+| Customer evidence | Evidence record metadata (id, version, uploader, timestamp, content type, linked controls, integrity result), with the original file retained |
+| Scan evidence | Per-resource record: account, region, resource identifier, API called, timestamp, verbatim response |
+| Results and journals | Assessment record: runtime version, model identifier, phase and tool-call journal, cited evidence ids |
+| Prompts and rubrics | Version control history, tied to the runtime version that used them |
+
+**Joinability is the point.** All operational provenance shares the assessment id, so a verdict, the
+evidence behind it, the reads that produced that evidence, the model identifier that judged it and the
+code version that ran can be assembled into a single chain without re-running anything.
+
+## 3. Determining when verification measures are needed
+
+Recording provenance is not the same as verifying it. The organization **determines when verification
+measures are needed, based on the source of the data, its content, and the context of its use.** The
+determination is made by the Data Steward with the AI Security Lead, and re-made when any of the three
+factors changes.
+
+### 3.1 Determination criteria
+
+| Factor | Raises the verification requirement when… |
+|---|---|
+| **Source** | The source is external or not under our control; the source is customer-controlled and therefore untrusted; the chain passes through an intermediary; rights depend on an assertion rather than a contract; the supplier does not disclose its own provenance |
+| **Content** | The content is authoritative for many assessments (requirement text); it may contain personal or special-category data; it is machine-generated and could be forged; it asserts a technical state that is materially favourable to whoever supplied it |
+| **Context of use** | The data determines a published verdict; it forms ground truth against which the whole system is validated; it will be relied on in an audit or by a regulator; a wrong outcome is costly or hard to reverse; the data crosses a tenant or legal boundary |
+
+### 3.2 Determination outcomes for each data class
+
+| Data class | Source / content / context assessment | Verification measures required |
+|---|---|---|
+| **Requirement text (D-1)** | Internal but **authoritative for every assessment of that control** — highest blast radius | **Strong verification:** sourced only from the curated catalogue; catalogue version matched to the published framework version; integrity-checked; marked organization-trusted in the evidence envelope; customer-authored text can never carry that marking; changes only through a reviewed catalogue release |
+| **Evaluation corpus (D-2)** | Internal, but it is the **ground truth** — a provenance failure here invalidates every accuracy claim | **Strong verification:** rights basis verified against contract before admission; de-identification reviewed; dual independent labelling with recorded agreement; entries version-controlled and peer-reviewed; split assignment immutable; test split protected from tuning |
+| **Customer evidence (D-5)** | **External and untrusted**, content may be self-serving, context is a published verdict | **Verification of form, not of truth:** uploader and timestamp recorded; declared content type must match the file; integrity check on ingest and retrieval; original retained. The *claims* inside are not accepted on trust — they are corroborated against observed technical state wherever the scan reads the subject, and a document can never overwrite a directly observed technical fact |
+| **Scan evidence (D-6)** | Machine-generated from an authoritative source (the AWS APIs), but reaches into a customer account | **Independent verification available:** every read is independently recorded in CloudTrail in the assessed account, so our record of what we read is externally checkable; credentials are short-lived, read-only and customer-authorized; freshness enforced per assessment |
+| **Synthetic / adversarial (D-3)** | Internal, authored, low provenance risk | **Light verification:** author and date recorded; marked synthetic so it can never be mistaken for real ground truth |
+| **Prompts and rubrics (D-4)** | Internal, but determine every verdict | **Strong verification:** version control, two-approval peer review, tied to the runtime version |
+| **Results and journals (D-7)** | Generated, and become the audit record | **Strong verification:** versioned and never retroactively rewritten; integrity-checked; a re-issue is always a new dated record |
+| **Foundation models (D-9)** | **External, opaque — the supplier does not disclose training-data provenance** | **Verification not possible at the source; compensating measures required and applied:** model identifier and region pinned and recorded per assessment; quarterly no-change regression to detect behaviour change; fairness and accuracy measured on our own task and outputs; supplier obligations recorded in AIMS-PRO-010. The limitation is documented rather than glossed |
+
+### 3.3 When verification is re-determined
+
+On a new or changed source; on a change of rights or contract; on any integrity or provenance failure;
+on a supplier change (model deprecation or behaviour change); when data starts being used in a
+higher-stakes context than the one it was admitted for; and at the annual data review. A provenance
+failure is a nonconformity: the data is quarantined, the assessments that relied on it are identified
+through the assessment id chain, and affected results are re-examined and if necessary withdrawn and
+re-issued.
+
+## 4. Retention of provenance records
+
+Provenance records are retained for **at least as long as the data they describe, and for as long as
+any published result depends on that data** — in practice 7 years, aligned to the audit-record
+retention in AIMS-STD-013 §4.2. Provenance for deleted data is retained after deletion, because the
+question "what was this verdict based on?" outlives the evidence itself.
+
+## 5. Review history
+
+| Version | Date | Reviewer | Outcome |
+|---|---|---|---|
+| 2.0 | 2025-09-24 | Data Steward | Established the provenance event set and the register |
+| 2.1 | 2025-12-08 | Data Steward + Legal & Privacy | Added data-sharing-without-transfer-of-control for model inference |
+| 2.2 | 2026-01-29 | Data Steward | Added transcription and abstraction events after review found summaries were not linked back to raw evidence |
+| 2.3 | 2026-03-02 | Data Steward, approved by Chief AI Officer | Added §3 verification determination criteria and the per-class outcomes, including the supplier-opacity compensating measures |

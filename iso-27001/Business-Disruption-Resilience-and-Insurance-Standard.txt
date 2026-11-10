@@ -1,0 +1,215 @@
+# Business Disruption Resilience and Insurance Standard
+
+**Document ID:** BCM-STD-015
+**Version:** 3.2
+**Owner:** VP Engineering (technology resilience); CFO (insurance and financial impact); Head of People
+(workforce continuity); CEO accountable for the plan as a whole
+**Approved by:** CEO 2026-02-19; reviewed by the Audit Committee 2026-02-19 (which also reviews the
+insurance programme annually)
+**Next scheduled review:** 2026-12-31 (Annually, after every exercise, after every disruption event, and on any change)
+to the architecture, provider set or insurance programme
+**Scope:** The compliance-evaluation service in AWS account 471885797689 (us-west-2), the corporate
+environment, seven outsourced providers, 48 personnel across five geographies and two legal entities.
+
+---
+
+## 1. Identifying disruption risks, and selecting the mitigation for each
+
+**The entity identifies, selects, and develops risk mitigation activities for risks arising from potential
+business disruptions.** Disruption risks are identified through the same process as every other risk
+(RSK-PRO-009) so they compete for attention on the same scale, and each is scored against the availability
+sub-objectives **A-1 to A-4** and the availability tolerance in RSK-STD-008.
+
+**Impact analysis first.** Each business process carries a recorded maximum tolerable outage, a recovery
+time objective and a recovery point objective, derived from the customer commitments rather than from what
+is convenient:
+
+| Process | Maximum tolerable outage | RTO | RPO | Basis |
+|---|---|---|---|---|
+| Assessment execution (the product) | 24 hours | **4 hours** | **15 minutes** | The availability commitment in the customer agreement and the A-1 tolerance |
+| Assessment results retrieval | 8 hours | 2 hours | 0 (durable store) | Customers depend on retrieval during their own audits |
+| Evidence upload | 24 hours | 4 hours | 0 | An upload lost is customer work lost |
+| Authentication / identity | 4 hours | **1 hour** | 0 | Nothing else works without it |
+| Security monitoring and alerting | 8 hours | 2 hours | 15 min | A monitoring outage is a detection outage (**R-039**) |
+| Customer support | 2 business days | 8 hours | n/a | Contractual response times |
+| Financial close and payroll | 5 business days (payroll: 0 tolerance on the pay date) | 2 business days | 1 day | Statutory and employment obligations |
+| Corporate collaboration tooling | 3 business days | 1 business day | 1 day | Degraded but survivable |
+
+**Disruption risks identified, and the mitigation selected for each:**
+
+| ID | Disruption risk | Inherent assessment | Mitigation selected | Residual position |
+|---|---|---|---|---|
+| **R-022** | **Loss of the us-west-2 region** | Critical impact, low likelihood | **Accepted** rather than mitigated by multi-region: multi-AZ deployment within the region, infrastructure entirely as code so the stack is rebuildable elsewhere, backups with a **quarterly restore test to a clean environment**, and a documented rebuild runbook with a measured time. Multi-region active-active was costed and **rejected on the recorded ground that the engineering capacity it would consume is currently needed for control remediation** — a decision, not an oversight | **Board-accepted with a named review date and an explicit reopening trigger** (a change in the availability commitment, a customer contractual requirement, or a second regional event in the industry). The acceptance is **conditional on the quarterly restore test passing**; a failed restore test reopens it automatically |
+| **R-030** | A backup that cannot be restored | Critical impact | Backup monitoring; integrity checks; **quarterly restore test to a clean environment measuring actual RTO/RPO**; zero tolerance for an untested backup path | Mitigated; the restore tests passed each quarter this period. This is the control that makes R-022's acceptance defensible, so it is treated as Critical in its own right |
+| R-023 | Loss of a single availability zone | Moderate | Multi-AZ deployment; capacity headroom to absorb the loss of one AZ | Mitigated |
+| R-024 | Failure of a critical provider (managed SIEM, model provider, identity provider, payments) | High | Per-provider exit plan and a named alternative; contractual notice periods; data portability requirements in each annex; for the model provider, **the design keeps the evaluation logic and prompts under entity control so a provider substitution does not require rebuilding the product** | Mitigated to Moderate; the concentration on a single cloud provider is not mitigated and is recorded as R-022's sibling |
+| **R-018** | **Loss of key personnel** | High | Named **and exercised** deputies for every control-critical role; runbooks so knowledge is not personal; cross-training; the IC bench raised from 2 to 6; 12 on-call certified; attrition reported to the Board | Mitigated; the "deputy exercised?" column in HR-POL-004 §8 is the evidence, and the two roles where a deputy has **not** yet exercised the duty are recorded as open |
+| R-025 | Loss of an office or a geography | Low — 42 of 48 personnel work remotely and production is in AWS | Remote-first working as the standing state rather than a contingency; no production asset in any office | Mitigated by design; tested annually |
+| R-026 | Ransomware or destructive action against the environment | Critical | Immutable and versioned backups; **audit-log store versioning** (enabled this period); deletion protection; least privilege; MFA (in remediation); network restriction; detection and response | **Partially mitigated — recorded openly.** The open findings on administrative access breadth, MFA and unrestricted ingress each weaken this mitigation, and the risk is carried at its true score rather than at the score the intended controls would give |
+| R-027 | Capacity exhaustion under customer growth | Moderate | Capacity review in the monthly ops review; autoscaling; growth **above** tolerance triggers a control-capacity review, not just an infrastructure one | Mitigated |
+| R-028 | A pandemic or similar workforce-wide event | Moderate | Remote-first; no dependency on physical presence for any production process | Mitigated by the standing operating model |
+| R-029 | Model or evaluation-quality disruption — a model change degrades assessment accuracy | High | The accuracy regression gate as a release gate; the ability to **pin or roll back to a prior model and logic version**; the Responsible AI Lead's stop authority; the suspension trigger for a verdict class below the accuracy floor | Mitigated; the rollback path is exercised in the quarterly game day |
+| R-031 | Financial disruption — a large customer loss or a funding event | Moderate | Cash runway monitored monthly against a floor; the CFO's scenario analysis; **the recorded 2025-11-14 decision to decline revenue rather than compromise a control**, which is the tone this risk is managed under | Mitigated; reported to the Board quarterly |
+
+## 2. Planned policies, procedures, communications and alternative processing
+
+**The entity has developed planned policies, procedures, communications and alternative processing solutions
+to respond to, mitigate and recover from incidents that disrupt business operations.** All four exist in
+advance and are exercised; none is left to be invented during an event.
+
+**Policies and procedures:**
+
+| Artifact | What it specifies | Where it lives |
+|---|---|---|
+| **This standard (BCM-STD-015)** | Impact analysis, RTO/RPO, the mitigation set, activation authority, insurance | Policy index |
+| Business continuity plan | Activation criteria and authority (any IC may activate; the CEO or VP Engineering confirms), the crisis-management team roster with deputies, decision log requirements, stand-down criteria | Policy index, with the roster reviewed quarterly |
+| Disaster recovery runbooks | Per-scenario technical steps: AZ loss, **full region rebuild from IaC and backup**, datastore restore, identity-provider failure, model-provider substitution, pipeline failure | In the repository beside the systems they cover, so they cannot drift out of sight — with a build check that fails a runbook referencing a renamed resource |
+| Backup and restore procedure | Scope, frequency, retention, encryption, integrity checks, and the **quarterly restore-test method against a clean environment** | Repository |
+| Incident response procedure (SEC-PRO-014) | The response spine that a disruption event runs on: severities, IC, phases, notification timers | Repository and policy index |
+| Crisis communication plan | §3 below | Policy index, with pre-approved templates |
+| Workforce continuity | Deputy assignments, on-call rota with escalation, IC bench, remote-first working standard | HR-POL-004 §8 and the rota |
+| Provider exit and substitution plans | Per critical provider: the alternative, the data-return requirement, the notice period, the estimated substitution time | Supplier records |
+| Insurance schedule | §5 below | Finance, reviewed annually by the Audit Committee |
+
+**Alternative processing solutions, stated with their real limits:**
+
+| Dependency | Alternative processing solution | Exercised? | Honest limit |
+|---|---|---|---|
+| Compute and orchestration | Multi-AZ within us-west-2; the entire stack reproducible from IaC into **any** region or account | The IaC rebuild is exercised in the quarterly restore test, which stands the stack up in a **clean environment** and runs assessments against it | Not a warm standby. A regional loss means a **rebuild**, measured at under the 4-hour RTO in the last two tests but dependent on the region being available elsewhere and on the test remaining representative |
+| Data stores | Point-in-time recovery, in-bucket object versioning (enabled 2026-08-18), and region-durable backups | Restored quarterly and the RPO measured | Backups are region-scoped to us-west-2; cross-region backup replication is a registered open item (backup standard §6.5), so whole-region data loss is an accepted residual. One datastore (`Demo`, non-production) currently has PITR and deletion protection **disabled** — recorded as an open deficiency with an owner and date, not presented as covered |
+| **Model provider** | Evaluation logic, prompts and the regression suite are entity-owned artifacts; an alternative model is qualified against the same regression suite before it would be needed | The substitution path is walked in the annual exercise | An alternative model must pass the accuracy floor; qualification takes time, so the plan assumes a degraded-accuracy period is unacceptable and the service would be **suspended for the affected verdict class rather than run on an unqualified model** — that choice is recorded |
+| Managed SIEM | The entity's own alerting covers the top-severity events independently of the provider, so provider loss degrades depth but not the critical path (**R-039**) | Tested in the purple-team validation | Depth of detection is genuinely reduced; a second detection engineer was trained to reduce the people-side of the same risk |
+| Identity provider | Documented break-glass path with **two-person control** and alerting; local emergency credentials sealed and inventoried | Exercised in a game day | The break-glass path is also the R-041 segregation limitation — the same mechanism that provides continuity is the one that cannot be fully segregated, and that tension is stated rather than hidden |
+| Offices | Remote-first is the normal state; no office is required for any production process | Continuously, by operation | Co-working locations hold nothing above Internal classification, so their loss is immaterial |
+| Key personnel | Named deputies who have **actually exercised** the duty; runbooks; 6 ICs; 12 on-call certified | Deputies exercised in scheduled absences, recorded per role | Two control-critical roles still have an **unexercised** deputy — open, with dates |
+| Payments and payroll | A second authorized signatory; a documented manual payroll path with the provider; dual authorization preserved in the fallback | Walked annually before the fiscal year end | The manual path is slower; the pay-date tolerance is zero, so the path is tested rather than assumed |
+| Customer support | Cross-trained coverage across two geographies and time zones | Continuously | A single-geography event does not stop support |
+
+## 3. Monitoring, information and communications during response, mitigation and recovery
+
+**The resilience policies and procedures include monitoring processes and information and communications
+capabilities to support the achievement of objectives during response, mitigation and recovery.** The
+requirement the entity holds itself to is that the monitoring and communication capability must **survive the
+disruption it is reporting on** — a status page hosted inside the failed environment is not a capability.
+
+**Monitoring during a disruption:**
+
+| Capability | What it provides during response | Independence from the failure |
+|---|---|---|
+| Service health and availability metrics with alerting | Detection, blast-radius, and the measurement of elapsed outage against the tolerance | Alerting is delivered through a paging provider outside the production account |
+| Recovery progress instrumentation | Restore percentage, replication lag and the measured RPO as the recovery proceeds — so the IC knows whether the RTO will be met while there is still time to escalate | Reported from the recovery environment, not the failed one |
+| **The IaC baseline as the authoritative inventory** | What must exist for the service to be whole, so a rebuild can be verified as complete rather than "looking right" | Version-controlled outside the production account |
+| Backup success and integrity monitoring | Whether the restore source is trustworthy **before** the restore is attempted | Monitored continuously, not checked at the moment of need |
+| Security monitoring during recovery | Detection of an attacker exploiting the disruption, and of a destructive action that caused it | Managed SIEM retains an independent log copy |
+| Log-configuration change alerting | Warns if the evidence needed to understand the event is being altered | Added this period after the audit-store versioning finding |
+| **The decision log** | A contemporaneous record of every activation decision, its reasoning and its author — the input to the post-event review and to any customer or regulator question | Kept by the Scribe role outside the affected systems |
+| Capacity and cost anomaly monitoring | Signals a mitigation consuming resource unsustainably | Independent of the workload |
+
+**A monitoring limitation, recorded:** for part of this period the configuration recorder's scope excluded
+identity resource types and the findings aggregator returned no data. A disruption in that window would have
+been recoverable, but the entity's ability to **evidence** what changed would have been impaired. It was
+treated as a near miss with a mandatory review, the recording scope was corrected, log retention was set,
+and a monthly reconciliation of expected-versus-actual detections was introduced. R-039's likelihood was
+re-scored upward as a result.
+
+**Communications during a disruption** — audiences, timing and channel are pre-defined, and templates are
+pre-approved because the annual exercise proved that drafting under pressure costs hours:
+
+| Audience | What is communicated | Timing | Channel, and its independence |
+|---|---|---|---|
+| Response team | Activation, role assignments, current state, next checkpoint | On activation, then every 30 minutes for Sev-1 | Paging plus a dedicated channel in a collaboration tool independent of the production account, with a **conference bridge as the fallback if the tool is also affected** |
+| All personnel | That an event is in progress, what they should and should not do, and where to send information | Within 1 hour of activation | Broadcast channel plus SMS to personal numbers held for this purpose, so a corporate-tool outage does not silence the entity |
+| **Executive team and CEO** | Severity, impact, customer exposure, decisions needed at their level | **Within 1 hour** for Sev-1 | Direct paging |
+| **Board / Audit Committee** | Nature, impact, response status, and the decisions taken | Within 24 hours, with the **24-hour escalation call** where the escalation criteria are met | GOV-PRO-006's escalation path |
+| **Affected customers** | What is affected, what is not, what the entity is doing, what the customer should do, and the next update time — **including what is not yet known** | **Within 24 hours of confirmation** for Sev-1; status page updated on activation and at each checkpoint | Status page hosted **outside** the production account and the affected region; named-contact email; the customer's named account contact for enterprise customers |
+| All customers | Service status regardless of individual impact | Continuously via the status page | Externally hosted |
+| Regulators / supervisory authorities | Where a notification obligation is triggered — assessed by the DPO and General Counsel | Statutory timers (72 hours for a qualifying personal-data breach, clock from discovery, **escalation at 50% elapsed**) | Legal channel, with pre-approved templates |
+| Providers and sub-processors | Engagement of their support and their obligations under the annex | On activation where relevant | The named contact and maximum notification time in each annex |
+| Insurers | Notice of circumstances that may give rise to a claim | Per the policy's notice condition — **checked at activation, not after recovery**, since late notice can void cover | Broker, named in the plan |
+
+**Recovery and stand-down communications** are equally pre-defined: confirmation that service is restored and
+verified (not merely responding), what data was affected and what was not, what the entity will do next, and
+— for a Sev-1 — a written post-incident summary to affected customers. Stand-down requires the IC's recorded
+confirmation against defined criteria; there is no informal end to an event.
+
+**Exercised and measured, with the failures kept.** Communications are exercised in the quarterly game days
+and the annual full-scale exercise. The 2025-11 exercise found the **notification decision took 31 hours
+against a 24-hour commitment** because no material was pre-drafted; the remediation (pre-approved templates
+per scenario class, a standing 2-hour legal review slot on Sev-1 declaration) brought the 2026-Q1 game day to
+6 hours. The 2026-Q1 game day separately found a **stale containment runbook**, corrected with a build check.
+Both findings are in the deficiency register.
+
+## 4. Governance of the resilience programme
+
+Continuity is governed rather than filed: the plan is owned by named officers (above); activation authority
+is explicit and does not require a committee; the impact analysis is refreshed annually and on any change to
+the customer commitments; exercises are scheduled a year ahead and their findings enter the deficiency
+register with the same 2-business-day capture rule as any other finding; the Audit Committee receives
+exercise results and insurance adequacy annually and reviews **R-022's acceptance and its reopening
+trigger** each year; and internal audit tests the programme independently — including testing whether the
+restore test actually restored, rather than whether a restore test was scheduled.
+
+## 5. Insurance as a mitigation of financial impact
+
+**The entity's risk management activities address the use of insurance to offset the financial impact of loss
+events that would otherwise impair the ability to achieve its objectives.** Insurance is treated as a **risk
+transfer decision made inside the risk process** — every "share" response in the risk register names the
+policy that carries it — and never as a substitute for a control.
+
+| Cover | Purpose — the loss event it offsets | Sizing basis | Register linkage |
+|---|---|---|---|
+| **Cyber liability** — first-party (incident response, forensics, notification costs, business interruption, data restoration, extortion) and third-party (customer claims, regulatory defence, fines where insurable) | The financial impact of **R-005** (external compromise), **R-026** (destructive action) and **R-012** (confidential disclosure) — notification and forensic costs alone can exceed the entity's cash reserves at 48 people | Modelled from the customer count, the volume and sensitivity of evidence held, notification cost per record in the applicable jurisdictions, and a business-interruption scenario at the maximum tolerable outage | R-005, R-012, R-026 marked **reduce + share** |
+| **Technology errors and omissions / professional liability** | The financial impact of **R-001** — a wrong compliance verdict relied on by a customer, which for an assurance vendor is the signature exposure | Contractual liability caps across the customer base, plus a tail for claims outside the caps | R-001 marked reduce + share |
+| **Business interruption** (within the cyber tower and separately) | Revenue loss and extra expense during an outage, including a **regional loss under the accepted R-022** — since the entity chose rebuild over multi-region, insurance carries part of the financial consequence of that choice | The maximum tolerable outage against monthly revenue, plus the modelled cost of an emergency rebuild | **R-022 — the accepted risk is explicitly part-financed by insurance, and that is recorded as part of the acceptance rationale** |
+| **Directors' and officers' liability** | Claims against directors and officers, including in respect of oversight of the matters in this standard | Board-approved limits | Governance risks |
+| Employment practices liability | Employment claims, including in connection with conduct cases | Headcount-based | Conduct and personnel risks |
+| Crime / fidelity | Employee theft, payment fraud and social-engineering fraud — the exposure the payment callback control addresses preventively | Payment volumes and approval limits | RSK-PRO-010's fraud scenarios, marked **reduce + share** |
+| General liability and property | Ordinary corporate exposures; property is minimal since the entity holds only office equipment and endpoint devices | Standard | Low materiality, recorded as such |
+| **Contractual indemnity and insurance requirements imposed on providers** | Transfers part of **R-006** (provider or sub-processor breach) to the party best placed to control it | Each critical provider's annex specifies minimum cover and an indemnity; certificates are collected and their currency checked at the annual assessment | R-006 marked reduce + share |
+
+**How insurance is kept honest:**
+
+1. **Reviewed annually by the CFO with the broker and approved by the Audit Committee**, against the current
+   risk register rather than against last year's schedule — so a risk that grew is a coverage question, not
+   only a control question.
+2. **Reviewed on trigger** as well as on cadence: a material change in customer count or contract terms, a
+   new jurisdiction, a new provider, a new processing purpose, or a material change to a Critical risk.
+3. **Exclusions and conditions are read and recorded, not assumed.** The current schedule's material
+   limitations are recorded in the risk register: regulatory fines are uninsurable in some jurisdictions;
+   the cyber policy carries a **notice condition that requires notice at the point circumstances arise**,
+   which is why insurer notice is a step at incident activation rather than after recovery; and
+   business-interruption cover has a waiting period **shorter than the maximum tolerable outage but longer
+   than the RTO**, meaning a fast recovery may fall below the deductible — an outcome the entity prefers and
+   has recorded as understood.
+4. **Insurance never reduces an inherent risk score.** The register records residual risk after *controls*;
+   insurance is recorded separately as a financial-impact mitigation, so that a well-insured but poorly
+   controlled risk cannot look acceptable. This rule exists because the opposite convention would have made
+   R-026 appear mitigated while the MFA and administrative-access findings remain open.
+5. **Claims and near-claims are reported** to the Audit Committee, and an insurer's declination or reservation
+   is treated as a risk finding.
+6. **The open control findings are disclosed to the insurer** at renewal. Concealing them would risk the
+   cover the register depends on, and the entity's position is that a disclosed gap with a dated remediation
+   plan is underwritable while an undisclosed one is worthless.
+
+## 6. Performance this period
+
+| Measure | Result |
+|---|---|
+| Disruption events meeting Sev-1 or Sev-2 availability criteria | None; availability remained within the A-1 tolerance |
+| Quarterly restore tests | 4 of 4 completed and passed; measured RTO under the 4-hour objective and RPO within 15 minutes in each |
+| Quarterly game days | 4 of 4 held; findings: a stale containment runbook (corrected, with a build check) and the improved notification-decision time |
+| Annual full-scale exercise | Held 2025-11; the 31-hour notification-decision finding and its remediation are recorded and re-tested |
+| Provider exit plans current | 7 of 7 |
+| Deputies exercised for control-critical roles | Most exercised; **2 roles remain with an unexercised deputy — open** |
+| Insurance review | Completed with the broker; approved by the Audit Committee 2026-02-19; cyber limit increased following growth in evidence volume |
+| Open resilience-related deficiencies | The `Demo` datastore's disabled PITR/deletion protection; the two unexercised deputies; the residual weakening of R-026 by the open MFA, administrative-access and ingress findings — all with named owners and dates, one CAP item **overdue by 9 days** and escalated as required |
+
+## 7. Review history
+
+| Version | Date | Change |
+|---|---|---|
+| 2.0 | 2024-11-06 | Established the impact analysis, RTO/RPO set and backup regime |
+| 2.5 | 2025-06-12 | Added the quarterly restore test to a clean environment after a restore path proved untested; **R-030 made a Critical risk in its own right** |
+| 3.0 | 2025-09-11 | Recorded R-022's acceptance with its reopening trigger and the rejected multi-region option; linked every "share" response to a named policy; added the rule that insurance never reduces a residual score |
+| 3.1 | 2025-11-28 | Post-exercise: pre-approved communication templates and the standing legal slot; insurer notice moved to incident activation after the notice condition was read |
+| 3.2 | 2026-02-19 | Added the monitoring-capability independence requirement and the recorded telemetry limitation; disclosed the open findings weakening R-026; recorded the two unexercised deputies and the `Demo` datastore gap |

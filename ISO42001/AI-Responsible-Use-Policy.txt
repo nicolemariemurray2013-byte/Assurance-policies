@@ -1,0 +1,172 @@
+# Responsible Use of AI Systems — Processes and Objectives
+
+**Document ID:** AIMS-POL-018
+**Version:** 3.3
+**Owner:** Chief AI Officer
+**Approved by:** AI Governance Board
+**Approval date:** 2026-03-06
+**Next scheduled review:** 2026-12-31
+**Scope:** Every AI system the organization uses, whether developed internally or obtained from a third
+party. Includes the compliance-evaluation AI system operated in AWS account 471885797689 (us-west-2),
+which is both developed and used by the organization and is therefore subject to this policy as a user
+as well as a provider.
+
+**Alignment with existing policy.** This policy is a **domain-specific extension of the organization's
+existing technology-use policies** — the Acceptable Use Policy, Information Security Policy, Third-Party
+Risk Management Policy, Procurement Policy, Change Management Policy and Data Protection Policy. It does
+not restate or replace them: an AI system is first subject to all of them, and this policy adds only what
+is specific to AI. Where a term is defined in those policies it carries the same meaning here. Conflicts
+resolve in favour of the stricter requirement, and any residual conflict is decided by the AIGB with the
+policy owner concerned.
+
+---
+
+# Part 1 — Processes for the responsible use of AI systems (A.9.2)
+
+The organization **defines and documents the processes for the responsible use of AI systems.** Four
+processes apply, in order: U-1 decision to use, U-2 sourcing and approval, U-3 authorization to operate,
+U-4 ongoing responsible use.
+
+## U-1 — Deciding whether to use an AI system at all
+
+Applies identically to systems **we develop** and systems **obtained from a third party**; the
+difference is only in which evidence satisfies each step.
+
+| Step | What is determined | Recorded | Decision authority |
+|---|---|---|---|
+| 1. Problem statement | What outcome is sought, and for whom | Use-case record | Requesting business owner |
+| 2. **Is AI the right instrument?** | Whether a deterministic, rules-based or human process would meet the need with less risk. **AI is not the default.** For our own system: deterministic rule-checking was evaluated and rejected only for the natural-language evidence-judgement portion, and the **scoring aggregation was deliberately kept as deterministic code, not model judgement** (AIMS-PRO-023 §3.1) | Rejected-alternatives record | AI Governance Board |
+| 3. Prohibited-use screen | Whether the use falls in a prohibited class (§P below). A prohibited use ends the process | Screening record | Responsible AI Lead — veto right |
+| 4. Impact assessment | Impact on individuals, groups and societies, proportionate to the use (AIMS-PRO-005) | AIMS-REC-005 record | Responsible AI Lead |
+| 5. Risk assessment | AI risks, including the security and privacy risks that the Information Security Policy already requires | AI risk register | AI Security Lead + Risk |
+| 6. **Cost of use, including ongoing cost** | Not only licence or build cost, but the **full cost of responsible operation**: inference and infrastructure cost; **monitoring**; **maintenance**; evaluation-corpus upkeep and re-labelling; human oversight effort; incident response; documentation currency; re-validation on supplier model change; and eventual decommissioning. A use case is **not approved without a funded owner for the ongoing monitoring and maintenance cost** — an unfunded monitoring commitment is treated as a decision not to monitor | Total-cost-of-use record, reviewed annually | Finance + Accountable Owner |
+| 7. Legal and regulatory requirements | Applicable AI, data-protection, sectoral and contractual requirements per jurisdiction (AIMS-REG-017) | Legal determination | Legal & Privacy |
+| 8. Objectives and success measures | The responsible-use objectives from Part 2 that apply, with measures | Objectives record | Accountable Owner |
+| 9. Decision | Approve, approve with conditions, defer, or reject — with reasons | Minuted decision | AI Governance Board |
+
+**Rejections are recorded with reasons.** Three internal proposals have been rejected under U-1:
+automated evaluation of employee compliance performance (prohibited use), automated generation of
+customer-facing attestations without human sign-off (unacceptable residual risk), and fine-tuning on
+customer-derived data (rights basis absent — AIMS-REC-021 §5). A process that has never rejected anything
+is not a control.
+
+## U-2 — Sourcing requirements (approved sourcing of AI systems)
+
+AI systems and components are obtained only through **approved sourcing**, which extends the existing
+Procurement and Third-Party Risk policies with AI-specific requirements:
+
+| Requirement | Applies to |
+|---|---|
+| Sourced only from suppliers assessed and approved under AIMS-PRO-010, through the standard procurement route — **no shadow procurement, no free-tier or personal-account use of AI services for organizational work** | All third-party AI |
+| Supplier must provide adequate documentation: intended purpose, capabilities, limitations, evaluation results, data-handling terms | All third-party AI |
+| Contractual terms required: **no use of our or our customers' data for training**; data location and retention; security and breach-notification obligations; deprecation notice; audit or attestation rights | All third-party AI |
+| Model access via approved managed services only (Amazon Bedrock), with the model identifier and region **pinned and recorded**, never floating | Foundation models |
+| Open-source or freely available components subject to the same assessment; "free" does not mean unapproved-use-permitted | All |
+| Internally developed systems must satisfy AIMS-POL-006 (life cycle) before use, including V&V and release criteria | Internal |
+| Where a supplier cannot evidence a requirement, **compensating measures are defined and recorded, or the sourcing is rejected**. The foundation-model training-data opacity is handled this way (AIMS-PRO-024 §3.2, D-9) | All |
+
+## U-3 — Authorization to operate
+
+No AI system enters organizational use without a recorded authorization naming: the accountable owner;
+the approved intended purpose and the **valid domain of use**; prohibited uses; the required human
+oversight (Part 2, §M-4); the monitoring measures and their funded owner; the review date; and the
+conditions under which authorization is suspended. Authorization is **time-bounded** and lapses if not
+renewed — the current authorization for the compliance-evaluation system expires 2026-09-06.
+
+## U-4 — Ongoing responsible use
+
+| Activity | Frequency | Owner |
+|---|---|---|
+| Use within intended purpose and valid domain confirmed | Continuous, with the checks in AIMS-REC-019 | AI Operations Lead |
+| Monitoring measures reviewed against thresholds | Monthly | AI Operations Lead |
+| Human oversight actually exercised — override rate, review coverage — verified rather than assumed | Monthly | Accountable Owner |
+| Adverse-impact reports and concerns reviewed | Monthly | Responsible AI Lead |
+| Total cost of use, including monitoring and maintenance, reviewed against the approved envelope | Annually | Finance + Accountable Owner |
+| Impact and risk assessments refreshed | Annually, and on significant change | Responsible AI Lead |
+| Supplier performance and model currency reviewed | Quarterly | AI Security Lead |
+| Authorization renewed or withdrawn | Semi-annually | AI Governance Board |
+
+## P — Prohibited uses
+
+Absolute, and screened for at U-1 step 3: evaluating or making decisions about **individual persons**
+(including using compliance verdicts to assess an employee's performance); producing a certification,
+attestation or legal opinion **without qualified human sign-off**; use outside the published valid domain
+of use presented as though inside it; use on personal or special-category data beyond what the approved
+purpose requires; granting an AI system **write, delete or configuration-change authority** in a customer
+or production environment (our own system holds **read-only** credentials by design); circumventing an
+approval, security or privacy control; and any use whose adverse impacts have not been assessed.
+
+---
+
+# Part 2 — Objectives for the responsible use of AI systems (A.9.3)
+
+The organization **defines and documents objectives for the responsible use of AI systems**, and the
+mechanisms by which they are achieved. The objectives below were selected against the organization's
+context — the system renders judgements that organizations and their auditors rely on, so
+**explainability, reliability and accountability dominate**, while some aspects common to other AI uses
+(physical safety, environmental control) are less material and are recorded as such rather than padded.
+
+| # | Objective | Why it applies in this context | Mechanisms that achieve it | Measure |
+|---|---|---|---|---|
+| **O-1 Fairness** | Equivalent evidence must receive equivalent verdicts, whatever the size, sector, maturity or documentation style of the organization assessed | Rubrics score the **presence of required elements, not polish or length**; terse-compliant and verbose-empty strata are permanent release gates; fairness measured across strata (M-7); disparity investigated as a defect; no demographic attributes held or inferred | Disparity across strata; presentation-bias gate pass |
+| **O-2 Accountability** | A machine verdict must never be an unowned verdict | A **named accountable owner** for the system; per-decision human accountability through recorded, attributable overrides; RACI in AIMS-PRO-003; the system is authoritatively **not** the decision-maker of record | Every published result has an accountable reviewer |
+| **O-3 Transparency** | Users and assessed organizations must know they are relying on AI output and what its limits are | Machine-generated labelling on every verdict; published limitations and valid domain of use; disclosed scoring behaviour; no covert operation | Disclosure present on 100% of results |
+| **O-4 Explainability** | The **primary** objective here: a compliance finding that cannot be explained is worthless to an auditor | Every requirement verdict carries a **rationale and citations to the specific evidence relied on**; coverage validation refuses to publish an uncited verdict; the full phase and tool-call journal is retained and disclosable; **traceable rationale is why fine-tuning was rejected** (AIMS-DOC-009 §3.1) | 100% of verdicts cited; analyst comprehension review ≥ threshold |
+| **O-5 Reliability** | Results feed audits and regulatory filings; instability destroys their value | Deterministic scoring in code; pinned model identifier; quarterly no-change regression to detect supplier drift; held-out test split never used for tuning; release criteria gate accuracy | Agreement with qualified human labels; no-change regression stability |
+| **O-6 Safety** | **Low materiality, recorded rather than inflated:** the system is read-only, has no physical actuation and no safety-of-life function. The residual safety-relevant path is indirect — a wrong verdict contributing to a false assurance conclusion | Read-only credentials with no write path; human sign-off before any assurance claim; withdrawal and correction process for published results | Zero write attempts; zero unreviewed published assurance claims |
+| **O-7 Robustness and redundancy** | Evidence is customer-controlled and therefore an attack surface; a silent failure would be worse than a loud one | Structural trust-boundary encoding so customer content is never instructions; adversarial release suite (injection, contradiction, overstatement); **fail-loud design — unreadable evidence yields unable-to-assess, never non-compliance**; retries with idempotency; graceful degradation with recorded coverage; human review as the redundant path rather than a second model | Adversarial suite pass; zero read-failures scored as non-compliance (Q-15) |
+| **O-8 Privacy and security** | Evidence may incidentally contain personal data and always contains confidential material | Processor role under DPA; encryption in transit and at rest; per-tenant isolation; least-privilege short-lived read-only credentials; evidence content excluded from logs and telemetry, verified quarterly; **no customer data used for training**; defined retention and honoured deletion | Zero cross-tenant findings; zero minimization violations |
+| **O-9 Accessibility** | Users include people using assistive technology; an inaccessible finding is an unusable finding | Screen-reader-compatible output; **status conveyed in text as well as colour**; plain-language customer material; specialist review semi-annually | Accessibility review closed with no open high findings |
+| **O-10 Environmental responsibility** | Lower materiality than the objectives above, but not nil, and recorded honestly | Inference-only (no training runs); prompt and context efficiency; right-sized models per node with only the auditor node on the largest model; scheduled rather than continuous operation; managed-service efficiency | Inference volume per assessment, trended |
+
+## M — Mechanisms, including where human oversight belongs
+
+Objectives are achieved through the mechanisms in the table above plus the following cross-cutting ones.
+
+| # | Mechanism | Achieves |
+|---|---|---|
+| M-1 | Governance: AIGB approval, time-bounded authorization to operate, quarterly review | O-2, and all |
+| M-2 | Life-cycle control: AIMS-POL-006 gates, V&V, release criteria, change classification | O-5, O-7 |
+| M-3 | Data governance: quality requirements, provenance, preparation criteria (AIMS-STD-022, AIMS-PRO-024, AIMS-PRO-023) | O-1, O-5, O-8 |
+| **M-4** | **Human oversight — see below** | O-2, O-4, O-6 |
+| M-5 | Monitoring and measurement against thresholds (AIMS-PRO-007) | O-5, O-7 |
+| M-6 | Adverse-impact reporting from anyone, handled in the same register as failures (AIMS-PLAN-016) | O-1, O-2, O-3 |
+| M-7 | Fairness and accuracy evaluation on our own task across strata | O-1, O-5 |
+| M-8 | Competence: analysts qualified in the framework they review; operators trained on limitations and failure modes | O-2, O-4 |
+| M-9 | Transparency artefacts: user information, limitations, annual performance reporting | O-3 |
+| M-10 | Supplier management, model pinning and drift detection | O-5, O-7 |
+
+### M-4 — Where meaningful human oversight is applied across the life cycle
+
+Oversight is placed where a human can actually change the outcome, and the authority to stop is real at
+every point — oversight that cannot halt anything is not oversight.
+
+| Life-cycle stage | Human oversight | Authority held | Why here |
+|---|---|---|---|
+| Inception / use decision | AIGB approves or rejects the use case; Responsible AI Lead holds a **veto** on prohibited uses | Reject; approve with conditions | The cheapest point to prevent harm is before building |
+| Requirements and design | Compliance analysts define correct behaviour; **failure modes chosen deliberately** (unable-to-assess over guessing) | Block a design | Design decisions determine which errors are even possible |
+| Data | Data Steward admits or rejects data; labelling by qualified analysts with adjudication | Reject data | Ground truth is a human product |
+| Prompts and rubrics | Two-approval peer review by practising analysts | Block | Rubrics are where interpretation lives |
+| V&V | Analyst review of sampled outputs; release criteria signed by named roles | **Block release** | Last point before customers rely on it |
+| **Operation — per assessment** | **A qualified analyst reviews and may override any verdict before it is relied on. Override is expected in normal use; a zero override rate is investigated as a sign of insufficient review, not celebrated as accuracy** | Override; annotate; re-scope; halt | Where the individual consequential decision actually happens |
+| Operation — aggregate | Monthly review of monitoring measures, override rates, coverage and concerns | Suspend the system | Patterns are invisible from a single assessment |
+| Publication of assurance claims | **No certification, attestation or assurance conclusion is issued on machine output alone** | Refuse to sign | The highest-consequence output must carry a human signature |
+| Change | Change classification, approval, and rollback authority with Operations | Reject or roll back a change | Changes silently move verdicts |
+| Incident | Incident commander; Accountable Owner may withdraw published results | Withdraw, correct, suspend | Harm in progress needs someone empowered to stop it |
+| Decommissioning | AIGB decision; record retention confirmed | Decide | Ending use is also a use decision |
+
+**Conditions that make oversight meaningful, not nominal:** reviewers are competent in the framework
+being assessed (M-8); they see the rationale and the cited evidence, not just the verdict; they have
+time and are not measured on throughput alone; **disagreeing with the system is the expected behaviour
+and carries no penalty**; overrides are recorded and analysed as product feedback; and no automated path
+exists that publishes a consequential result without a human in it.
+
+## 3. Review history
+
+| Version | Date | Reviewer | Outcome |
+|---|---|---|---|
+| 2.0 | 2025-09-17 | Chief AI Officer | Established U-1…U-4 and the O-series objectives |
+| 3.0 | 2025-11-26 | Chief AI Officer + Responsible AI Lead | Added the total-cost-of-use step including funded monitoring and maintenance, after a use case was approved without a monitoring owner |
+| 3.1 | 2026-01-08 | Chief AI Officer | Added approved-sourcing requirements and the no-shadow-procurement rule |
+| 3.2 | 2026-02-04 | Responsible AI Lead | Expanded M-4 to the full life cycle and added the conditions that make oversight meaningful; added the zero-override-rate signal |
+| 3.3 | 2026-03-06 | Chief AI Officer, approved by AIGB | Stated alignment with the existing technology-use policies and the conflict-resolution rule; recorded the three rejected use cases; recorded low-materiality objectives (O-6, O-10) honestly rather than inflating them |

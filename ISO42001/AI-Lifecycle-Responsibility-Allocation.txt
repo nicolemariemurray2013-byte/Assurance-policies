@@ -1,0 +1,172 @@
+# Allocation of Responsibilities Across the AI System Life Cycle
+
+**Document ID:** AIMS-PRO-025
+**Version:** 3.2
+**Owner:** Chief AI Officer
+**Approved by:** AI Governance Board
+**Approval date:** 2026-03-06
+**Next scheduled review:** 2026-12-31, and on any change to the parties involved
+**Scope:** All parties intervening in the life cycle of the compliance-evaluation AI system
+(AWS account 471885797689, us-west-2), whether internal or external.
+
+---
+
+## 1. Allocation of responsibilities within the organization and with other parties
+
+Responsibilities are **allocated between the organization, its partners, suppliers, customers and
+relevant third parties**, and the allocation is documented rather than assumed. An unallocated
+responsibility is the failure mode this document exists to prevent: the parts of an AI life cycle most
+likely to be neglected are the ones each party assumes the other is covering.
+
+### 1.1 The organization's roles, and why it holds more than one
+
+The organization is simultaneously:
+
+| Role held | In relation to | Consequence |
+|---|---|---|
+| **Provider / developer** | The compliance-evaluation system it builds and offers | Owns design, V&V, documentation, limitations disclosure |
+| **User / deployer** | Its own use of that same system | Subject to AIMS-POL-018 as a user, not exempt from it |
+| **Customer** | Its suppliers (cloud, foundation models) | Must exercise supplier requirements and monitoring (AIMS-PRO-010) |
+| **Processor** | Assessed organizations' personal data | Acts only on the controller's instruction |
+
+Holding several roles is recorded explicitly because each carries different duties, and conflating them
+is how a provider ends up exempting itself from the obligations it places on its own users.
+
+### 1.2 Allocation across the life cycle
+
+Legend: **A** accountable (one only) · **R** responsible · **C** consulted · **I** informed · **—** no role
+
+| Life-cycle stage | Organization (provider) | Cloud & model suppliers | Assessed organization (customer) | Partners / integrators | Third parties (auditors, regulators, affected individuals) |
+|---|---|---|---|---|---|
+| **Inception — decide to build/use** | **A/R** — use-case approval, prohibited-use screen, impact and risk assessment | I | C — needs and expectations gathered (AIMS-PRO-026) | C | C — affected groups consulted in the impact assessment |
+| **Requirements and design** | **A/R** — intended purpose, valid domain, failure-mode choices, oversight design | C — platform and model capability and constraints | C — requirements and usability input | C — integration requirements | C — analyst and auditor expectations |
+| **Data** | **A/R** — quality, provenance, preparation, corpus governance | R — model training data (**their** responsibility, not visible to us) | **R — supplies its own evidence and is responsible for its accuracy and completeness, and for linking it to controls** | — | C — data subjects' rights |
+| **Development** | **A/R** | R — platform and model availability and behaviour | — | R — integration code they own | — |
+| **V&V** | **A/R** — evaluation against qualified human labels, adversarial and fairness testing, release criteria | C — model behaviour characterization | C — participates in acceptance where contracted | R — tests their own integration | C — external audit of the process |
+| **Release / deployment** | **A/R** — deployment as code, pinned image and model, documentation currency | R — service availability | **R — registers the environment and creates the read-only role, i.e. grants and bounds our access** | R — deploys their own integration | I |
+| **Operation** | **A/R** — monitoring, alerting, coverage, incident response | R — service and model operation, deprecation notice | **R — uses within the valid domain; provides human review of consequential verdicts; keeps evidence current** | R — operates their integration | — |
+| **Human oversight of individual verdicts** | R — provides the capability, guidance and record; verifies it is exercised | — | **A — the reviewing analyst is accountable for the verdict relied upon** | — | — |
+| **Monitoring for adverse impacts** | **A/R** — register, triage, remediation | I | R — reports what it observes | R | **R — anyone may report; we must provide the channel** |
+| **Incident response and communication** | **A/R** — detection, containment, notification per AIMS-PLAN-016 | R — supplier-side incidents notified to us | R — notifies us of what it observes; as controller, notifies its own regulator and data subjects | R | I / R — authorities receive notification per AIMS-REG-017 |
+| **Change** | **A/R** — classification, approval, advance notice of verdict-affecting change | R — notifies model deprecation and change | C — objection window on sub-processor change; R for its own re-validation after notice | C | I |
+| **Re-assessment after a corrected result** | R — re-runs and re-issues | — | **A — decides whether to rely on the corrected result** | — | I |
+| **Decommissioning** | **A/R** — AIGB decision, record retention, customer notice | R — service withdrawal notice | R — exports its records | R | I |
+
+### 1.3 Boundaries that are stated explicitly because they are commonly misread
+
+| Boundary | Ours | Not ours |
+|---|---|---|
+| Correctness of the *evidence* | We assess and cite what we are given, and report unreadable evidence as unable-to-assess rather than non-compliance | The truthfulness and completeness of what the customer supplies |
+| The compliance *conclusion* | The assessment aid, its rationale and its citations | The certification, attestation or assurance opinion — always the customer's or its auditor's, with qualified human sign-off |
+| Access to the customer's account | Using only what the customer granted, read-only, in scope | Creating or widening that access; the role is the customer's to create, bound and revoke |
+| Remediation of findings | Reporting them clearly and actionably | Performing remediation in the customer's environment |
+| Foundation model behaviour | Selecting, pinning, testing, monitoring, and disclosing limitations | The model's weights and its training data |
+| Personal data in evidence | Processing on instruction, minimizing, securing, deleting on request | Determining the purpose of that processing — the customer is the controller |
+
+## 2. Parties intervening in the life cycle, and their roles
+
+All parties are documented, internal and external. "Intervening" is read broadly: anyone whose action or
+inaction can change an outcome.
+
+### 2.1 Internal
+
+| Role | Responsibility in the life cycle |
+|---|---|
+| **Top management** | Provides resources; owns the AIMS; approves the AI policy; management review |
+| **Chief AI Officer** | Accountable executive for AI governance; approves Severity 1 external communication |
+| **AI Governance Board** | Approves use cases, authorization to operate, residual-risk acceptance; may suspend the system |
+| **AI System Accountable Owner** | Single accountable owner for this system end to end; decides withdrawal, correction, re-issue |
+| **Responsible AI Lead** | Impact assessment; fairness; adverse-impact handling; **veto on prohibited uses** |
+| **AI Development Lead** | Design, build, V&V, prompts and rubrics, documentation currency |
+| **AI Operations Lead** | Deployment, monitoring, alerting, incident response, logging and retention |
+| **AI Security Lead** | Threat modelling, adversarial testing, credential and access design, supplier security |
+| **Data Steward** | Data acquisition, selection, quality, provenance; admits or rejects data |
+| **Compliance analysts** | Define correct behaviour; label ground truth; **exercise human oversight of verdicts** |
+| **Legal & Privacy (incl. DPO)** | Legal and regulatory obligations; privacy roles; DPAs; breach notification |
+| **Procurement / Third-Party Risk** | Approved sourcing; supplier contracts |
+| **Internal Audit** | Independent audit of the AIMS; nonconformity reporting |
+| **HR / L&D** | Competence and awareness |
+| **Finance** | Funds ongoing monitoring and maintenance — a named condition of use approval |
+
+### 2.2 External
+
+| Party | Role in the life cycle | Governing instrument |
+|---|---|---|
+| **Cloud provider (AWS)** | Infrastructure, managed runtime, logging, identity services | Customer agreement; shared-responsibility model |
+| **Foundation model supplier (via Amazon Bedrock)** | Model capability, availability, deprecation notice; training-data provenance is theirs and is not disclosed to us | Service terms; AIMS-PRO-010 |
+| **Assessed organizations (customers)** | Grant read-only access; supply and link evidence; exercise human review; decide reliance | Contract, DPA, usage agreement (AIMS-PRO-026) |
+| **Customers' analysts / auditors** | Users, and the human oversight point | Usage agreement; AIMS-STD-015 |
+| **Partners and integrators** | Consume or embed results | Partner agreement with pass-through obligations |
+| **Sub-processors** | Discrete processing functions | DPA; 30-day change notice with objection window |
+| **External auditors / certification bodies** | Rely on results as assurance input; audit our AIMS | NDA; scheme rules |
+| **Regulators and supervisory authorities** | Oversight; recipients of notifications | AIMS-REG-017 |
+| **Data subjects** | Individuals named incidentally in evidence — **no role, but rights** | Data-protection law |
+| **Affected groups and society** | No contractual role; impacts assessed and reportable by anyone | AIMS-REC-005; AIMS-PLAN-016 §A |
+| Contractors / labellers | Corpus labelling under supervision | Contract with confidentiality and de-identification obligations |
+
+## 3. Responsible approach and documentation when supplying to a third party
+
+Where the organization supplies an AI system, or its outputs, to a third party:
+
+| Obligation | How it is met |
+|---|---|
+| Responsible approach applied | The supplied system has an accountable owner, a completed impact assessment, V&V evidence, and disclosed limitations before any third party receives it |
+| **Documentation provided with the system** | Intended purpose and valid domain; capabilities and **limitations**; required resources and required human oversight; input-data expectations; interpretation guidance; incident and support routes; data-handling and retention terms — the set in AIMS-DOC-012 §1 |
+| Limits of the valid domain stated | Published and contractual, not merely in a manual (AIMS-REG-017 O-16) |
+| Responsibility allocation shared | The recipient receives §1.2 and §1.3 so the split is agreed in advance, not discovered during an incident |
+| Pass-through obligations | Partners must not present output as certification, must preserve the AI-generated disclosure and the human-review requirement, and must pass both to their own customers |
+| No responsibility transfer by silence | If a recipient assumes a duty we have not accepted, it is corrected in writing at contracting and at each renewal |
+| Change and deprecation notice | ≥ 10 business days for verdict-affecting change; documented deprecation and end-of-support commitments |
+| Feedback route | Recipients get the same adverse-impact channels as anyone else |
+
+## 4. PII privacy roles, responsibilities and applicable privacy controls
+
+### 4.1 Privacy roles
+
+| Party | Privacy role | Basis |
+|---|---|---|
+| **Assessed organization** | **Controller** — determines the purpose and means; decides what evidence to supply | It chooses to run the assessment and what to submit |
+| **Our organization** | **Processor** — processes only on the controller's instruction, for the assessment purpose only | DPA |
+| Sub-processors | Sub-processors, under flow-down terms | DPA; 30-day change notice |
+| Model supplier | Sub-processor for inference; **contractually no training use** | Service terms; AIMS-REC-021 §4.1 |
+| Cloud provider | Sub-processor / infrastructure | Customer agreement |
+| **Data subjects** | Individuals whose personal data may appear incidentally in evidence — typically policy owners, approvers and signatories | Data-protection law |
+| **DPO / Legal & Privacy** | Oversight, advice, breach notification, rights handling | Statutory and internal |
+| Data Steward | Operational data governance, including de-identification gates | AIMS-PRO-024 |
+
+### 4.2 Applicable privacy controls
+
+| Control | Implementation |
+|---|---|
+| **Purpose limitation** | Evidence is processed only for the assessment it was supplied for. **No secondary use, no cross-tenant aggregation, and no use for training or corpus assembly** — the default position on customer data is prohibition |
+| **Minimization** | Personal data is neither solicited nor extracted; special-category data is not solicited and never extracted; evidence content and customer personal data are **excluded from logs and telemetry, verified quarterly** |
+| De-identification | Mandatory before any corpus entry; entries failing review are **rejected, not repaired** |
+| Storage limitation | Defined retention with automatic expiry; deletion recorded as a provenance event |
+| **Data-subject rights** | Access, correction, erasure and restriction supported via the controller, within statutory timelines (AIMS-REG-017 O-7) |
+| Security | Encryption in transit and at rest; per-tenant isolation; least-privilege, short-lived, read-only credentials; access logging, including logging of log access |
+| Transparency | Privacy and data-handling notice; disclosure of sub-processors, transfer mechanisms and processing locations |
+| Cross-border transfers | Processing locations and transfer mechanisms disclosed; 30 days' notice before change (O-9) |
+| **Breach notification** | Processor→controller within 24 hours of confirmation; 72-hour supervisory-authority clock handled by the controller with our support (O-1…O-3) |
+| Privacy by design | Privacy assessed at design; no personal-data-dependent feature; **no demographic attributes held or inferred**, which is also why no demographic breakdown of the corpus exists |
+| DPIA support | Information provided to controllers for their own DPIA on request |
+| Accountability | Records of processing; DPA in place with every customer and sub-processor |
+
+## 5. Verification that the allocation holds
+
+An allocation nobody checks decays. Verified as follows: contract and DPA review at onboarding and
+renewal (Legal & Privacy); confirmation at each incident post-mortem that every party performed its
+allocated part, with gaps raised as nonconformities; **monthly verification that customer-side human
+oversight is actually being exercised** (override rate and review coverage), since it is the single
+allocated responsibility whose failure is least visible to us; quarterly supplier review; annual
+review of this document against the parties actually involved. The 2026-03-06 review found no unallocated
+responsibility and one clarification needed — added at §1.3 — on who owns remediation in the customer's
+environment.
+
+## 6. Review history
+
+| Version | Date | Reviewer | Outcome |
+|---|---|---|---|
+| 2.0 | 2025-09-17 | Chief AI Officer | Established the life-cycle RACI and the party register |
+| 3.0 | 2025-12-11 | Chief AI Officer + Legal & Privacy | Added §4 privacy roles and controls; DPA flow-down for sub-processors |
+| 3.1 | 2026-02-04 | Chief AI Officer | Added §3 obligations when supplying to a third party, with pass-through terms |
+| 3.2 | 2026-03-06 | Chief AI Officer, approved by AIGB | Added §1.1 multiple-roles statement, §1.3 commonly-misread boundaries, and §5 verification with the monthly oversight check |

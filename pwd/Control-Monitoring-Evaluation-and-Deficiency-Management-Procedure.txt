@@ -1,0 +1,306 @@
+# Control Monitoring, Evaluation and Deficiency Management Procedure
+
+**Document ID:** MON-PRO-011
+**Version:** 3.2
+**Owner:** Compliance Manager, reporting to the CEO for operation and to the **Audit Committee** for the
+evaluation results — the Committee, not management, receives the conclusion on whether the control
+components are present and functioning
+**Approved by:** Audit Committee 2026-02-19
+**Next scheduled review:** 2026-12-31 (Annually, and on any change to the control set, the risk profile or the rate)
+of change in the business
+**Scope:** All components of internal control — control environment, risk assessment, control activities,
+information and communication, and monitoring — across the entity, both legal entities, all eight
+operating units, the seven outsourced providers, and the compliance-evaluation service in AWS account
+471885797689, us-west-2.
+
+---
+
+## 1. A mix of ongoing and separate evaluations
+
+**The entity selects and develops a mix of ongoing and separate evaluations to ascertain whether the
+components of internal control are present and functioning.** The mix is deliberate: ongoing evaluations
+give continuous coverage but are performed by the people who operate the controls, and separate
+evaluations give objectivity but only at points in time. Neither alone is sufficient, so every control
+component is covered by at least one of each.
+
+| Internal control component | **Ongoing** evaluation covering it | **Separate** evaluation covering it |
+|---|---|---|
+| **Control environment** (CC1) | Quarterly control-owner attestation; the culture survey; conduct-case and detection-latency tracking; management's own control decisions reported quarterly | Annual internal audit of the control environment; the Audit Committee's in-camera sessions with the assurance functions; the annual Board and committee self-evaluation; the annual tone assessment for any new officer |
+| **Risk assessment** (CC3) | Quarterly risk register review; continuous threat intelligence, vulnerability and configuration scanning; the mandatory quarterly challenge question | Annual entity risk assessment workshop challenged by the Board; internal audit review of the risk process; annual fraud risk assessment presented to the Audit Committee |
+| **Control activities** (CC5–CC8, A1, C1, PI1, P-series) | Automated configuration and compliance scanning of the account; control-owner self-testing at the control's own frequency; exception and alert monitoring; access review; change-record review; backup and restore verification | Internal audit control testing on a risk-based plan; the SOC 2 examination; ISO/IEC 42001 certification and surveillance audits; quarterly penetration testing; annual DPIA reviews; provider assessments |
+| **Information and communication** (CC2) | Acknowledgement and completion tracking on every required communication; the semi-annual hotline fail-safe test; complaint and inbound-channel volume review | Internal audit of the communication process; the culture survey's questions on whether people know how to report; the auditor's assessment of the system description |
+| **Monitoring** (CC4 — this procedure itself) | Deficiency register ageing; CAP overdue tracking; evaluation-coverage tracking against the plan | **Internal audit's review of the monitoring function**, reported to the Audit Committee without management present; the external auditor's assessment of monitoring |
+
+**Balance is measured, not assumed.** The annual monitoring plan records, per component, how much
+assurance comes from ongoing versus separate evaluation, and the Audit Committee approves the balance.
+The plan explicitly rejects two failure modes: relying on self-attestation alone for a component (which
+is why every component has a separate evaluation), and relying on an annual audit alone for a fast-moving
+component (which is why change-heavy areas carry continuous ongoing evaluation, per §2).
+
+## 2. Considering the rate of change
+
+**The entity addresses the rate of change in business and business processes when selecting and
+developing ongoing and separate evaluations.** Evaluation frequency is set from the rate of change of the
+thing being evaluated, not from a uniform calendar — a control over a process that changes weekly cannot
+be assured by an annual test.
+
+| Area | Observed rate of change | Evaluation design that follows from it |
+|---|---|---|
+| **Assessment logic, prompts and models** | Highest in the entity — changes multiple times per month, and the underlying models change outside the entity's control | **Evaluation is per change, not periodic**: the accuracy regression suite and adversarial evaluation run as a release gate on every change; drift monitored continuously; quarterly expert-agreement sampling as the separate evaluation |
+| Infrastructure configuration | Continuous, via pipeline deploys and provider-side change | Continuous configuration and compliance scanning; drift detection; quarterly penetration test as the separate evaluation |
+| Application code | Weekly releases | Automated checks on every commit and merge; change-record review monthly; annual internal audit of the change process |
+| Access and identity | High — joiners, leavers, role changes, 11 vendor individuals | Event-driven checks at provisioning and removal; **quarterly** access review rather than annual; internal audit tests removals against HR records |
+| Third-party relationships | Moderate — 7 providers, sub-processor changes | Continuous monitoring of provider performance against the requirements annex; annual provider assessment; reassessment within 30 days of any change |
+| Legal and regulatory obligations | Moderate but consequential | Quarterly obligation-inventory review; assessment within 30 days of an identified change; DPIA per new processing |
+| Financial processes | Monthly close cycle, stable process | Monthly close controls with review; annual external audit |
+| Control environment and governance | Low rate of change | Annual evaluation, with event-driven reassessment on a leadership change |
+| **Business model and growth** | Currently inside the growth tolerance band; growth above 60% is itself a trigger | A control-capacity review is triggered by growth above tolerance; new business lines require a control-impact assessment before Board approval |
+
+The rate of change is re-examined when the monitoring plan is set each year, and mid-year if a change
+trigger in RSK-PRO-009 §14 fires. In the current period the plan increased access-review frequency from
+semi-annual to quarterly (driven by vendor-personnel churn) and moved model evaluation from a monthly
+cadence to a per-change gate.
+
+## 3. Baseline understanding of the control system's design and current state
+
+**The entity uses the design and current state of the internal control system to establish a baseline for
+ongoing and separate evaluations.** Evaluation is performed against a recorded baseline, so that
+"functioning" means functioning as designed rather than as remembered.
+
+| Baseline artefact | What it records | Maintained by | Refreshed |
+|---|---|---|---|
+| **Control register** | Every control: its identifier, the criteria and sub-objectives it addresses, its design, its owner, its frequency, the evidence it produces, the system or process it operates in, and whether it is automated or manual | Compliance Manager | On any control change, same day; fully reviewed annually |
+| **System description** | The service's purpose, the five-node pipeline, components, data flows, the trust boundary and what is outside it, and the shared-responsibility split | VP Engineering | Quarterly and on architectural change |
+| **Risk register with control mapping** | Each risk, its inherent and residual score, and the specific controls credited with the reduction | Compliance Manager | Quarterly |
+| **Criteria-to-control mapping** | Every trust services criterion and ISO/IEC 42001 clause mapped to the control(s) that address it, with gaps stated as gaps | Compliance Manager | On framework or control change |
+| **Current-state assessment** | For each control: last tested, result, open deficiencies, compensating controls, and whether the control has *ever* been tested | Compliance Manager | Continuously; reported quarterly |
+| **Configuration baseline** | The expected configuration of the account and its resources, expressed as code and as compliance rules | VP Engineering + AI Security Lead | On change; drift detected continuously |
+| **Accuracy baseline** | The regression suite and the expert-agreement result that a change must not degrade | Chief AI Officer | Per release; the suite itself reviewed quarterly |
+| **Evidence inventory** | Which documents and system evidence support which control, and their currency | Compliance Manager | Continuously |
+
+Two rules keep the baseline honest. First, **the baseline records current state including its known
+defects** — the open findings on administrative access, MFA, log immutability, network ingress and the
+`Demo` table configuration are part of the recorded current state, not omitted from it, so an evaluation
+cannot report a clean result by comparing against an idealized design. Second, **a control that has never
+been tested is flagged as such** and cannot be credited with reducing a residual risk (RSK-PRO-009 §13);
+this rule identified two over-credited controls in 2026-Q1.
+
+## 4. Evaluators with sufficient knowledge
+
+**The entity ensures that evaluators performing ongoing and separate evaluations have sufficient
+knowledge to understand what is being evaluated.** Competence is determined before the evaluation, per
+evaluator type, and is evidenced.
+
+| Evaluator | Evaluations performed | Knowledge required | How sufficiency is established |
+|---|---|---|---|
+| **Control owners** (24 named) | Ongoing self-testing and the quarterly attestation | The control's design, its evidence, and what failure looks like | The control assignment notice with written acknowledgement (GOV-PRO-006 §5); framework and criteria training (14 of 14 complete); the attestation itself asks whether they have the information they need, and a "no" raises an action |
+| **Compliance Manager and compliance analyst** | Second-line testing, coverage and deficiency management | The trust services criteria, ISO/IEC 42001, evidence sufficiency, control testing methodology | Role profile in HR-POL-004 §1; annual criteria training refreshed on framework change; professional certification funded and maintained |
+| **AI Security Lead and security engineers** | Vulnerability scanning, configuration review, access review, detection coverage review | Threat modelling, IAM, cryptography, detection engineering, the AWS control surface | Role profile; security-competency scorecard; annual competency test with a pass threshold; the detection-depth gap in HR-POL-004 §5 was closed by training a second engineer specifically so evaluation did not depend on one person |
+| **Chief AI Officer and Responsible AI Lead** | Model, prompt and accuracy evaluation | Model evaluation methodology, statistical reasoning about output quality, the frameworks being assessed | Role profile; responsible-AI training (31 of 31); the independent AI assurance advisor provides external challenge |
+| **DPO and General Counsel** | DPIAs, privacy control evaluation, obligation review | Applicable privacy law, DPIA methodology | Role profile; retained external privacy counsel supplements depth; the identified privacy-law gap is covered by the retainer while the senior counsel hire completes |
+| **Outsourced internal audit provider** | Separate control testing on the approved plan | Control testing, the criteria, IT general controls, cloud environments | Engagement letter states required qualifications; competence evaluated annually as an outsourced provider (HR-POL-004 §4); reports to the Audit Committee |
+| **External service auditor** | The SOC 2 examination | Attestation standards, the trust services criteria | Firm selected and retained by the **Audit Committee**, not management; independence confirmed annually |
+| **Certification body** | ISO/IEC 42001 audits | The standard; accreditation | Accredited body |
+| **External penetration testing firm** | Technical security testing | Offensive security for cloud and AI systems | Scope and tester qualifications agreed in the rules of engagement |
+| **Audit Committee and Board** | Assessment of evaluation results (§8) | Enough to challenge, per the skills matrix | Skills matrix with **two identified gaps** (privacy law, AI assurance) and the commensurate action — retained privacy counsel and an independent AI assurance advisor, both reporting to committees rather than to management (GOV-CHT-002 §3) |
+
+**Independence is part of sufficiency.** An evaluator does not evaluate their own work: control owners
+self-test, but their controls are also tested by Compliance (second line) and by internal audit (third
+line); Compliance's own function is evaluated by internal audit; and internal audit's work and the
+monitoring function itself are reviewed with the Audit Committee without management present.
+
+## 5. Ongoing evaluations built into business processes and adjusted to changing conditions
+
+**The entity builds ongoing evaluations into its business processes and adjusts them to changing
+conditions.** These are not separate exercises added on top of the process; the evaluation is a step of
+the process, which is why it happens every time the process runs.
+
+| Business process | Evaluation built into it | Where it sits in the process | Adjusts to changing conditions how |
+|---|---|---|---|
+| **Deploy / release** | Automated static analysis, dependency and secret scanning, the test suite, and — for anything touching evaluation logic — the **accuracy regression gate and adversarial evaluation**. A failing check blocks the deploy | A gate in the pipeline; deploy is impossible without it | New checks are added when a new failure mode is found; the regression suite grows with every accuracy defect; two checks were added this period from penetration test findings |
+| **Change approval** | Independent review, self-approval blocked, security review for security-relevant change, CAB for significant change | Before merge and before deploy | The significance threshold is re-tuned quarterly from change-failure data; emergency change gained a **blocking** post-hoc review after a gap was found |
+| **Access provisioning** | Screening attestation, competence verification and training completion checked **at the point of provisioning** — a hard gate, not a reminder | Provisioning cannot complete without them | Extended to vendor personnel individually as the workforce model changed; frequency of the review cycle raised to quarterly |
+| **Access removal** | Departure and engagement-end triggers checked against actual revocation within 1 business day | In the offboarding workflow | Vendor-personnel departures added as a trigger after the workforce model changed |
+| **Infrastructure operation** | Continuous configuration compliance scanning of the account, drift detection against the IaC baseline, and the entity's **own** compliance-evaluation service run against its own environment | Continuous, with findings raised as tickets automatically | New rules added as new resource types are adopted; the current open findings are outputs of this mechanism |
+| **Monitoring and alerting** | Alert-to-human timing measured (MTTD); required-event coverage reviewed; alarm inventory reconciled to the required list | Continuous | Coverage list updated when a new component or event type appears; a missing-telemetry finding (recorder exclusions, SecurityHub) was raised by this mechanism |
+| **Incident response** | Post-incident review mandatory for every Sev-1 and near miss, and the review **must state whether the risk register was wrong** | After every incident | Findings change controls; two control changes this period |
+| **Assessment operation** (the product) | Completeness check that every scorable requirement received a conclusion; `unable to assess` surfaced rather than inferred; anomalous verdict-shift alerting; quality metrics on every run | Inside the pipeline, per assessment | Thresholds re-tuned from the quarterly expert-agreement sample |
+| **Evidence handling** | Classification on receipt; retention conformance checked quarterly; upload-time prompts when personal data is detected | At receipt and continuously | The technical no-local-copy control was added after case D-2026-004 |
+| **Backup** | Backup success monitored; **restore tested quarterly to a clean environment** — an untested backup path is zero-tolerance | Continuous monitoring; quarterly test | Test scope extended when a new data store is added |
+| **Third-party operation** | Provider performance monitored against the requirements annex; named-individual attestations tracked; incident-notification timeliness recorded | Continuous, per provider | A late notification is recorded in the supplier record and changes the next assessment's scope |
+| **Financial close** | Reconciliations, variance analysis against the accrual model, approval limits enforced in the system | Every close | Thresholds reviewed annually with materiality |
+| **Control ownership** | **Quarterly control-owner attestation** — a personal written statement per control, not a checkbox | Quarterly, per owner | Attestation questions are revised when a failure mode shows the previous question was too easy to answer affirmatively |
+| **Communication** | Acknowledgement tracking on required communications; the semi-annual hotline fail-safe test | Per communication; semi-annually | The acknowledgement requirement on control assignment became blocking after 3 owners were found unacknowledged |
+
+## 6. Varying the scope and frequency of separate evaluations by risk
+
+**The entity varies the scope and frequency of separate evaluations depending on risk.** The annual
+monitoring plan is built from the risk register: scope and frequency are derived from residual risk,
+criticality, rate of change, and prior findings, and the derivation is recorded so the plan can be
+challenged.
+
+| Risk / area | Residual risk and criticality | Separate-evaluation frequency and scope | Why this frequency |
+|---|---|---|---|
+| **Assessment accuracy and integrity** (R-001, R-038; PI-1…PI-5) | High residual; Critical component | Expert-agreement sampling **quarterly**, stratified with full coverage of high-impact verdicts; adversarial/red-team evaluation of the model and prompt layer **quarterly**; internal audit of the change-to-result chain **annually**; the independent AI assurance advisor **semi-annually** | Highest residual risk, highest criticality, and the highest rate of change |
+| **Logical access and identity** (R-005, R-009; S-1, S-2, S-7) | High residual, with **open findings** on administrative access and MFA | Internal audit **semi-annually** rather than annually while the findings are open; penetration testing quarterly includes the identity path; **external review of the identity path** added specifically because R-041 is an accepted limitation | Elevated by open findings and by an accepted segregation limitation — an accepted risk gets more evaluation, not less |
+| Network and boundary (S-3) | High residual; open findings on ingress and boundary protection | Quarterly external penetration test plus continuous scanning; internal audit annually | Internet-facing, continuously probed |
+| Logging, monitoring and detection (R-039; S-5) | Medium residual; **open findings** on recorder coverage, SecurityHub and log immutability | Detection coverage review **quarterly**; internal audit annually; a purple-team detection validation exercise added this period | Detection failure is invisible by nature, so it needs deliberate testing |
+| Confidentiality and tenant isolation (R-012; C-1…C-4) | Medium residual; Critical asset | **Tenant isolation tested every quarter** as part of penetration testing, with an explicit isolation objective in the rules of engagement; internal audit of classification and retention annually | The magnitude is severe even though likelihood is reduced |
+| Availability, backup and recovery (R-022, R-030; A-1…A-4) | Medium residual, one Board-accepted risk | Restore test **quarterly**; recovery exercise quarterly; capacity review monthly; internal audit annually | The accepted single-region risk is conditional on the restore test actually passing |
+| Privacy (P-1…P-7) | Low–Medium residual; high regulatory magnitude | DPIA per new or changed processing; annual privacy control audit; external counsel review of the notice and transfer mechanism annually; DSR timeliness sampled quarterly | Statutory deadlines have zero tolerance |
+| Change management (R-015) | Low residual | Internal audit annually; change-record sampling monthly; every emergency change reviewed individually | Strong preventive controls reduce the need for frequent separate testing — the reduction is justified, not assumed |
+| Third parties (R-006) | Medium residual | Provider assessment **annually per provider**, plus reassessment within 30 days of any change; the supplier with the secure-coding corrective action is reassessed **quarterly until closed** and remains scope-restricted | Frequency raised for a specific provider on evidence, then reduced when closed |
+| Control environment, governance, fraud | Low residual, but severe if wrong | Internal audit of the control environment annually; fraud risk assessment annually to the Audit Committee; Board and committee self-evaluation annually; culture survey annually | Low rate of change, but a leadership change triggers immediate reassessment |
+| Financial reporting | Low–Medium | External audit annually; internal review at each close; Audit Committee review of significant judgments quarterly | Statutory cycle plus monthly process |
+| **Areas with no prior finding** | Varies | A sample is included each year regardless of score, and rotates | Deliberate defence against the plan only ever looking where problems were already found |
+
+Adjustments made to the plan in the current period, each with a recorded reason: access-path evaluation
+increased to semi-annual (open findings); one supplier moved to quarterly (corrective action);
+detection validation added (R-039); change-management sampling reduced from weekly to monthly (verified
+control effectiveness) — recorded so that a *reduction* in evaluation is as visible as an increase.
+
+## 7. Periodic separate evaluations providing objective feedback
+
+**The entity periodically performs separate evaluations to provide objective feedback on whether internal
+controls are present and functioning.** Objectivity comes from who performs the evaluation and to whom
+they report, not from the technique.
+
+| Separate evaluation | Performed by | Independence basis | Frequency | Reports to |
+|---|---|---|---|---|
+| **Internal audit control testing** | Outsourced internal audit provider | Not part of management; engaged by and reporting to the Audit Committee; the audit plan is approved by the Committee, not by management | Quarterly engagements on an annual risk-based plan | **Audit Committee**, presented directly, with an in-camera portion |
+| **SOC 2 examination** | Independent service auditor | Selected, retained and compensated by the Audit Committee; independence confirmed annually | Annual | Audit Committee then the Board; auditor presents directly, in camera for part |
+| **ISO/IEC 42001 certification and surveillance audit** | Accredited certification body | External and accredited | Certification plus annual surveillance | AI Governance Oversight Committee and the Board, **with all findings including minor nonconformities** |
+| **Penetration test and red team** | External security testing firm | External; scope and rules agreed in advance, including a critical-finding escalation path mid-test | Quarterly | Security & Privacy Committee, full report plus remediation status |
+| **Adversarial / red-team evaluation of the model and prompt layer** | External advisor with the internal team | External challenge on the highest-risk area | Quarterly | AI Governance Oversight Committee |
+| **Expert-agreement accuracy sampling** | Expert reviewers independent of the engineers who built the logic | Reviewers do not build the thing they sample | Quarterly, stratified | AI Governance Oversight Committee |
+| **Second-line control testing** | Compliance Manager and analyst | Independent of the control owners, though inside management — which is why it is not the only separate evaluation | Continuous on a rolling plan; every control tested at least annually | CEO and the Audit Committee |
+| **Independent AI assurance advisory review** | Retained independent advisor | Reports to the committee, not to management | Semi-annual | AI Governance Oversight Committee |
+| **External privacy counsel review** | Retained counsel | Reports to the committee | Annual, plus per novel processing | Security & Privacy Committee |
+| **Provider assessments** | Third-Party Risk Manager, using the provider's own independent assurance reports | Uses external assurance rather than provider self-assertion | Annual per provider; more often on evidence | Board, semi-annually |
+| **Customer security assessments of the entity** | Customers' own security teams | Fully external, with a different perspective and no relationship to manage | As requested | Board in aggregate; adverse findings immediately — the boundary-protection finding arrived this way |
+| **Board and committee self-evaluation** | Board, facilitated externally | Evaluates the oversight function itself | Annual (February) | Board |
+| **Culture survey** | Anonymous, administered by a third party | Anonymity is the independence mechanism; asks directly whether personnel believe management would accept an unfavourable finding | Annual | Audit Committee |
+| **Review of the monitoring function itself** | Internal audit provider | The monitor is monitored, and reports without management present | Annual | Audit Committee |
+
+**Feedback is objective in substance as well as source:** every separate evaluation reports all findings
+including those management disputes, with both positions stated (GOV-PRO-007 §3); findings are not
+pre-reconciled with management before the Committee sees them; and the current period's results —
+4 internal audit findings, 2 high penetration test findings, 2 minor nonconformities, 1 adverse customer
+finding, and 2 residual scores corrected upward because a credited control failed its test — were all
+reported as raised.
+
+## 8. Management and the Board assessing the results of evaluations
+
+**Management and the Board of Directors, as appropriate, assess the results of ongoing and separate
+evaluations of internal controls.** Assessment means reaching and recording a conclusion, not receiving a
+report.
+
+| Forum | What it assesses | Cadence | Conclusion recorded |
+|---|---|---|---|
+| **Control owner** | Their own control's results; whether it operated as designed every time it was due | Quarterly attestation | A personal written statement per control, with exceptions listed rather than implied |
+| **Monthly management control review** | Ongoing evaluation output: scan findings, alert and exception volumes, access review results, change failures, incident metrics, deficiency ageing | Monthly | Minutes with actions, owners and dates |
+| **Quarterly management review** | The aggregate: all evaluation results in the quarter, deficiency severity and trend, CAP status, and **an explicit conclusion on whether each control component is present and functioning** | Quarterly | The conclusion is minuted per component, with any component qualified and why |
+| **Audit Committee** | Internal audit results; the SOC 2 examination; second-line testing; the deficiency register in full; the fraud assessment; the culture survey; the monitoring function's own review | Quarterly, and on any immediate escalation | The Committee records whether it accepts management's conclusion, and it has not always done so |
+| **Security & Privacy Committee** | Penetration test results, security posture, access review outcomes, privacy assessments, DSR timeliness | Quarterly | Minuted conclusions and required remediation with deadlines |
+| **AI Governance Oversight Committee** | Accuracy sampling, adversarial evaluation, model and prompt change results, the AI assurance advisor's review | Quarterly | Minuted; can require remediation before further releases |
+| **Full Board** | The aggregate internal control report; material deficiencies; external assessment results; the risk report; and the entity's conclusion on internal control | Quarterly; full annual assessment | The Board's own conclusion, minuted, including any disagreement with management |
+| **Management assertion process** | Whether the description is fairly presented and the controls were suitably designed and operating effectively throughout the period | Annually | The signed assertion, supported by the evidence file |
+
+**Evidence that assessment is real rather than procedural.** In the current period: the Board re-scored
+two risks upward against management's proposed scores; the Audit Committee sent one proposed risk
+acceptance (vendor personnel access) back for further reduction rather than accepting it; the Committee
+rejected management's initial conclusion that a control component was fully functioning while the
+identity-path findings were open, and required the qualification to be stated; and the Committee added
+an external review of the identity path that management had not proposed. A Board that only ratifies is
+not assessing, so these outcomes are recorded deliberately.
+
+## 9. Communicating deficiencies to the parties responsible for corrective action
+
+**The entity communicates identified internal control deficiencies to the parties responsible for taking
+corrective action.** Every deficiency is assigned to a named individual with the authority to fix it, and
+the assignment is acknowledged.
+
+| Step | Rule | Timing |
+|---|---|---|
+| **Capture** | Every deficiency — from any source: ongoing scanning, self-testing, attestation exceptions, internal audit, the external auditor, the certification body, penetration testing, incidents, near misses, customer or researcher input, and any report through the channels in GOV-PRO-006 §3 — is entered in the single **deficiency register** with its source | Within **2 business days** of identification |
+| **Classify** | Severity assigned using the criteria in §10; a deficiency affecting a zero-tolerance objective is classified Significant or Material by default | With capture |
+| **Assign** | To the individual who owns the control and has the authority to remediate — not to a team mailbox. Where remediation requires authority the owner lacks, the deficiency is assigned jointly with the officer who holds it | Within 2 business days |
+| **Communicate** | Written notice to the assignee stating the deficiency, its severity, the required remediation, the due date, and the interim compensating control required in the meantime; **acknowledgement is required and is tracked** | Same day as assignment |
+| **Notify others affected** | The control owner, the process owner, and — where the deficiency affects a customer commitment, personal data or a provider's control — Customer Operations, the DPO, or Third-Party Risk respectively | Within 2 business days |
+| **Communicate to the provider** where the deficiency is in an outsourced control | Formal notice under the requirements annex, with a corrective action plan required and a deadline; scope restriction applied where warranted | Within 5 business days |
+| Interim risk decision | If remediation cannot be immediate, a compensating control is required and recorded; **if none is possible, the residual risk is escalated for an explicit acceptance at the right level** — it is never left implicit | With assignment |
+
+Communication is bidirectional: the assignee must confirm the remediation plan and flag if the due date
+is not achievable **before** it passes, and a due date can be changed only by the approver who set the
+severity, with the reason recorded. This exists because silently slipping dates is how a tracked
+deficiency becomes an untracked one.
+
+## 10. Communicating deficiencies to senior management and the Board
+
+**The entity communicates identified internal control deficiencies to senior management and the Board of
+Directors, as appropriate.** "As appropriate" is defined in advance by severity, so escalation is not a
+judgment made by the person with an interest in not escalating.
+
+| Severity | Definition | Communicated to | Timing |
+|---|---|---|---|
+| **Material weakness** | A deficiency, or combination, such that there is a reasonable possibility that a material misstatement or a failure to meet a stated commitment would not be prevented or detected on a timely basis; or any deficiency causing unauthorized disclosure of customer or personal data; or a materially wrong verdict issued at scale | **Board Chair and Audit Committee Chair immediately; full Board and CEO within 24 hours**; disclosed in the assertion and to customers where required | **Within 24 hours, not held for the next meeting** |
+| **Significant deficiency** | Less severe than a material weakness but important enough to merit attention by those responsible for oversight; includes any breach of a zero-tolerance objective, any deficiency in a Critical component, and any repeat of a previously remediated deficiency | CEO and the accountable officer within 2 business days; **Audit Committee at its next meeting, and immediately if it concerns management, fraud, or an assurance function** | 2 business days / next meeting |
+| **Deficiency** | A control does not operate as designed, or a design gap exists, without rising to the above | Accountable officer within 2 business days; reported to management review monthly; to the Audit Committee in the quarterly aggregate | Monthly / quarterly aggregate |
+| **Observation / improvement opportunity** | No control failure, but an opportunity to strengthen | Control owner; reported in the quarterly aggregate | Quarterly |
+| **Any deficiency implicating management, or any pressure on an assurance function** | Regardless of severity | **Directly to the Audit Committee Chair**, bypassing management entirely; the reporter may use the anonymous channels | Immediately |
+| **Aggregation rule** | Individually minor deficiencies that together indicate a pattern — same root cause, same owner, same component, or a repeat — are escalated **as a combination** at the higher severity | Audit Committee | Quarterly, with the aggregation analysis stated |
+
+**What the Board receives quarterly**, in the internal control report: every open deficiency by severity
+with its age; all new deficiencies in the quarter with their source; remediation status against the
+agreed dates with overdue items named; the aggregation analysis; deficiencies remediated and how closure
+was verified; deficiencies whose due dates were extended, with the reason and by whose authority; and
+management's conclusion on each control component with any qualification. Management also confirms in
+writing each quarter that it has reported every deficiency it is aware of — a positive assertion, so
+silence is not taken as nothing to report (GOV-PRO-006 §2).
+
+**Current period, reported as raised:** the open account findings (administrative access, account and
+user MFA, unrestricted SSH ingress on three security groups, inconsistent transport-security enforcement,
+audit-bucket versioning and log retention, the `Demo` table configuration, absent boundary protection,
+and the configuration-recorder and SecurityHub telemetry gaps) are recorded in the register, classified,
+assigned with dates, and reported to the Audit Committee with the compensating controls applied in the
+interim. The identity-path items are classified **Significant** because they affect zero-tolerance
+objectives, and the Committee's response was to add an external review rather than to accept the
+remediation plan as proposed.
+
+## 11. Monitoring corrective action to timely remediation
+
+**Management tracks whether identified internal control deficiencies are remedied on a timely basis.**
+The corrective action plan (CAP) register is the tracking mechanism, and timeliness is measured against
+the date set at classification rather than against the date the work happened to finish.
+
+| Element | Rule |
+|---|---|
+| **Remediation deadlines by severity** | Material weakness: interim compensating control **immediately**, permanent remediation within 30 days; Significant: 60 days; Deficiency: 90 days; Observation: next planning cycle. Deadlines for security findings follow the vulnerability SLAs where tighter (Critical 7 days, High 30, Medium 90) |
+| **Owner and authority** | Named individual with the authority to remediate; joint assignment where the authority sits higher |
+| **Interim compensating control** | Required from the moment of classification until closure, and recorded; a deficiency with neither remediation nor a compensating control is escalated as an unaccepted residual risk |
+| **Progress tracking** | Status updated at least monthly by the owner; reviewed in the monthly management control review; the register is a single source, not per-team lists |
+| **Overdue handling** | An item overdue by 1 day is flagged and reported; **overdue past the agreed date is a breach of the control-effectiveness tolerance (RSK-STD-008 §3) and escalates to the Audit Committee**; the owner must state the new date and the reason, and only the approver who set the severity may change it |
+| **Escalation ladder** | Overdue → accountable officer; 30 days overdue or any overdue Significant/Material item → CEO and Audit Committee; a repeatedly overdue item → the Board, with the resource or authority obstacle named explicitly, since an overdue remediation is often a resourcing decision that has not been made openly |
+| **Closure requires verification, not assertion** | Closure is approved by the Compliance Manager on evidence that the control now operates — for a configuration finding, a re-scan showing the corrected state; for a process finding, a test of the process operating; for a provider finding, provider evidence plus the entity's own verification. **The owner cannot close their own item** |
+| **Re-testing after closure** | Closed items are re-tested at the next scheduled evaluation of that control; a deficiency that recurs is classified at the **higher** severity as a repeat, on the basis that the first remediation did not address the root cause |
+| **Root cause required** | Closure requires a stated root cause and confirmation that the fix addresses it; where the root cause is systemic, the fix must be systemic, and a systemic root cause **reduces the individual sanction** rather than the remediation requirement (GOV-POL-005 §8) |
+| **Metrics reported** | Open items by severity and age; percentage remediated within deadline; number of extensions and by whose authority; number of repeats; mean days to remediate by severity; items closed with verification evidence |
+
+**Current period performance, reported honestly:** 18 deficiencies identified from all sources;
+11 closed with verification; 7 open, of which 5 are the account configuration findings with dated plans
+and interim compensating controls and 2 are the accepted-limitation items (R-041's external review, and
+the second-region decision recorded as an acceptance rather than a deficiency); 2 due dates were extended
+with recorded reasons and approvals; **1 item was overdue** — the log-immutability configuration, overdue
+by 9 days, escalated to the Audit Committee as required, with the reason (a dependency on the retention
+policy decision) and a revised date recorded; 1 repeat deficiency was reclassified upward. Reporting the
+overdue item and the repeat is the point: a register showing 100% on-time closure would be evidence that
+the tracking is not honest rather than that the remediation is perfect.
+
+## 12. Review history
+
+| Version | Date | Change |
+|---|---|---|
+| 2.0 | 2024-11-20 | Established the monitoring plan, the deficiency register and the CAP process |
+| 3.0 | 2025-09-11 | Added the ongoing/separate balance per control component; added the evaluator competence table; moved the evaluation-results conclusion to the Audit Committee |
+| 3.1 | 2025-12-03 | Added rate-of-change-driven frequency, the baseline-includes-known-defects rule, and the rule that an untested control cannot be credited |
+| 3.2 | 2026-02-19 | Added the severity-based escalation table with the 24-hour material-weakness rule and the aggregation rule; added closure-requires-verification and the repeat-deficiency reclassification; recorded the current overdue item |

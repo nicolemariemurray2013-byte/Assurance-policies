@@ -1,0 +1,420 @@
+# Physical Threat Protection and Secure-Area Working Standard
+
+**Document ID:** SEC-PHY-044
+**Version:** 2.0 — **effective 2026-03-02**, superseding v1.1 of 2025-12-03
+**Owner:** Director, IT Operations (facilities lead reports to this role)
+**Approved by:** CISO 2026-02-26, per the approval authority in GOV-POL-040 §3
+**Next scheduled review:** 2026-12-31 (Annually, and **before beginning critical operations at any new physical site**, on)
+any lease change, and on any material change to the local threat picture
+**Scope:** Physical and environmental threat protection for the two entity-operated offices (HQ, 34 desks, with
+one server closet holding network equipment only; EU subsidiary suite, 9 desks), the three provider-operated
+co-working locations, the 42 primarily remote work locations, and — by reference and inheritance only — AWS
+us-west-2, which holds every production information asset and whose physical and environmental controls the
+entity monitors but does not operate. Also covers secure-area working practice and the clear desk / clear
+screen rules for all locations.
+
+**Related:** SEC-PRO-013 (physical access and facility security), OPS-EQP-045 (equipment siting, utilities,
+cabling, maintenance), SEC-MED-046 (storage media, off-premises assets, equipment disposal), SEC-END-043
+(endpoints and remote working), RSK-STD-008 (risk methodology), OPS-BCP-031 (continuity), TPR-PRO-016
+(supplier assurance), GOV-PRO-007 (shared-responsibility allocation).
+
+---
+
+## 1. What the entity protects physically, and what it inherits
+
+The entity operates **no data centre**. Every production information asset — customer evidence, assessment
+results, logs, model artefacts — exists only in AWS account 471885797689 in us-west-2. The consequence for
+this standard is precise and is stated rather than blurred:
+
+| Asset class | Physical location | Threat protection operated by | How the entity obtains assurance |
+|---|---|---|---|
+| Production evidence, assessment results, logs, model artefacts | AWS us-west-2 only | **AWS** — an inherited control | Annual review of the provider's audit reports against the shared-responsibility allocation in GOV-PRO-007 §5; recorded as inherited and **not asserted as the entity's own** |
+| Network equipment (switch, firewall, patch panel, UPS) | HQ server closet | Entity | Direct testing: environmental alarm, quarterly inspection, monthly access-log review |
+| Endpoint devices | With 48 individuals across five geographies | The individual under SEC-END-043, with technical compensation | Posture enforcement, encryption, remote wipe |
+| Signed contracts and statutory registers | Locked cabinets, HQ and EU suite | Entity | Key custody list, quarterly review |
+| Log copies | Managed SIEM provider's colocation facility | **Provider** | Annual provider assessment including physical and environmental controls |
+| Removable media | **None exists** — eliminated by design (SEC-MED-046 §3) | — | Device-policy compliance report; the absence of an approved media register is the evidence |
+
+**The honest consequence:** the entity's most effective physical control is that the valuable asset is not in
+any building it controls. Several requirements below are therefore satisfied for the entity's own premises at
+office scale and satisfied for production by inheritance, and each is labelled as one or the other. An
+inherited control asserted as an operated control would be a misstatement, and a requirement left blank
+because it is inherited would be a gap; neither is done here.
+
+---
+
+## 2. Designing and implementing protection against physical and environmental threats (7.5-R1)
+
+Protection against physical and environmental threats — natural disasters and other intentional or
+unintentional physical threats to infrastructure — is designed and implemented at each site in scope, sized to
+what the site actually holds.
+
+| Site | Threats designed against | Controls implemented | Type |
+|---|---|---|---|
+| **HQ office and server closet** | Fire; water ingress; power failure; electrical surge; theft and burglary; vandalism; civil disruption; earthquake (moderate regional exposure); extreme heat | Landlord fire detection and suppression with entity-verified coverage of the suite; **no water-bearing services routed through the server closet** (verified at fit-out and re-verified at each landlord works notification); UPS with clean shutdown for closet equipment; surge protection at the closet distribution board; badge-controlled suite entry with prop-open alarm; laminated glazing on ground-floor aspects; seismic restraint straps on the closet rack; temperature and humidity alarm to a monitored channel; no signage identifying the entity as a technology tenant at street level | Preventive + detective |
+| **EU subsidiary suite** | Fire; water ingress; power failure; theft; civil disruption; flood (site is 400 m from a watercourse — assessed, above the modelled 1-in-200 level) | Landlord fire detection and suppression; entity-controlled suite access; no server room and therefore no closet-specific controls; flood exposure assessed and recorded as acceptable with no basement storage | Preventive |
+| **Co-working locations (3)** | All of the above, none of it under entity control | **Risk removed rather than managed**: no entity information asset above Internal may be stored on site; no entity equipment is left overnight; provider assessment on file; operator badge list reconciled monthly | Avoidance |
+| **Remote locations (42)** | Fire, flood, theft, power and connectivity loss at individual homes | Risk removed by the no-local-copy control; devices encrypted and remotely wipeable; continuity handled by role handover rather than by site resilience (OPS-BCP-031 §5) | Avoidance + compensating |
+| **AWS us-west-2 (production)** | Fire, flood, seismic, power, physical intrusion at data-centre scale | **Inherited.** Multi-AZ deployment within the region is the entity's own design decision and its own control; the physical protection of each facility is the provider's | Inherited + entity architecture |
+| Managed SIEM provider facility | As above, at the provider's scale | Provider-operated; assessed annually | Inherited, assessed |
+
+**A limitation recorded rather than implied.** The entity's production deployment is **single-region**
+(us-west-2, multi-AZ). A regional physical event is therefore an availability risk that the current
+architecture does not eliminate. It is Board-accepted as risk **R-022**, conditional on the quarterly restore
+test passing, and it is disclosed in the customer-facing description. Multi-AZ addresses facility-level and
+campus-level physical events; it does not address a regional one, and the standard says so rather than
+implying resilience the entity does not have.
+
+## 3. Risk assessments for physical and environmental threats (7.5-R2, 7.5-R3, 7.5-R4, 7.5-R5)
+
+### 3.1 When assessments are performed (7.5-R2)
+
+A physical and environmental threat assessment is performed **prior to beginning critical operations at each
+physical site** and **at regular intervals thereafter**:
+
+| Assessment | Trigger / interval | Performed by | Output |
+|---|---|---|---|
+| Pre-occupancy site assessment | **Before any critical operation begins at a new site** — before the first desk is used, not after fit-out | Facilities lead with the CISO, using the RSK-STD-008 methodology | Site risk record with controls required as a condition of occupancy |
+| Periodic site reassessment | **Annually** per site, and within 30 days of a material change | Facilities lead | Updated site risk record; findings into the deficiency register |
+| Lease or landlord change | On event | Facilities lead with the General Counsel | Reassessment plus lease-clause review |
+| Provider (co-working, SIEM, cloud) physical assessment | Annually, on the TPR-PRO-016 cycle | Third-Party Risk Manager | Provider assessment record |
+| Threat-picture monitoring | **Continuous, reviewed quarterly** | Facilities lead, with specialist input (§3.4) | Change log; out-of-cycle reassessment where warranted |
+
+**Performed this period:** annual reassessment of HQ (2026-01-14) and of the EU suite (2026-01-21); a
+pre-occupancy assessment of the EU suite was performed in 2025-08 before occupancy, and its conditions —
+lockable statutory-records cabinet, entity-controlled suite reader, no basement storage — were met before the
+first working day; annual provider assessments for the three co-working operators and the SIEM provider; four
+quarterly threat-picture reviews.
+
+### 3.2 Location and construction: topography and urban threats (7.5-R3)
+
+Site selection and construction were assessed against local topography and urban threat, and the assessment is
+recorded per site rather than assumed:
+
+| Factor assessed | HQ | EU suite |
+|---|---|---|
+| **Elevation and flood exposure** | Floor 4 of 9; site elevation above the modelled 1-in-1000 fluvial and pluvial extent; no basement occupancy | Floor 2 of 5; 400 m from a watercourse, above the modelled 1-in-200 level; **no basement storage permitted**, recorded as a condition of occupancy |
+| **Bodies of water** | Nearest significant watercourse 2.1 km; coastal surge not applicable | Assessed as above; the condition above is the mitigation |
+| **Tectonic fault lines** | Moderate regional seismic exposure; building constructed to current seismic code; **rack seismic restraint** fitted in the closet; assessment concluded no additional structural measure is available to a tenant | Low seismic exposure |
+| **High-profile location attracting political unrest, criminal activity or terrorist attack** | Assessed as **low-to-moderate**: a mixed commercial district with no government, diplomatic or high-symbolism co-tenant; two peaceful demonstrations passed the building this period with no impact. Mitigations: no street-level entity signage, no publication of the office address on the website, reception-controlled entry, and a documented close-and-work-remotely trigger | Assessed as **low**: suburban business park, no notable co-tenants; the same no-signage rule applies |
+| Adjacent hazard | No fuel storage, chemical processing or high-hazard occupancy within the assessed radius; a ground-floor restaurant at HQ is the material adjacency and is the reason fire-detection coverage of the suite was independently verified rather than accepted from the landlord's certificate | Ground-floor retail; same verification applied |
+| **Criminal activity** | Local commercial burglary rate reviewed against police open data; laminated glazing and the no-overnight-equipment rule for street-facing desks follow from it | Low; no additional measure |
+
+Because the entity is a tenant in both cases, "construction" is largely a **selection** criterion rather than a
+design one: the assessment records what the building provides, what the lease permits the entity to add, and —
+where a threat cannot be addressed at tenant level — the residual risk and the compensating measure. This is
+recorded explicitly, because a tenant claiming to have designed a building's flood resilience would not be
+credible.
+
+### 3.3 Controls implemented against the identified threats (7.5-R4)
+
+Controls follow from the assessment results rather than from a generic list. Where a named threat is not
+applicable to a site, that is recorded with the reason:
+
+| Threat named in 7.5-R4 | HQ / EU controls | Production (inherited) |
+|---|---|---|
+| **Fire** | Landlord detection and suppression, coverage of the suite independently verified; extinguishers serviced annually; evacuation drills twice yearly with 46 of 48 participation across the two sites; the server closet has smoke detection reporting to the monitored channel; no combustible storage in the closet; charging of lithium batteries restricted to the designated bench with a metal enclosure | AWS facility fire protection |
+| **Flooding and water** | No water-bearing services through the closet, re-verified at each landlord works notification; leak-detection puck under the closet rack (added this period); no basement storage; no equipment on the floor; EU condition of occupancy as above | AWS facility |
+| **Electrical surges and power failure** | Surge protection at the closet distribution board; UPS providing clean shutdown for closet equipment (the closet holds no production data, so ride-through capacity is deliberately not purchased — the requirement is orderly shutdown, not continuity); details in OPS-EQP-045 §3 | AWS facility power; multi-AZ deployment |
+| **Explosives and weapons** | Assessed as **not a design threat** for either site given the location assessment in §3.2: no screening or blast measure is implemented, and this is a recorded, reasoned decision rather than an omission. The mitigations that do apply are reception-controlled entry, no street signage, the challenge-any-unbadged-individual instruction, and the close-and-work-remotely trigger | AWS facility |
+| Vandalism, theft, burglary | Badge-controlled suite entry with prop-open alarm; laminated glazing on ground-floor aspects; no equipment visible from the street; overnight clear-desk enforcement; locked device store | AWS facility |
+| Dust, vibration, chemical, electromagnetic, temperature, humidity | Covered for equipment in OPS-EQP-045 §2 and §5; closet temperature and humidity alarmed | AWS facility |
+| Civil disruption / site inaccessibility | Documented trigger to close a site and work remotely — invoked **once** this period for a half day during a transport strike at the HQ city, with no operational impact because the workforce is already remote-capable | AWS facility; R-022 stated for the regional case |
+
+### 3.4 Monitoring changes, and obtaining specialist advice (7.5-R5)
+
+**Changes to physical and environmental threats are monitored**, and specialist advice is obtained where the
+entity's own competence ends:
+
+| Input monitored | Source | Cadence | Acted on this period |
+|---|---|---|---|
+| Severe-weather and natural-hazard advisories for both office cities | National meteorological and hazard services; alerting to the facilities lead | Continuous, alert-driven | Two heat advisories; closet temperature monitored more frequently, no exceedance |
+| Flood-map and seismic-code updates | Public hazard mapping | Annually | No change to either site's conclusion |
+| Local crime and public-order picture | Police open data; landlord tenant bulletins; building management notices | Quarterly | The two demonstrations; no control change |
+| Landlord works and building-system changes | Contractual notification from building management | Per event | Three works notifications; the water-services re-verification was performed each time, which is how the leak-detection puck came to be added after a chilled-water pipe was rerouted on the floor above |
+| Provider physical-security posture | AWS audit reports; co-working and SIEM provider assessments | Annually | No adverse finding; the SIEM provider's move to Confidential handling triggered a re-executed annex (HR-PRO-042 §4.4) |
+| Insurance surveyor recommendations | Insurer survey | On renewal | Two recommendations: extinguisher signage and the lithium-battery charging enclosure — both implemented |
+| **Specialist advice** | Fire risk assessor (statutory, annual, both sites); insurer's surveyor; the landlord's structural and M&E engineers; a seismic-restraint specialist consulted at HQ fit-out; the entity's own competence is deliberately not stretched to structural, fire-engineering or utility design | Annual and event-driven | Fire risk assessments completed 2026-01 for both sites, no material finding; seismic restraint specification confirmed |
+
+**Findings are handled like any other deficiency**, entering the register with an owner and a date rather than
+sitting in a facilities file: **D-2026-015** (Low) recorded the absence of leak detection under the closet rack
+after the landlord's pipe reroute, closed on installation; **D-2026-016** (Low) recorded that the EU suite's
+evacuation drill had slipped past its due date by 6 weeks, closed after the drill on 2026-02-11.
+
+---
+
+## 4. Working in secure areas (7.6)
+
+### 4.1 What constitutes a secure area here (7.6-R1)
+
+**Security measures for working in secure areas are designed and implemented, applying to all personnel and
+covering all activities taking place in the secure area.** The entity has exactly one secure area of its own,
+and identifying it narrowly is what makes the measures enforceable:
+
+| Secure area | Why it is one | Population with access |
+|---|---|---|
+| **HQ server closet** | Holds the network equipment on which office connectivity depends, the patch panel, and the only physical infrastructure the entity operates | A **named list**, currently 5 individuals (6 at period start), each requiring dual authorization from the AI Security Lead and the Director IT Operations |
+| Locked records cabinets (HQ and EU) | Hold signed contracts and statutory registers | Key custody: General Counsel (records), IT Operations (device store) |
+| **AWS data centres** | Genuinely secure areas, but **not the entity's** — no entity personnel has or seeks physical access | None; recorded as inherited |
+
+Measures applying to all activities in the server closet: entry only against a change record or an incident
+record; entry logged by the badge reader and **reviewed monthly against work records**, with any unmatched
+entry investigated; out-of-hours entry generating an **alert** to the AI Security Lead rather than waiting for
+the monthly review; work performed to the equipment-maintenance rules in OPS-EQP-045 §5; and no material
+removed from the closet without an asset-register update.
+
+### 4.2 Need-to-know about the area and its activities (7.6-R2)
+
+Personnel are made aware of the existence of, and activities within, the secure area **on a need-to-know
+basis**. Practically: the closet's location is not marked with signage identifying its contents; the named
+access list is not published; planned work in the closet is communicated to the change approvers and the
+affected service owners, not broadcast; and incident work in the closet is described in the incident record by
+function rather than by physical detail. The 42 remote personnel have no need to know and are not told, which
+is not secrecy for its own sake but the removal of an unnecessary reconnaissance surface.
+
+### 4.3 Avoiding unsupervised work (7.6-R3)
+
+**Measures are in place to avoid unsupervised work in secure areas**, for safety as well as to reduce the
+opportunity for malicious activity:
+
+1. Work in the server closet requires **two people present** where the work involves opening the rack,
+   handling power, or physically altering connectivity. This is a written rule with a technical backstop: the
+   badge log shows single-badge entries, and a single-badge entry coinciding with a rack-opening change record
+   is a finding.
+2. A **single-person entry is permitted only** for non-invasive activity — reading a status light, retrieving
+   a labelled spare, photographing a serial number — and the change or incident record must say so.
+3. **External technicians are never unsupervised**: an entity escort from the named list is present for the
+   whole visit, and the escort is recorded by name in the visit record (OPS-EQP-045 §5).
+4. **Vacant means locked** (§4.4), so "unsupervised" cannot arise by drift.
+5. Lone working outside business hours triggers a check-in with the on-call IT Operations engineer at entry
+   and exit, for safety.
+
+**This period:** 7 closet entries. 5 were two-person; 2 were single-person non-invasive with the reason
+recorded. One external technician visit (a landlord electrician working on the floor distribution board) was
+escorted throughout. The monthly log review found **one entry with no corresponding work record** — an
+engineer retrieving a spare cable — recorded as **D-2026-017** (Low) with the correction that the change tool
+now offers a lightweight "closet access" record type, because requiring a full change record for a 90-second
+task was the reason the record was skipped.
+
+### 4.4 Vacant secure areas locked and periodically inspected (7.6-R4)
+
+The server closet is **locked whenever unoccupied** — the door is self-closing and self-locking on a separate
+entity-keyed lock that is not part of the building master suite, with a prop-open alarm at 60 seconds. It is
+**periodically inspected**: a documented quarterly inspection by the facilities lead covering physical
+integrity of the door and lock, rack security, cable tidiness and labelling, absence of unauthorised devices,
+environmental readings, UPS status, extinguisher currency, and absence of stored material that should not be
+there. The records cabinets are similarly locked when unattended and inspected at the same cadence.
+
+**Inspections this period:** 4 of 4 completed. Findings: one unlabelled patch lead (corrected at the
+inspection); a cardboard box of packaging material stored in the closet (removed, and a no-combustible-storage
+sign fitted); and the pipe reroute observation that produced D-2026-015.
+
+### 4.5 Endpoint devices in secure areas (7.6-R5)
+
+The carrying and use of user endpoint devices in the server closet is **appropriately controlled**: a laptop
+may be taken in only where the work requires it (console access to network equipment), it must be an
+entity-issued, in-posture device, it must not be left in the closet, and it must not be connected to a
+management port without a change record naming that action. Personal devices other than a phone are not taken
+in. Where console access is needed, the preferred path is the out-of-band management interface from the desk
+rather than a laptop in the closet, because it produces a logged session instead of a physical presence.
+
+### 4.6 Recording equipment in secure areas (7.6-R6)
+
+**Photographic, video, audio and other recording equipment — including cameras in user endpoint devices — is
+not permitted to be used in the server closet unless authorized.** Authorization is granted for a specific,
+recorded purpose: photographing a serial number for a warranty claim, documenting a cabling change for the
+as-built record, or evidencing a fault for a vendor. The authorization is recorded in the same work record,
+the images are stored in the asset or change record rather than on the device, and images showing rack layout
+or credentials are classified Confidential. Phones are not banned from the closet — a blanket ban that
+everyone would breach is worse than a use rule that is followed — but **using** a camera without authorization
+is a policy breach. Three authorized photographs were taken this period, all attached to change records.
+
+The entity **operates no camera inside its own suite**, a deliberate decision recorded on privacy grounds with
+badge logging and the monthly log review as the compensating controls (SEC-PRO-013 §5). Building-perimeter and
+lobby video is the landlord's.
+
+### 4.7 Emergency procedures posted (7.6-R7)
+
+**Emergency procedures are posted in the secure area in a readily visible and accessible manner**: on the
+inside face of the closet door, at eye height, laminated, a single page carrying the evacuation route and
+assembly point; the location of the nearest extinguisher and its class; the electrical isolation point for the
+closet and the instruction not to operate it except in an emergency; the emergency contact list (on-call IT
+Operations, facilities lead, building management, emergency services) with numbers rather than names alone;
+and the instruction that life safety takes precedence over equipment in every case. The same information, in
+its site-appropriate form, is posted at the office entrances and in the EU suite. Currency of the posted sheet
+is a line item on the quarterly inspection (§4.4) — an out-of-date emergency contact list is the failure mode
+that a posted procedure most often has, and it was corrected once this period after an on-call number changed.
+
+---
+
+## 5. Clear desk and clear screen (7.7)
+
+### 5.1 The topic-specific policy, defined and communicated (7.7-R1, 7.7-R3)
+
+**A topic-specific policy on clear desk and clear screen is established and communicated to all relevant
+interested parties**, and the rules are **defined** rather than left to interpretation. It applies at HQ, at
+the EU suite, at co-working locations and at home, because 42 of 48 personnel work primarily remotely and a
+rule that stops at the office door would not protect anything.
+
+| Rule | Applies to | Basis |
+|---|---|---|
+| Desks are cleared of all papers and removable storage media whenever the desk is left for an extended period and **always at end of day** | All locations | 7.7-R1 |
+| No material classified Confidential or above is left on a desk unattended at any time | All locations | 7.7-R1 |
+| Screens are locked whenever the desk is left, however briefly | All locations | 7.7-R1 |
+| Screens are positioned so they are not readable from a doorway, window, or adjacent seat; a privacy filter is used in transit and at co-working locations | All locations | 7.7-R1 |
+| Whiteboards and flip charts are cleared of Confidential or critical information when no longer required | Offices and home | 7.7-R10 |
+| Nothing is left behind when a facility or room is vacated | All locations | 7.7-R11 |
+
+Communication: published on the policy portal as part of this standard; acknowledged annually with the code of
+conduct (**48 of 48**); included in the onboarding module; reinforced in the quarterly security briefing;
+issued to contractors and the 11 named vendor individuals as a contractual annex; and communicated to the
+landlord's cleaning contractor through building management, because a cleaner is a relevant interested party
+who works in the suite unsupervised outside hours.
+
+### 5.2 Enforcement (7.7-R2)
+
+The rules are **appropriately enforced**, by technical means where possible and by observation where not:
+
+| Rule | Enforcement mechanism |
+|---|---|
+| Screen lock | **Technical**: 5-minute automatic lock, immediate on lid close, non-disableable by the user (SEC-END-043 §6) |
+| Timeout / automatic logout | **Technical**: 15-minute re-authentication for production tooling, 8-hour maximum session, idle console sessions terminated at 15 minutes |
+| Print restrictions | **Technical**: Confidential printing disabled at the device; badge-release printing at HQ |
+| Removable media | **Technical**: USB mass storage blocked, so there is no removable media to leave on a desk |
+| Local storage of Confidential material | **Technical**: the no-local-copy control means a Confidential document generally cannot be on the desk in the first place |
+| Paper, whiteboards, positioning, end-of-day state | **Observational**: unannounced clear-desk walkthroughs; end-of-day sweeps by the last person out at each office, recorded on a rota; internal audit's annual observation pass |
+| Remote locations | **Self-assessment plus provision**: the location self-assessment in SEC-END-043 §4 asks specifically about screen visibility and lockable storage, and a filter or lock is issued in response |
+
+**Enforcement results this period, including the failures.** Six unannounced walkthroughs (4 HQ, 2 EU) found:
+two desks with Internal papers left out overnight (individuals reminded; both were the same team, which
+received a targeted briefing); **one Confidential printout left at the HQ printer overnight** — a customer's
+own report, printed for a call, in breach of both the print rule and the collection rule — recorded as
+deficiency **D-2026-018** (Moderate), which produced the change to badge-release printing at HQ described in
+§5.5; one whiteboard left with a customer name and finding summary (cleared; a "clear before you leave" sticker
+now sits on every meeting-room whiteboard); and one unlocked, unattended screen (the case that also drove the
+lock-timer reduction from 10 to 5 minutes in SEC-END-043 §11). Internal audit's annual pass found the clear
+desk rules substantially followed and reported the printer case independently.
+
+### 5.3 Sensitive information locked away in secure furniture (7.7-R4)
+
+Sensitive or critical business information on paper or on electronic storage media is **locked away in secure
+furniture when not required, and especially when the office is vacated**:
+
+- HQ: keyed cabinets for signed contracts and statutory records (key custody with the General Counsel), and a
+  keyed device store for spare laptops (custody with IT Operations). Key holders are a named list reviewed
+  quarterly.
+- EU suite: its own keyed statutory-records cabinet, a condition of occupancy from the pre-occupancy
+  assessment.
+- Remote locations: lockable drawer units or cabinets **provided on request** (11 issued); an individual with
+  no lockable storage may not hold physical material above Internal at all, which converts a provisioning gap
+  into a handling restriction rather than into an unenforced rule.
+- Co-working locations: nothing above Internal may be held on site, and nothing is left overnight.
+- **Electronic storage media**: none exists to lock away, by design.
+
+### 5.4 Protecting unattended devices, and locking mechanisms (7.7-R5, 7.7-R6)
+
+| Requirement | Implementation |
+|---|---|
+| Devices protected by key locks or other security means when not in use or unattended (7.7-R5) | Cable locks available at HQ and EU desks and used for desk-side docked laptops; spare and unissued devices held in the keyed device store; devices never left in a vehicle or in checked baggage; a device left overnight at a co-working location is a policy breach, not a risk to be assessed |
+| Logged off or protected by a screen and keyboard locking mechanism controlled by user authentication when unattended (7.7-R6) | Lock requires password or biometric; **screen and keyboard both locked**; privileged sessions must be **logged off**, not merely locked, when the task ends — locking a session that holds a just-in-time production grant leaves the grant live, so the rule distinguishes the two |
+| Configured with a timeout or automatic logout (7.7-R6) | 5-minute device lock; 15-minute production re-authentication; 8-hour session ceiling; idle SSH/console termination at 15 minutes; all MDM- and identity-provider-enforced, none user-adjustable |
+
+### 5.5 Printer and multi-function device output (7.7-R7)
+
+Output from printers and multi-function devices is collected by the originator **immediately**, and since
+**2026-02** HQ printing uses **badge-release ("pull") printing**, so a job is not rendered until the
+originator authenticates at the device — meaning an uncollected job never becomes an uncollected printout. The
+change was made in response to D-2026-018 rather than in the abstract. Alongside it: Confidential printing is
+disabled at the device entirely; the EU suite's single device is badge-release-capable and was enabled at the
+same time; jobs unclaimed after 4 hours are deleted; and no home or co-working printer is registered for
+entity material above Internal.
+
+### 5.6 Secure storage and disposal of documents and removable media (7.7-R8)
+
+Documents and removable storage media containing sensitive information are securely stored (§5.3) and, when no
+longer required, **discarded using secure disposal mechanisms**: cross-cut shredders at both offices and
+provided on request to remote personnel (9 issued); a locked confidential-waste consignment at HQ collected by
+a certificated destruction contractor with a certificate of destruction retained against the consignment
+record; **never household or general office waste** for anything above Internal. Removable media disposal is
+governed by SEC-MED-046 §6 and is currently a null case because no removable media exists. Retention periods
+that determine *when* material is no longer required come from PRV-RET-036, so that "discard when no longer
+needed" has a defined meaning rather than a discretionary one.
+
+### 5.7 Pop-ups, screen sharing and presentation (7.7-R9)
+
+**Rules and guidance are established and communicated for the configuration of pop-ups on screens**, to prevent
+inadvertent disclosure during presentations, screen sharing, or work in public areas:
+
+- Notification previews are **suppressed by MDM policy** on the lock screen and, for mail and chat, reduced to
+  sender-only with content hidden — configuration, not instruction.
+- A **presentation / focus mode** must be engaged before screen sharing or presenting; the collaboration
+  platform is configured to suppress notifications automatically when sharing is detected, and the manual step
+  exists as a backstop for tools that are not integrated.
+- **Share a window, not a desktop**, is the default rule; sharing a whole desktop requires a deliberate choice
+  and is discouraged in customer-facing calls.
+- Browser tabs, bookmark bars and open documents are reviewed before sharing; a dedicated demonstration profile
+  with no customer material is provided for customer-facing sessions.
+- Credentials are never entered while sharing; the platform's screen-share indicator is the prompt to stop.
+- In public areas, a privacy filter is mandatory and Confidential material is not opened at all.
+- Guidance is delivered in the onboarding module and refreshed quarterly, with a worked example drawn from a
+  real near miss: a notification preview showing a customer name appeared during an internal demonstration in
+  2025-11, which is why preview suppression became a configuration rather than a recommendation.
+
+### 5.8 Whiteboards and displays (7.7-R10)
+
+Sensitive or critical information on whiteboards, flip charts and wall displays is **cleared when no longer
+required**: meeting rooms carry a "clear before you leave" prompt, the end-of-day sweep rota includes meeting
+rooms, digital displays in common areas show only non-sensitive dashboards with no customer identifiers, and
+persistent architecture material on walls is reviewed at the quarterly inspection for anything that has become
+Confidential over time. Remote personnel are covered by the same rule for home whiteboards, on the same
+reasoning as §5.1 — a household member or a video-call participant is an unauthorised viewer.
+
+### 5.9 Vacating facilities and the final sweep (7.7-R11)
+
+**Procedures are in place for vacating facilities, including a final sweep prior to leaving to ensure the
+entity's assets are not left behind.** Three cases are distinguished, because they fail differently:
+
+| Case | Procedure | Evidence |
+|---|---|---|
+| **End of day / last person out** | Rota-recorded sweep: desks clear, whiteboards cleared, meeting rooms checked, printer tray empty, cabinets locked, closet door closed and locked, suite door closed | Sweep rota record |
+| **Vacating a co-working location or a meeting room off-site** | Checklist before leaving: all papers collected, no device left charging, no material in the booth, whiteboard cleared, and — added after the two visitor-badge cases in SEC-PRO-013 §3 — a deliberate look at the seat and the floor. Nothing is stored on site overnight in any circumstance | Individual attestation for the location, spot-checked |
+| **Permanently vacating a leased facility** | A documented decommissioning procedure: full inventory reconciliation against the asset register; removal of all entity equipment including network equipment, patch leads and the UPS; removal of entity labels, signage and markings; secure disposal or return of all physical records per PRV-RET-036 with a certificate; **removal or handover decision for entity-installed security controls** recorded per SEC-MED-046 §7; final sweep of every room including storage and above ceiling tiles; formal handover to the landlord with a signed inventory; and confirmation to the CISO that no entity information asset remains | Decommissioning record; not exercised this period (no facility vacated), and tested by walkthrough of the procedure during the annual site reassessment |
+
+---
+
+## 6. Roles, evidence and independent testing
+
+| Role | Responsibility |
+|---|---|
+| Director IT Operations | Owns this standard; owns the facilities lead, the closet, inspections and enforcement |
+| Facilities lead | Performs site assessments, quarterly inspections, walkthroughs, sweeps and provider list reconciliation |
+| CISO | Approves the standard; owns the monthly closet log review, out-of-hours alerting and the deficiency register |
+| AI Security Lead | Co-authorises closet access; receives out-of-hours entry alerts |
+| General Counsel | Records-cabinet key custody; lease-clause review; the jurisdictional constraints on monitoring |
+| Head of People | Acknowledgement and training completion |
+| Third-Party Risk Manager | Provider physical assessments (co-working, SIEM, cloud) |
+| Every individual | Clear desk, clear screen, positioning, sweeps, reporting |
+| Internal assessment | Annually: observation pass including tailgating and clear desk; sample of closet entries against work records; verification that site assessments were performed before occupancy and on cadence; verification of inspection and drill records; test of the vacating procedure by walkthrough |
+
+| Evidence | Where it is held |
+|---|---|
+| Pre-occupancy and annual site risk records | Risk system, per site |
+| Fire risk assessments, insurer surveys, specialist reports | Facilities file |
+| Quarterly secure-area inspection records | Facilities file |
+| Badge logs for the server closet; monthly review records; out-of-hours alerts | Badge system; security case file |
+| Change/incident records authorising closet entry, including two-person and photography authorisations | Change system |
+| Evacuation drill records and posted-procedure currency checks | Facilities file |
+| Clear-desk walkthrough records and end-of-day sweep rota | Facilities file |
+| Print configuration (badge release, Confidential disabled) and unclaimed-job deletion settings | Print server configuration |
+| Confidential-waste consignment records and certificates of destruction | Facilities file |
+| MDM policy state for lock timers, notification suppression and USB blocking | MDM console |
+| Location self-assessments and provision records (locks, shredders, filters) | HR record; IT Operations file |
+| Deficiencies D-2026-015 to D-2026-018 with owners, dates and closure evidence | Deficiency register |
+
+## 7. Review history
+
+| Version | Date | Change |
+|---|---|---|
+| 1.0 | 2025-04-22 | Split from SEC-PRO-013 to separate threat protection, secure-area working and clear desk from access control; established the site assessment cycle and the closet inspection |
+| 1.1 | 2025-12-03 | Out-of-cycle: EU suite pre-occupancy assessment conditions recorded; provider physical assessments brought onto the TPR-PRO-016 cycle; the decision not to operate internal video recording documented with its compensating controls |
+| 2.0 | 2026-03-02 | Annual review. Two-person rule for invasive closet work made explicit with a badge-log backstop; lightweight closet-access record introduced after D-2026-017; **badge-release printing introduced at both offices after D-2026-018**; notification-preview suppression moved from guidance to MDM configuration; leak detection added after the landlord pipe reroute (D-2026-015); EU drill slippage recorded (D-2026-016); explosives/weapons recorded as a reasoned non-design-threat rather than an omission; facility decommissioning procedure documented and walkthrough-tested |

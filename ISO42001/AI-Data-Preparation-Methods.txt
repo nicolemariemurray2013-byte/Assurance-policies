@@ -1,0 +1,106 @@
+# AI Data Preparation Criteria, Methods and Transforms
+
+**Document ID:** AIMS-PRO-023
+**Version:** 2.4
+**Owner:** AI Development Lead; data-classification aspects with the Data Steward
+**Approved by:** Chief AI Officer
+**Approval date:** 2026-03-02
+**Next scheduled review:** 2026-12-31
+**Scope:** Preparation of all data for the AI tasks performed by the compliance-evaluation AI system in
+AWS account 471885797689 (us-west-2).
+
+---
+
+## 1. The AI tasks, and why criteria differ between them
+
+Data preparation criteria are defined **per AI task**, because the same transform can be correct for one
+task and destructive for another.
+
+| AI task | Input data | Nature of the task |
+|---|---|---|
+| **T-A: Requirement comprehension** | Framework requirement text from the trusted catalogue | Text understanding of authoritative text that must not be altered |
+| **T-B: Document evidence analysis** | Customer-supplied documents | Natural-language evidence evaluation against requirement text |
+| **T-C: Environment evidence analysis** | Raw API responses from the customer's account | Structured-data evaluation of technical state |
+| **T-D: Judgement and synthesis** | Outputs of T-A, T-B, T-C | Reasoning over combined evidence to a per-requirement verdict |
+| **T-E: Evaluation and validation** | Labelled corpus entries | Measuring the system against qualified human ground truth |
+
+## 2. Documented criteria for selecting preparation methods and transforms
+
+A transform is selected only if it satisfies every criterion below for the task in question. These are
+the standing criteria; the methods chosen under them are in §3.
+
+| # | Selection criterion | Rationale |
+|---|---|---|
+| C-1 | **Meaning preservation** — the transform must not change what the data asserts | A verdict rests on the substance of evidence; a transform that alters meaning manufactures a wrong verdict |
+| C-2 | **Reversibility / source retention** — the pre-transform original is retained and the transform is recorded | Required for provenance (RD-1) and so a disputed finding is checkable against the source, not against our processing of it |
+| C-3 | **Error reduction, demonstrated** — the transform must measurably reduce a specific class of error, not merely tidy the data | Prevents preparation from becoming ritual; each method in §3 names the error it removes |
+| C-4 | **No fabrication** — a transform must never invent, infer or fill in content that was not present | An imputed compliance claim would be indistinguishable from a real one; this is the strictest criterion here |
+| C-5 | **Trust-boundary preservation** — a transform must not cause customer-supplied content to be treated as instructions or as organization-trusted | Injection defence (RD-4) is structural and must survive preparation |
+| C-6 | **Privacy minimization** — preparation removes personal data where the task does not need it, and never propagates it into a new store | Data-protection obligation; smaller exposure surface |
+| C-7 | **Determinism and reproducibility** where the transform affects an outcome | The same input must prepare the same way, or results cannot be reproduced |
+| C-8 | **Failure is visible** — a transform that cannot complete raises a read failure rather than emitting partial or silently degraded data | Partial data judged as complete data mis-attributes fault to the customer (IC-4) |
+| C-9 | **Fitness for the task's model interface** — the prepared form must fit the context and structure the task actually consumes | An oversized or badly structured input causes silent truncation, which is a correctness problem |
+| C-10 | **Recorded per instance** — the transforms applied are recorded with the data | Without this, provenance is incomplete and the entry is not admitted (AIMS-STD-022 Q-9) |
+
+**Governing decision.** The criteria above deliberately **exclude** the statistical preparation
+repertoire common to trained-model pipelines. Because the system trains nothing and consumes
+natural-language and structured evidence directly, imputation, normalization of values, scaling and
+numeric encoding are **not applicable, and are not permitted on evidence** — imputing a missing value
+would violate C-4 and could invent compliance. Where a preparation activity is not applicable, that is
+recorded with the reason (§3.2) rather than omitted.
+
+## 3. Documented preparation methods and transforms used
+
+### 3.1 Methods applied
+
+| Activity | Applied to | Method actually used | Error class it reduces | Criteria satisfied |
+|---|---|---|---|---|
+| **Statistical exploration** | Evaluation corpus (T-E), and the production evidence population at the annual review | Distribution analysis across the defined strata: framework, workflow type, evidence quality, environment condition, outcome class, language, document length. Compared against the production population | Unrepresentative corpus; hidden skew that would inflate apparent accuracy; undetected drift | C-3, C-10 |
+| **Cleaning** | Customer documents (T-B) | Removal of extraction artefacts only: control characters, encoding anomalies, page furniture and repeated headers/footers. **Substantive content is never removed**, and a document that cannot be cleanly extracted raises a read failure | Extraction noise being read as content; a garbled document scoring as absent evidence | C-1, C-2, C-3, C-8 |
+| **Cleaning** | Scan evidence (T-C) | None applied. Raw API responses are retained and analysed **verbatim** | Any cleaning here would destroy the only independent record of observed technical state | C-1, C-2 |
+| **Labelling** | Evaluation corpus (T-E) | Dual independent labelling by analysts qualified in the framework; per-requirement status from the controlled vocabulary; inter-rater agreement recorded; disagreements adjudicated by a third qualified analyst and the adjudication recorded; split assignment (validation / held-out test) recorded and immutable | Single-assessor bias; unreliable ground truth; test-set leakage | C-3, C-7, C-10 |
+| **De-identification** | Evaluation corpus (T-E) | Mandatory removal of personal identifiers before entry, with review; entries failing review are **rejected, not repaired** | Personal data retained without need; privacy harm to non-users | C-6, C-8 |
+| **Encoding — structural, not numeric** | All tasks | Evidence is wrapped in a structured envelope that marks its class, its source, and whether it is **organization-trusted** (requirement text) or **untrusted customer content**. Customer content is declared as data and is never framed as instructions | Prompt injection; customer text acquiring instruction authority; confusion of authoritative and self-asserted claims | C-5, C-7 |
+| **Normalization — format, not values** | Customer documents (T-B) | Consistent text representation and encoding; document structure (headings, tables) preserved because structure carries meaning in a policy document. **No normalization of the values or claims themselves** | Format variation being mistaken for substantive difference | C-1, C-3 |
+| **Segmentation / chunking** | Long documents (T-B) | Structure-aware segmentation at section boundaries, with overlap, and with each segment carrying its document and section identity so a citation resolves to a real location. Sized to the task's context so nothing is silently truncated | Silent truncation causing a present requirement to read as absent; citations that cannot be located | C-1, C-9, C-10 |
+| **Deduplication** | Evaluation corpus (T-E) | Near-duplicate detection across the corpus, and across the validation/test boundary | Duplicate-driven overstatement of accuracy; the same instance appearing on both sides of the split | C-3, C-7 |
+| **Filtering / selection** | Operational evidence (T-B) | Only evidence the customer has explicitly linked to the control is selected. Scan evidence is excluded from the document-analysis track and handled on its own track under a fresh-only policy | Irrelevant evidence diluting judgement; stale environment readings treated as current | C-3, C-7 |
+| **Integrity and type validation** | All ingested data | Declared content type must match the file; integrity check on ingest and on retrieval; failure causes rejection, never silent substitution or repair | Corrupt or mislabelled data judged as if valid | C-8 |
+| **Aggregation into the verdict** | Judgement (T-D) | Per-requirement statuses are aggregated by a **deterministic formula in code**, not by a model; requirements that could not be read are excluded from both numerator and denominator | Non-reproducible scores; read failures counted as non-compliance | C-4, C-7 |
+
+### 3.2 Preparation activities considered and recorded as not applicable
+
+Recorded with reasons, so their absence is a decision rather than an omission:
+
+| Activity | Determination | Reason |
+|---|---|---|
+| **Imputation** of missing values | **Not applicable and prohibited on evidence** | Inventing a missing value could manufacture a compliance claim (C-4). Missing evidence yields an explicit unable-to-assess state instead |
+| **Numeric normalization and scaling** | Not applicable | No numeric feature vector exists; the tasks consume natural-language and structured evidence directly, and no model is trained |
+| **Numeric / categorical encoding** (one-hot, embeddings as features) | Not applicable as a feature-engineering step | No trained model consumes engineered features; the only encoding used is the structural envelope in §3.1 |
+| **Outlier removal** | **Prohibited on operational data** | An unusual environment or an unusual document is exactly the case that must be assessed, not discarded. Outliers are retained and, where out-of-domain, routed to human review |
+| **Class balancing on production data** | Not applicable | Production data is not sampled; balancing applies only to the evaluation corpus (C-3, AIMS-STD-022 Q-8) |
+| **Augmentation of real corpus entries** | Prohibited | A partly invented entry would corrupt ground truth. Synthetic cases are authored separately and permanently marked synthetic |
+| Feature selection / dimensionality reduction | Not applicable | No feature space |
+
+## 4. Governance of preparation methods
+
+A change to any preparation method is a **Standard change** at minimum (AIMS-POL-006 §4) and requires
+full V&V regression, because preparation silently determines what the model sees. A change that alters
+the trust-boundary encoding or the segmentation strategy is treated as **Material**, since both can
+change verdicts without any change to prompts or rubrics. Every corpus entry and every piece of
+operational evidence records the transforms applied to it (C-10), so an assessment can be reproduced
+with the preparation that actually ran.
+
+Preparation methods are reviewed: at every release (as part of RC-10 documentation currency), at the
+annual data review against the current production population, and whenever a defect is traced to
+preparation — two have been, and both are recorded in §5.
+
+## 5. Review history
+
+| Version | Date | Reviewer | Outcome |
+|---|---|---|---|
+| 2.0 | 2025-09-03 | AI Development Lead | Established the C-series selection criteria and the method register |
+| 2.1 | 2025-10-21 | AI Development Lead | Segmentation made structure-aware after a defect where a long policy was truncated mid-section and a present requirement read as absent |
+| 2.2 | 2026-01-15 | AI Development Lead + AI Security Lead | Structural trust-boundary encoding added as a mandatory transform (C-5) |
+| 2.3 | 2026-01-29 | AI Development Lead | Cross-split near-duplicate detection added after a duplicate was found spanning the validation/test boundary |
+| 2.4 | 2026-03-02 | AI Development Lead, approved by Chief AI Officer | Added §3.2 — activities explicitly determined not applicable, with reasons, including the prohibition on imputation and outlier removal |

@@ -1,0 +1,121 @@
+# AI Data Quality Requirements and Measurement
+
+**Document ID:** AIMS-STD-022
+**Version:** 3.2
+**Owner:** Data Steward; fairness content jointly with the Responsible AI Lead
+**Approved by:** Chief AI Officer
+**Approval date:** 2026-03-02
+**Next scheduled review:** 2026-12-31
+**Scope:** All data used to **develop** and to **operate** the compliance-evaluation AI system in AWS
+account 471885797689 (us-west-2).
+
+---
+
+## 1. Defined and documented data quality requirements
+
+Quality requirements are **defined per data class**, because "quality" means different things for
+requirement text, for labelled evaluation data and for customer evidence. Each requirement has a
+measure, a threshold and a consequence when it is not met. A requirement without a measure is not a
+requirement, so every row below is measurable.
+
+### 1.1 Development data — the evaluation corpus and requirement text
+
+| # | Quality requirement | Measure | Threshold | Consequence if not met |
+|---|---|---|---|---|
+| Q-1 | **Label accuracy** — labels reflect qualified human judgement | Dual independent labelling by analysts qualified in the framework; inter-rater agreement recorded | Agreement ≥ 0.85 before adjudication; 100% of disagreements adjudicated and recorded | Entry excluded from the corpus until adjudicated |
+| Q-2 | **Representativeness** of the operational domain | Stratum coverage against the defined strata (§2) | Every stratum populated; no stratum below its minimum count | Corpus flagged as not fit; affected claims cannot be made |
+| Q-3 | **Completeness** — coverage of canonical requirements | Proportion of supported requirements with at least one corpus instance | 100% of controls, ≥ 90% of individual requirements | Uncovered control cannot be claimed as validated |
+| Q-4 | **Integrity** — data is unaltered and is what it claims to be | Content-type and integrity check on ingest; version control on every entry | 100% pass | Rejected, never repaired |
+| Q-5 | **De-identification** | Mandatory review before entry | 100% of entries; zero personal data | Entry rejected |
+| Q-6 | **Split isolation** | Test split never used for tuning | Zero leakage; split assignment immutable once set | Accuracy claims void; regression re-baselined |
+| Q-7 | **Currency** of requirement text | Catalogue version matched against the published framework version | 100% current; drift detected at catalogue release | Assessments for that framework blocked |
+| Q-8 | **Balance** across outcomes | Distribution of met / partial / not-met instances | No outcome class below 20% of the corpus | Rebalanced before the next release baseline |
+| Q-9 | **Provenance completeness** | Every entry has origin, rights basis, custody chain and last-updated date | 100% | Entry not admitted (AIMS-REC-021) |
+| Q-10 | **Consistency of interpretation** over time | Quarterly re-label of a sampled subset by current analysts | Agreement with the stored label ≥ 0.90 | Rubric and affected labels reviewed; label drift recorded |
+
+### 1.2 Operational data — customer evidence and scan evidence
+
+| # | Quality requirement | Measure | Threshold | Consequence if not met |
+|---|---|---|---|---|
+| Q-11 | **Integrity of supplied evidence** | Declared content type matches the file; content readable end to end | 100% | Evidence rejected at upload, or the requirement is marked unable-to-assess — **never** scored as non-compliance |
+| Q-12 | **Relevance / fitness for purpose** | Evidence is explicitly linked to the control it is offered for | Only linked evidence is read | Unlinked evidence is invisible to the control by design; the customer is told what linkage does |
+| Q-13 | **Freshness of environment data** | Scan evidence collected within the assessment that uses it | 100% fresh; reuse as current evidence is prohibited | Assessment fails rather than proceed on stale readings |
+| Q-14 | **Scan coverage** | Resources successfully read ÷ resources in scope | Alarmed on degradation against the trailing baseline | Coverage shortfall reported as an evidence gap, not as a customer gap |
+| Q-15 | **Attribution of read failures** | Count of `not_met` verdicts derived from a failed or absent read | **Zero** | Defect; blocks release (IC-4) |
+| Q-16 | **Sufficiency** | A requirement has at least one piece of bearing evidence | Otherwise unable-to-assess | A verdict is never manufactured from nothing |
+| Q-17 | **Minimization** | No evidence content or personal data present in logs or telemetry | Zero occurrences, verified quarterly | Severity 1 if leakage is confirmed |
+| Q-18 | **Traceability** | Every verdict cites the specific evidence relied on | 100% | Verdict fails coverage validation and is not published |
+
+## 2. Ensuring data meets the requirements and is suitable for its intended purpose
+
+Suitability is enforced at gates, not asserted after the fact.
+
+| Gate | What is checked | Who | Effect of failure |
+|---|---|---|---|
+| Corpus ingest | Q-1, Q-4, Q-5, Q-9 | Data Steward | Entry rejected |
+| Corpus baseline (per release) | Q-2, Q-3, Q-6, Q-8 | AI Development Lead | Release blocked or the claim narrowed |
+| Catalogue release | Q-7 | Data Steward | Framework assessments suspended until current |
+| Evidence upload | Q-11, Q-12 | System, automatically | Upload rejected with a specific reason |
+| Assessment run | Q-13, Q-14, Q-16 | System, automatically | Requirement marked unable-to-assess; coverage recorded |
+| Result publication | Q-15, Q-18 | System coverage validation | Result not published |
+| Quarterly review | Q-10, Q-17 | Data Steward / AI Security Lead | Nonconformity raised and tracked to closure |
+| Annual review | Q-2 against the actual production population | Data Steward + Responsible AI Lead | Acquisition of under-represented data (AIMS-REC-021 §6) |
+
+**Strata used for representativeness (Q-2).** Framework and control-group coverage; workflow types;
+evidence quality (fully compliant, partially compliant, non-compliant, **terse-but-compliant**,
+verbose-but-empty, wrong-subject, corrupt/unreadable); environment conditions (rich, sparse,
+**zero-in-scope-resource**, permission-denied); adversarial (injection, contradiction, overstatement);
+negative controls (evidence for the wrong control, empty documents).
+
+## 3. Defining, measuring and improving quality across data classes
+
+The organization defines, measures and improves data quality for each applicable class, **to the extent
+possible**, and records where it is not possible.
+
+| Data class | Applicability here | How quality is defined | How measured | How improved |
+|---|---|---|---|---|
+| **Training data** | **Not applicable — no model is trained or fine-tuned.** Recorded deliberately, with the basis stated, rather than omitted. If training is ever introduced, AIMS-POL-006 §2.5 applies and this row becomes live | — | — | — |
+| **Validation data** (30% split, used for tuning prompts and rubrics) | Applicable | Q-1 … Q-5, Q-8, Q-9 | Agreement, stratum counts, integrity pass rate | Re-label on drift; rebalance strata; add cases from real incidents |
+| **Test data** (70% held-out split) | Applicable | Q-1 … Q-6, Q-9, Q-10 | Same, plus leakage checks | Improved only by *adding* coverage — never by tuning against it, which would destroy its purpose |
+| **Production (operational) data** | Applicable — customer evidence and scan evidence | Q-11 … Q-18 | Integrity pass rate, coverage ratio, unable-to-assess rate, minimization scan | Extend scan coverage to newly supported services; clearer upload guidance and error messages so customers can fix rejected evidence; route out-of-domain evidence to human review |
+| Requirement text | Applicable | Q-7 | Catalogue version match | Catalogue release process |
+| Prompts and rubrics (data under change control) | Applicable | Consistency of interpretation (Q-10) | Quarterly analyst review; regression agreement | Rubric revision as a Standard change with full V&V |
+
+**Where improvement is limited, and why it is recorded:** we cannot improve the quality of a customer's
+own documentation — only report on it accurately and distinguish "not evidenced" from "not compliant".
+We cannot inspect or improve the foundation models' training data (AIMS-REC-021 §4.3); the compensating
+approach is to measure fairness and accuracy on our own task and outputs.
+
+## 4. Impact of bias on performance and fairness, and adjustments made
+
+Bias is treated as a data-quality issue with a performance and fairness consequence, not as a separate
+ethical annex. Because **no model is trained**, the available adjustments act on **data and rubrics**
+rather than on weights — and that is stated plainly so the absence of model-side adjustment is not read
+as an absence of treatment.
+
+| Identified bias | Effect on performance / fairness | Detection | Adjustment made | Acceptable for the use case? |
+|---|---|---|---|---|
+| **Presentation bias** — polished, verbose documents read as more compliant than terse ones | Systematically disadvantages small or informally documented organizations; a fairness harm and an accuracy error | Terse-compliant and verbose-empty strata compared against each other | Rubrics rewritten to score **presence of required elements**, not length, tone or polish; terse-compliant stratum made a permanent gate (IC-1) | Yes — no material disparity at the last release |
+| **Language bias** — English-only corpus | Accuracy uncharacterized on non-English evidence | Language distribution of corpus and production evidence | Domain of use limited to English and **published as a limitation**; non-English evidence routed to human review; annual rebalancing | Yes, **with the limitation disclosed** — not acceptable if it were hidden |
+| **Framework recency bias** — corpus skews to recent frameworks | Weaker accuracy on older frameworks | Per-framework agreement measured separately, not only in aggregate | Per-framework thresholds; acquisition of under-represented frameworks at the annual review | Yes, with per-framework reporting |
+| **Maturity bias** — organizations with a compliance function produce more legible evidence | Could replay the historical pattern that assurance favours scale | Disparity across maturity strata | Substance-over-polish rubric; absence of readable evidence never asserted as non-compliance | Yes |
+| **API-visibility bias** — requirements no API can observe were being scored as gaps | Penalized customers for API blindness rather than non-compliance; a systematic accuracy error | Comparison of scan-silent requirements against analyst judgement | **Adjustment made 2026-03-06:** coverage-gap versus contradiction rule — the document decides where the scan cannot read the subject, while observed technical state still governs where it can | Yes — and non-exploitable, since evasion cases were added to the adversarial suite |
+| **Label bias** from a small analyst pool | Ground truth reflects a few people's interpretation | Inter-rater agreement; quarterly re-labelling (Q-10) | Dual independent labelling; adjudication recorded; rubric reviewed with practising analysts quarterly | Yes |
+| **Inherited model bias** — associations in the supplier's weights attached to names, regions or languages in evidence | Could produce differential verdicts for equivalent evidence | Fairness-strata evaluation on our own task (M-7) | No demographic attributes held or inferred; disparity investigated as a defect; smaller/alternative models regression-tested before adoption | Yes at current measurement; **residual and monitored**, since the weights are not ours to adjust |
+| **Outcome-balance bias** — a corpus dominated by passing examples would inflate apparent accuracy | Overstated performance | Outcome distribution (Q-8) | Minimum 20% per outcome class | Yes |
+
+**Decision recorded.** Following the adjustments above, the Responsible AI Lead and Data Steward judged
+performance and fairness **acceptable for the use case** at the 2026-03-04 release, with two residual
+biases (inherited model bias; English-language narrowness) accepted under monitoring and disclosure
+rather than eliminated. Acceptability is re-decided at every release, and a newly detected disparity is
+handled as a defect, not as a known limitation, unless the AIGB accepts it explicitly with a review
+date.
+
+## 5. Review history
+
+| Version | Date | Reviewer | Outcome |
+|---|---|---|---|
+| 2.0 | 2025-08-26 | Data Steward | Defined the Q-series requirements with measures and thresholds |
+| 3.0 | 2025-11-18 | Data Steward + Responsible AI Lead | Added Q-15 (zero mis-attribution of read failures) after the IC-4 finding |
+| 3.1 | 2026-01-29 | Data Steward | Added Q-10 consistency-of-interpretation measurement to detect label drift |
+| 3.2 | 2026-03-02 | Data Steward + Responsible AI Lead, approved by Chief AI Officer | Recorded the API-visibility bias adjustment; stated explicitly that training data is not applicable and why; recorded the acceptability decision and the two residual biases |

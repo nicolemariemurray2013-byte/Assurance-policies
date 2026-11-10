@@ -1,0 +1,290 @@
+# Termination, Change of Employment and Confidentiality Agreements Procedure
+
+**Document ID:** HR-PRO-042
+**Version:** 2.0 — **effective 2026-03-02**, superseding v1.2 of 2025-09-08
+**Owner:** Head of People (process), jointly with the General Counsel (agreement terms and enforcement)
+**Approved by:** General Counsel 2026-02-26, per the approval authority in GOV-POL-040 §3
+**Next scheduled review:** 2026-12-31 (Annually, and on any change to employment law in a jurisdiction where personnel)
+are located, to the entity's legal structure, or to the confidentiality agreement templates
+**Scope:** All 48 personnel of both legal entities, all contractors, and the 11 named vendor individuals with
+access to entity information. Covers what survives the end of an engagement, what is signed to make it
+survive, and how a change of role is handled — which is treated as a termination and a new start, not as an
+adjustment.
+
+**Related:** GOV-POL-040 (policy framework), SEC-AST-041 (asset return and intellectual property rights),
+SEC-PRO-013 (physical access removal), SEC-IAM-021 (logical access removal), HR-POL-004 (screening and
+competence), GOV-POL-005 (code of conduct), TPR-PRO-016 (third-party risk), PRV-RET-036 (retention).
+
+---
+
+## 1. Why this is a separate procedure
+
+Access removal is a control that happens on a date. What this procedure governs is the set of obligations
+that **do not** end on that date — confidentiality, intellectual property, and the duty not to use knowledge
+acquired here elsewhere — together with the knowledge and role transfer that must happen so that a departure
+does not leave a control unowned. Those two things fail in different ways: the first fails silently years
+later, the second fails immediately and invisibly. Both are handled here.
+
+A change of role is in scope because the most common way an entitlement outlives its justification is a
+promotion or a transfer, where nobody experiences the event as an ending.
+
+---
+
+## 2. Information security responsibilities that remain valid after termination or change (6.5-R1)
+
+The following duties survive the end of employment, contract or engagement, for the durations stated, and are
+enumerated in the individual's terms rather than left to general law:
+
+| Surviving duty | What it requires | Duration | Basis |
+|---|---|---|---|
+| **Confidentiality of information** | Not to disclose, publish or use entity or customer Confidential information, including evidence, assessment results, control weaknesses, security architecture, incident details, pricing and customer identities | **Indefinite** for customer data, personal data and trade secrets; **5 years** for other Confidential business information | Employment agreement §12; contractor agreement §9; NDA (§4) |
+| **Intellectual property** | Assignment of all work product created in the engagement; no retention of copies; no reuse of entity code, models, prompts, document templates or assessment methodology | **Indefinite** (assignment is permanent) | Employment agreement §13; SEC-AST-041 §3 |
+| **Other knowledge obtained** | Not to use non-documented knowledge — how a control is bypassed, where a weakness sits, which customer is behind schedule, how the AI system is prompted — for personal benefit or the benefit of another party | **Indefinite** for security-relevant knowledge; this is stated explicitly because "it was in my head, not in a file" is the failure mode a confidentiality clause alone does not close | Employment agreement §12.3 |
+| **Responsibilities contained in confidentiality agreements** | Every obligation in the signed NDA or confidentiality undertaking, including return/destruction certification and the duty to notify the entity of any compelled disclosure | Per the agreement's own survival clause (§4.2) | NDA §7 |
+| **Non-solicitation of entity data** | Not to contact entity customers to obtain or use entity assessment content | 12 months | Employment agreement §14, jurisdiction-limited |
+| **Duty to report** | To report to the CISO any subsequently discovered exposure of entity information that the individual becomes aware of | Indefinite, framed as a duty rather than a prohibition | GOV-POL-005 §8 |
+| **Cooperation** | To cooperate with an investigation, regulatory enquiry or litigation concerning the period of the engagement | 3 years, reasonable-cost-reimbursed | Employment agreement §15 |
+
+**A duty stated with its limits.** The entity does not assert a general non-compete; three of the five
+jurisdictions in which personnel are located would not enforce one, and asserting an unenforceable term
+weakens the terms that are enforceable. The General Counsel maintains a jurisdiction matrix recording, for
+each of the five jurisdictions, which surviving clauses are enforceable, which are narrowed, and which are
+omitted — reviewed annually and on legal change (6.6-R5). The EU subsidiary's population receives a locally
+reviewed variant.
+
+## 3. Where the surviving duties live: the terms of engagement (6.5-R2)
+
+The duties in §2 are **contained in the individual's terms and conditions of employment, contract or
+agreement** — not only in a policy the individual could later claim not to have read.
+
+| Population | Instrument carrying the surviving duties | Signed when | Current state |
+|---|---|---|---|
+| Employee (both entities) | Employment agreement §§12–15, plus a standalone confidentiality undertaking | Before the start date; access is not provisioned without it (SEC-PRO-013 §2) | 48 of 48 |
+| Contractor (individual) | Contractor agreement §§9–11 with an equivalent survival clause | Before engagement start | 4 of 4 |
+| **Named vendor personnel** (11 individuals) | The vendor's master agreement requirements annex, **plus an individual confidentiality undertaking from each named person** — because a corporate NDA binds the company, not the engineer | Before access is granted | 11 of 11 |
+| Business partner personnel (auditors, assessors) | Mutual NDA, purpose- and duration-scoped | Before the engagement | 6 current |
+| Interviewees and candidates | Short-form NDA where a demo exposes non-public material | At interview | Used 9 times this period |
+
+The template language is owned by the General Counsel, versioned in the document management system, and
+changed only through legal review. A change to the surviving-duty clauses triggers re-signature for personnel
+whose duties materially change; a change that only clarifies does not, and which of the two applies is a
+recorded legal judgement rather than an administrative default.
+
+## 4. Confidentiality and non-disclosure agreements (6.6)
+
+### 4.1 The agreements the entity uses, identified and documented (6.6-R1)
+
+| Agreement | Used for | Owner of the template | Register entry |
+|---|---|---|---|
+| Employee confidentiality undertaking | All employees | General Counsel | HR record |
+| Contractor confidentiality clause + undertaking | Individual contractors | General Counsel | Contract register |
+| **Individual undertaking for named vendor personnel** | The 11 vendor individuals | General Counsel | Vendor register, per named person |
+| Mutual NDA (standard) | Prospects, partners, auditors, assessors | General Counsel | Contract register |
+| One-way inbound NDA | Where a third party's material is received | General Counsel | Contract register |
+| Candidate NDA (short form) | Interviews exposing non-public material | Head of People | Recruitment record |
+| **Customer DPA and confidentiality terms** | Customers, covering entity obligations to them | General Counsel | Customer contract register |
+
+Every executed agreement is recorded in the contract register with counterparty, date, version, term,
+survival period and the business owner. The register is the population for the review in §4.4; an agreement
+not in the register is treated as not existing, which is what makes the register worth maintaining.
+
+### 4.2 Terms determined by information type, classification, use and permissible access (6.6-R2)
+
+Terms are not uniform. The template selected and the clauses enabled are determined by what the counterparty
+will actually handle:
+
+| Element the agreement must contain | How it is set | Example of variation by classification |
+|---|---|---|
+| **A definition of the information to be protected** | Explicit and positive — not "all information disclosed". Names the categories: customer assessment content and evidence, personal data, security architecture and weaknesses, AI system prompts/models/evaluation data, source code, pricing, and the fact and content of incidents | A candidate NDA defines only "the product demonstration and roadmap"; a vendor annex defines evidence, logs and personal data by name |
+| Expected duration | Fixed term for business information; **indefinite** for personal data and trade secrets | Candidate NDA 2 years; vendor annex indefinite for personal data |
+| Required actions on termination of the agreement | Return or destruction, with **written certification** within 15 days | Required for every agreement that permits receipt of Confidential or above |
+| Responsibilities and actions of signatories to avoid unauthorized disclosure | Need-to-know limitation, no onward disclosure without written consent, minimum protective measures matching the classification, subcontractor flow-down | Vendor annex mandates encryption at rest and in transit and named-individual access; a candidate NDA does not |
+| Ownership of information, trade secrets and intellectual property | Stated, with no implied licence | Cross-referenced to SEC-AST-041 §3 |
+| **Permitted use** of the protected information | Purpose-limited to the engagement's stated purpose; any other use is a breach, including training a model on it | Explicit AI clause added in template v4 (2025-11): no use of entity or customer material as training or fine-tuning input |
+| Right to audit and monitor activities involving Confidential information | Present for vendors handling Confidential and above | Exercised twice this period |
+| Process for notification and reporting of unauthorized disclosure or breach | **Notice to the entity without undue delay and in any case within 24 hours**, with cooperation in investigation and notification | Vendor annex; mirrored in PRV-TPD-038 |
+| Terms for return or destruction of information at agreement cessation | Method appropriate to classification (secure deletion, certified destruction), plus certification | Cross-referenced to PRV-RET-036 |
+| Expected actions in case of a breach | Injunctive relief, indemnity where negotiated, and the entity's right to suspend access immediately | Suspension right exercised once (§4.5) |
+| **Applicable jurisdiction and governing law** | Chosen per counterparty location against the jurisdiction matrix; clauses unenforceable locally are narrowed rather than left as decoration (6.6-R5) | EU counterparties: EU-entity paper, local law, GDPR terms incorporated |
+
+### 4.3 Signature (6.6-R3)
+
+Confidentiality or non-disclosure agreements are **signed** — by personnel, contractors, named vendor
+individuals and other relevant interested parties — before access is granted, and signature is a technical
+gate, not an administrative expectation: identity provisioning in SEC-IAM-021 and badge encoding in
+SEC-PRO-013 both require the signed undertaking as a prerequisite, and both have refused provisioning for a
+missing undertaking this period (one contractor, recorded in SEC-PRO-013 §2). Signature is captured
+electronically with signer identity, template version and timestamp, retained for the term plus the survival
+period plus 7 years under PRV-RET-036.
+
+**Current state:** 48 of 48 employees; 4 of 4 contractors; 11 of 11 named vendor individuals; 6 of 6 current
+partner/auditor NDAs; 9 of 9 candidate NDAs where required. Two engagements were **blocked** at this gate
+during the period rather than proceeding on a promise.
+
+### 4.4 Review (6.6-R4)
+
+| Review | Cadence | Reviewer | What it tests |
+|---|---|---|---|
+| Template review | **Annually**, and on legal change | General Counsel | Currency against law, the classification scheme, and the AI-use clause |
+| Executed-agreement review | Annually against the contract register | General Counsel with the business owner | Whether the agreement still matches what the counterparty now handles — scope creep is the common failure |
+| **Change-triggered review** | Within 30 days of the trigger | General Counsel | Triggers: a change in the information a counterparty handles; a classification change; a new jurisdiction; a change in law; an incident involving the counterparty; a change in the entity's structure; a material change to a vendor's subprocessors |
+| Jurisdiction matrix review | Annually | General Counsel | Enforceability of each surviving clause in each of the five jurisdictions (6.6-R5) |
+| Completeness reconciliation | Quarterly | Head of People and Third-Party Risk Manager | Every person with access has a current signed undertaking; an unmatched identity is suspended |
+
+**Reviews performed this period, and what they changed.** The annual template review produced v4, adding the
+no-training-input clause and tightening the breach-notice window from 72 to 24 hours. A change-triggered
+review followed the managed SIEM provider's expansion into log retention, which moved it from Internal to
+Confidential handling and required a re-executed annex with the audit right enabled. The jurisdiction review
+narrowed the non-solicitation clause in two jurisdictions and removed it in one. The quarterly reconciliation
+found **one named vendor individual whose individual undertaking had lapsed at contract renewal while the
+corporate NDA remained in force** — recorded as deficiency **D-2026-014** (Moderate), access suspended the
+same day, undertaking re-executed within 2 business days, and the correction is that individual undertakings
+now carry the renewal date of the master agreement rather than their own, so renewal cannot desynchronise
+them.
+
+### 4.5 Enforcement in practice
+
+Enforcement is recorded because an unenforced clause is not a control. This period: one contractor's access
+was **suspended** under the immediate-suspension right after they forwarded an internal architecture diagram
+to a personal address (handled as a security incident, no customer data involved, engagement terminated, the
+return-and-certify obligation completed and verified); one former employee's post-employment request to
+retain a copy of their own project documentation was **refused** in writing, with the specific clause cited,
+and the refusal recorded; and one candidate NDA breach — a roadmap detail repeated publicly — resulted in a
+cease-and-desist letter rather than litigation, a proportionality decision recorded by the General Counsel.
+
+## 5. Enforcing surviving duties, and treating a role change as termination plus initiation (6.5-R3)
+
+**Post-termination duties are enforced**, and a **change of responsibility or employment is managed as the
+termination of the current responsibility combined with the initiation of the new one.** Operationally that
+means a role change runs both halves of the process, in that order, and neither half may be skipped because
+the person is staying.
+
+| Step | On departure | On role change |
+|---|---|---|
+| Departure/change attestation signed, restating the surviving duties in §2 and listing what must be returned or destroyed | Required, before the last working day | **Required** — the individual attests to the duties attaching to the role being left, including confidentiality of material they will no longer be entitled to see |
+| Exit or transition interview covering the surviving duties, the return obligations and the reporting duty | Held for all departures | Held for every change into or out of a privileged, control-owning or customer-data role |
+| Logical access | Revoked on the last working day (SEC-IAM-021) | **Old entitlements revoked first, then new ones granted** — never additively. The identity system enforces this: a role change closes the prior entitlement set and opens a new request |
+| Physical access | Deactivated on the last working day (SEC-PRO-013 §3) | Zones reassessed at the level of the new role |
+| Assets | Returned per SEC-AST-041 | Reassessed; equipment no longer required for the new role is returned |
+| Control ownership and security roles | Transferred per §6 | Transferred per §6 |
+| Confidentiality undertaking | Survives; a copy is issued to the individual with the attestation so the terms are in their hands, not only in a file they no longer have access to | Re-signed where the new role changes the categories of information handled |
+| Register update | Leaver register, asset register, control-owner register | Same three registers |
+
+**Enforcement mechanics.** The surviving duties are enforceable because: the instrument is signed and
+retained (§4.3); the attestation restates the duties at the moment of departure, removing the "I did not
+know it continued" defence; the entity retains the access logs that would evidence a pre-departure bulk
+export, and reviews them for every departure classified as involuntary or as a privileged-role exit — a
+**mandatory pre-departure access-log review** covering the 30 days before notice, performed for 4 of 4
+qualifying cases this period, finding one large but legitimate export (a customer's own report, to that
+customer); and the General Counsel maintains the escalation path from reminder letter to cease-and-desist to
+injunctive relief, which has been used at the first two levels this period (§4.5).
+
+**Preventing pre-departure copying** is handled jointly with SEC-AST-041 §5 and SEC-DLP-023: individuals under
+notice retain normal access unless a risk assessment says otherwise (removing access on notice creates its own
+risks), but their exports are monitored more closely, bulk-download alerting thresholds are lowered for the
+notice period, and involuntary terminations have access removed before notification.
+
+## 6. Transferring the security roles and knowledge a departing person held (6.5-R4, 5.11-R4 cross-reference)
+
+**Information security roles and responsibilities held by any individual who leaves or changes job roles are
+identified and transferred to another individual** — before the departure date, not after.
+
+| What is transferred | How it is identified | Deadline | Verification |
+|---|---|---|---|
+| **Named control ownership** | The control-owner register in CTL-POL-012 is filtered by the individual; every control they own appears on the offboarding checklist as a line item with a named successor | Successor named before the last working day; the checklist **cannot be closed** with an unassigned control | Register shows the new owner; MON-PRO-011's monthly check flags any control with no owner |
+| Policy ownership (§3 of GOV-POL-040) | Policy register filtered by owner | Same | Policy register |
+| Risk ownership | Risk register filtered by owner | Same | Risk register |
+| On-call and incident-response roles | On-call roster and the incident role matrix in SEC-IRP-027 | Removed from the roster on the last working day; successor certified before removal | Roster and certification record |
+| Vendor relationship ownership | Vendor register (TPR-PRO-016) | Same | Vendor register |
+| Approval authority (change approver, access approver, expense) | Authority matrix in GOV-STR-003 | Reassigned before departure; the workflow tool's approver list is updated so an orphaned approval cannot route to a departed identity | Workflow configuration |
+| Break-glass and key-custody roles | Named lists in SEC-CRY-022 and SEC-PRO-013 | Removed same day; **if a physical key cannot be recovered the lock is re-keyed** | Key-holder list |
+| **Operational knowledge** | A documented handover covering current work, in-flight decisions, undocumented dependencies, known workarounds, contacts, and anything the individual believes only they know | Written handover reviewed by the receiving manager before the last working day; where the departure is abrupt, the manager records what could not be recovered rather than leaving the gap implicit | Handover document in the team space; the manager signs that it is sufficient |
+| Customer and regulator contact ownership | CRM and the regulator contact register | Reassigned before departure; **external contacts are notified of the change** where the individual was a named contact (6.5-R5) | Notification record |
+
+**This period:** 3 departures and 5 role changes. The departures transferred 11 named controls, 2 policy
+ownerships, 1 vendor relationship and 3 on-call certifications. One case is recorded as a partial failure:
+an abrupt departure left a **single undocumented dependency in the evidence-staging cleanup job** that was
+discovered 6 days later during a routine failure; the handover had been signed as sufficient. This is
+deficiency **D-2026-013** (Low, no customer impact, no data loss), and the correction is that the handover
+template now requires the individual to list every scheduled job, alarm and manual step they own, verified
+against the observability inventory rather than against memory.
+
+## 7. Communicating the surviving duties, and to whom (6.5-R5)
+
+| Audience | What is communicated | When | How |
+|---|---|---|---|
+| The departing or changing individual | The duties in §2, the return obligations, the reporting duty, and a copy of their signed undertaking | At notice and again at the exit/transition interview | Attestation pack, countersigned |
+| Their manager and team | That the individual's access and control ownership have ended, and who holds them now | On the effective date | Team notification and the control-owner register |
+| **Relevant contact persons and operating counterparties** — customers, the regulator contact, vendors, the external auditor, the managed SIEM provider | That a named contact has changed, and the new contact | Within 5 business days of the effective date, and immediately where the individual was an escalation contact | A defined **process for communicating changes and operating procedures to relevant contact persons**, owned by the relationship owner and tracked in the offboarding checklist |
+| Reception and facilities | Badge deactivation and visitor-host changes | Same day | Badge system and reception list |
+| Third-party risk | Vendor-side changes and any required annex update | Within 5 business days | Vendor register |
+| Personnel generally | The existence and content of the surviving duties, so they are known before they matter | Annually, in the code-of-conduct acknowledgement cycle, and at onboarding | Awareness training module "what follows you out of the door" |
+
+This period the contact-change process issued 7 notifications (3 departures, 4 relevant role changes),
+including a change of the named incident escalation contact to the managed SIEM provider and a change of the
+regulator contact recorded in the AI reporting obligations register.
+
+## 8. External personnel: the same process, contractually (6.5-R6)
+
+**The termination and change process is applied to external personnel — suppliers — when a person, contract or
+job ends, or when the job changes within the organization.** It is applied through the contract, because the
+entity cannot run a supplier's HR process:
+
+1. The requirements annex obliges the provider to notify the entity of any change or departure affecting a
+   named individual with entity access **within 1 business day**, and to confirm the individual's own return
+   or destruction of entity information.
+2. Entity-side access is removed on the same deadlines as for employees, and the badge carries a **hard expiry
+   at the recorded engagement end date** so a missed notification fails closed rather than open (SEC-PRO-013
+   §3).
+3. The individual's confidentiality undertaking survives independently of the corporate relationship (§4.2),
+   which is precisely why individual undertakings are required.
+4. Entity assets held by vendor personnel are recovered per SEC-AST-041 §4, with the provider confirming the
+   return in writing.
+5. Control or role ownership held by vendor personnel — the managed SIEM provider holds two named
+   monitoring roles — is transferred per §6, with the provider naming the successor and the entity
+   acknowledging the name rather than accepting "the team".
+6. A **change of the job within the provider** is treated as a role change: entitlements are reassessed at the
+   level of the new role, and unescorted physical status is re-justified (SEC-PRO-013 §4).
+7. Where the whole contract ends, the exit provisions run: access removal, asset return, information return
+   or certified destruction, deletion confirmation for any entity data held, and a closure record signed by
+   the Third-Party Risk Manager.
+
+**This period:** 3 vendor departures and 1 vendor-side role change. All 3 departures were notified within the
+1-business-day window and access was removed same-day; the role change reverted one individual from
+unescorted to escorted physical status. One provider's initial closure record omitted the deletion
+confirmation and was **not accepted** until the confirmation was produced 4 business days later — recorded in
+the vendor register as a supplier performance observation rather than waived.
+
+## 9. Roles, evidence and independent testing
+
+| Role | Responsibility |
+|---|---|
+| Head of People | Owns the process; initiates every departure and role change; tracks attestations and the checklist; reports completion |
+| General Counsel | Owns the agreement templates, the jurisdiction matrix and enforcement; approves this procedure |
+| CISO | Owns the pre-departure access-log review for privileged and involuntary cases; receives post-employment exposure reports |
+| Receiving/hiring manager | Accepts the handover and signs that it is sufficient; names control successors |
+| Director IT Operations | Executes logical and physical access removal and asset recovery |
+| Third-Party Risk Manager | Applies the process to external personnel through the contract; maintains the vendor register |
+| Internal assessment (MON-PRO-011) | Tests, at least annually and on a sample: signed undertakings against the access population; attestation completeness; control-owner reassignment timeliness; contact-change notifications; and vendor notification compliance |
+
+| Evidence | Where it is held |
+|---|---|
+| Signed confidentiality undertakings, with version and timestamp | Document management system / vendor register |
+| Contract register with survival terms and review dates | Contract register |
+| Departure and change attestations | HR record |
+| Offboarding/role-change checklists with per-item timestamps | HR workflow |
+| Control-owner, policy-owner and risk-owner reassignment records | CTL-POL-012 register, policy register, risk register |
+| Handover documents with manager sign-off | Team space |
+| Contact-change notification records | Relationship owner's file |
+| Pre-departure access-log review records | Security case file |
+| Template review, jurisdiction matrix and change-triggered review records | Legal file |
+| Enforcement actions and refusals | Legal file; deficiency register |
+
+## 10. Review history
+
+| Version | Date | Change |
+|---|---|---|
+| 1.0 | 2025-02-11 | Established the surviving-duty set, the attestation and the offboarding checklist |
+| 1.1 | 2025-06-20 | Added named vendor individual undertakings after a corporate-NDA-only gap was identified |
+| 1.2 | 2025-09-08 | Out-of-cycle: EU subsidiary opened; jurisdiction matrix introduced and two clauses narrowed |
+| 2.0 | 2026-03-02 | Annual review. Role change made an explicit terminate-then-initiate sequence enforced by the identity system; contact-change communication process defined; no-training-input clause added to templates (v4); breach notice tightened to 24 hours; recorded D-2026-013 (undocumented dependency at handover) and D-2026-014 (lapsed individual undertaking) with corrections; added the mandatory pre-departure access-log review |

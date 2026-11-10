@@ -1,0 +1,455 @@
+# Privacy Notice and Notice Governance
+
+**Document ID:** PRV-NOT-019
+**Notice version:** 4.1 — **effective 2026-01-20**, superseding v4.0 of 2025-11-20
+**Owner:** Data Protection Officer, who reports to a Board committee rather than to management
+**Approved by:** General Counsel / DPO 2026-01-16; reviewed by the CEO and the Audit Committee 2026-02-19
+**Next scheduled review:** Annually (next by 2026-12-31), and on any change to processing, purposes, categories,
+recipients, retention, transfers or applicable law
+
+**Where the notice is published — Part A below is the notice text as published:**
+- The public website footer on **every page**, labelled "Privacy Notice", reachable in one click from any page
+- Linked from the product sign-in page, from the account-creation form, and from every form that collects
+  personal information — **at the point of collection, not only from the footer**
+- Linked from the customer service agreement and from the DPA
+- Linked from every marketing email and event registration form
+- Presented to personnel at hire and annually thereafter (the internal notice, Part A §11)
+- **Available as a dated, versioned archive** of all prior versions at a stable URL (§B4)
+
+---
+
+# Part A — The Privacy Notice (as published to data subjects)
+
+**Privacy Notice — version 4.1, effective 20 January 2026.**
+This notice is written to be read. If anything here is unclear, contact us at the address in §10 and we will
+explain it — and if the notice itself was unclear, we will change it.
+
+## A1. Who we are and what this notice covers
+
+**Objective description of the entities and activities covered.** We are a provider of an automated compliance
+evaluation service. This notice is given by two legal entities: the parent company, which provides the service
+worldwide, and its European subsidiary, which is the controller for personal information of individuals in the
+European Economic Area and the United Kingdom. Both are covered by this notice, and the notice states which
+entity is responsible where that differs.
+
+**This notice covers:**
+
+| Activity covered | Our role |
+|---|---|
+| Our public website, product documentation and status page | Controller |
+| Creating and administering a customer account, and providing the compliance evaluation service to a customer organization | Controller for the **account and user** information we hold about the individuals who use it |
+| Personal information that happens to be **inside evidence documents or configuration data a customer uploads or exposes to us** for assessment | **Processor** — the customer is the controller, and the customer's own privacy notice governs. We process only on their documented instructions under a data processing agreement |
+| Sales, marketing and events | Controller |
+| Recruitment | Controller |
+| Employment, contracting and vendor personnel administration | Controller |
+| Support, complaints and disputes | Controller |
+| Security monitoring and logging of our own systems | Controller |
+
+**This notice does not cover:** our customers' own privacy practices, including how they collect the personal
+information they may place in evidence they submit to us — for that, ask the customer organization; other
+companies' websites we link to; and personal information a customer's own privacy notice governs where we act
+as processor. **Where we act as processor and you contact us about your information, we will tell you so and
+route your request to the customer organization** — see §6.
+
+## A2. Why we collect personal information (purposes)
+
+We collect and use personal information for these purposes and no others. Each purpose has a legal basis
+(the basis matters if you are in the EEA/UK; it is stated for everyone's transparency).
+
+| Purpose | What we do | Legal basis |
+|---|---|---|
+| **Provide the service** | Create and administer accounts; authenticate users; deliver assessment results to the authorized users of a customer organization; provide support | Performance of a contract |
+| **Secure the service** | Log access, detect and investigate security events, prevent unauthorized access and misuse | Legitimate interests (protecting the service, our customers and their data), and legal obligation |
+| **Communicate about the service** | Service notices, incident and status notifications, changes to terms or to this notice | Contract and legal obligation |
+| **Bill and account** | Invoicing, payment, tax and financial records | Contract and legal obligation |
+| **Support, complaints and disputes** | Receive and resolve inquiries, complaints and disputes; keep a record of the resolution | Contract; legitimate interests; legal obligation |
+| **Improve the service** | Understand how features are used, at an aggregate level. **We do not use customer evidence, assessment results, or personal information to train models** — this is a contractual commitment, not only a policy | Legitimate interests |
+| **Sales and marketing** | Contact business prospects about the service; run events; send a newsletter you can unsubscribe from in one click | Consent where required; otherwise legitimate interests, with an objection right |
+| **Recruit** | Assess applications, communicate with candidates, keep a record of the decision | Legitimate interests; consent for a talent pool |
+| **Employ and contract** | Employment administration, payroll, benefits, screening, training records, access administration, conduct matters | Contract; legal obligation; legitimate interests |
+| **Comply with law** | Statutory records, tax, employment, privacy and security obligations; responding to lawful requests | Legal obligation |
+
+**We do not** sell personal information, share it for cross-context behavioural advertising, use it to make
+automated decisions about you that have a legal or similarly significant effect on you, or profile you for
+advertising.
+
+## A3. Choice and consent
+
+**Your choices, and what happens if you make them:**
+
+| Choice | How to exercise it | Consequence if you decline or withdraw |
+|---|---|---|
+| **Marketing email** — opt-in where required, always opt-out | One-click unsubscribe in every email, or the address in §10 | None to your use of the service. We will still send **service notices** (security, incidents, changes to terms) because those are necessary to the contract and you cannot opt out of them while you hold an account |
+| **Non-essential cookies and analytics** | The cookie banner on first visit, and the "Cookie settings" link in the footer at any time — including to **withdraw** consent later | The website and product work fully without them. Only our own aggregate usage measurement is affected |
+| **Account information required to use the service** (name, work email, authentication data) | Not optional | **We cannot create or maintain an account without it.** You would not be able to use the service |
+| **Optional profile details** (job title, phone, display preferences) | Provide or leave blank; edit at any time in your profile | No effect on service access; we may have fewer ways to reach you about support |
+| **Support conversation content** | You choose what to tell us | We may not be able to resolve the issue |
+| **Recruitment: talent pool retention** after an unsuccessful application | Separate, explicit opt-in | We delete your application per the retention schedule and will not contact you about future roles |
+| **Employment information required by law or the contract** (identity, tax, payroll, screening) | Not optional | We could not lawfully employ or pay you; screening completion is a condition of access to systems |
+| **Special-category / sensitive information** | We do not ask for it and **do not knowingly collect it**. In the narrow cases where the law requires us to handle it (for example, accessibility or health-related accommodation, where you choose to tell us), we ask for **your explicit consent, directly from you, in writing**, for that specific purpose | Declining does not affect employment or service access; it may limit an accommodation we can offer |
+| **Withdraw a consent you previously gave** | The address in §10, or the mechanism the consent was given through | We stop the processing that relied on it, going forward. Withdrawal does not undo processing already carried out lawfully, and where the processing is necessary for the contract or required by law we will tell you which basis applies instead |
+
+**Consent is required — and asked for — before we collect, use or disclose personal information, except where
+a law or regulation requires or allows otherwise**, or where the processing is necessary to perform our
+contract with you or your organization. Where we rely on something other than consent, §A2 says which basis and
+why. Where we rely on consent, **the consent is specific to the purpose we asked about**, and we do not treat
+it as covering anything else.
+
+**Where consent is implicit.** For a small number of unavoidable purposes we treat continuing to use the
+service, after being given this notice, as the basis for processing: authenticating you so you can sign in,
+logging your access for security, and sending you service notices. We list these explicitly because implicit
+consent should never be a catch-all. Our documented reasoning for each is published in the Choice and Consent
+Procedure referenced in §B1.
+
+**New purposes.** If we ever want to use information we already hold for a purpose not described in this
+notice, we will document the new purpose, update this notice, **tell you about it, and obtain your consent
+before the new use begins** — not after. One example of how we apply this: in the current period we considered
+an analytics purpose that would have used product usage data in a new way, and **we decided not to implement
+it** rather than proceed on an existing consent that did not cover it. That decision is recorded.
+
+## A4. What personal information we collect, and how
+
+| Category | Examples | How we collect it |
+|---|---|---|
+| **Identity and contact** | Name, work email, job title, phone, employer, country | Directly from you, when you create an account, complete a form, contact us, apply for a role, or attend an event |
+| **Authentication and account** | Credentials and authentication factors, roles and permissions within your organization's tenant, preferences | Directly from you, and **from your own organization's administrator**, who may create your account and assign your role |
+| **Usage and access records** | Sign-in times, IP address, actions taken in the product, pages viewed, requests made, and access denied | Automatically, from the service and its logs, when you use it |
+| **Device and technical** | Browser and device type, operating system, approximate location derived from IP address (city-level, not precise location) | Automatically, when you visit or sign in |
+| **Cookies and similar technologies** | Strictly necessary cookies for sign-in and security; **our own aggregate usage measurement, only with your consent** | Via your browser. **We do not use advertising or cross-site tracking technologies, and we do not embed third-party advertising trackers** |
+| **Support and correspondence** | Your messages, the case record, and our response | Directly from you |
+| **Billing** | Billing contact, purchase order and invoice details, payment status (we do **not** hold full card numbers — our payment provider does) | From your organization, and from our payment provider |
+| **Recruitment** | Application, CV, interview notes, references, right-to-work confirmation | From you; from a recruiter or job board where you applied through one; from referees you name |
+| **Employment / contractor** | Employment record, payroll and tax data, emergency contact, training and competence records, screening outcome, access records, conduct case records where applicable | From you; from our HR and payroll provider; from a screening provider; from your employer where you are vendor personnel |
+| **Security monitoring** | Security event records that may include your identity and actions | Automatically, from our own monitoring |
+| **Personal information inside customer evidence** | Whatever a customer's document or configuration happens to contain — for example, names in an approval record | **From our customer, not from you.** We are the processor; see §A1 and §A6 |
+
+**Methods of collection, stated plainly:** directly from you (forms, account creation, support, applications,
+employment); automatically from your use of the service (logs, cookies as described, technical data); and from
+other sources, listed in §A5.
+
+## A5. When we obtain information about you from someone other than you
+
+We tell you the sources, because information about you can reach us without you giving it to us:
+
+| Source | What we obtain | Why |
+|---|---|---|
+| **Your own organization's administrator** | Your name, work email and the role they assign you in their tenant | To create and configure your access to the service your employer bought |
+| **Our customer organizations** (where we are processor) | Personal information that happens to be inside evidence documents or configuration they submit for assessment | Because they instructed us to assess it. Their notice, not this one, governs that processing |
+| **Screening provider** (personnel and contractors) | The outcome of pre-employment or periodic screening, to the extent lawful in your location | Because screening is a condition of access to systems that hold customers' confidential information |
+| **HR, payroll and benefits providers** | Employment administration data | To employ and pay you |
+| **Your employer** (if you are vendor or contractor personnel) | Your identity, the engagement dates, and a screening attestation naming you | To grant scoped, time-limited access and to meet our own security obligations |
+| **Referees you name** | References | Recruitment |
+| **Recruiters and job boards** you applied through | Your application | Recruitment |
+| **Payment provider** | Payment status and billing metadata | Billing |
+| **Public professional sources and business contact providers** (sales prospecting only) | Name, job title, employer, work email | To contact you about the service in a business capacity. **We tell you where we got your details in the first message, and you can object or unsubscribe in one click.** We use only providers that represent their collection is lawful, and we check that representation |
+| **Security researchers, customers, and our providers** | Reports that may name you if you are involved in a security event | To investigate and respond |
+
+**If we ever develop or acquire additional information about you for our own use** — for example, deriving an
+attribute about you rather than being told it — **we will tell you.** Two current cases: we derive an
+approximate, city-level location from your IP address for security purposes, and we derive product-usage
+summaries. Both are disclosed here rather than left to be discovered, and neither is used to profile you for
+advertising or to make a significant automated decision about you.
+
+## A6. How we use, retain and dispose of personal information
+
+**Use.** We use your information **only for the purposes in §A2**, for which it was collected. If we need it
+for something else, §A3 applies — new purpose documented, notice given, consent obtained first. Internally,
+access is limited to the people who need it for their role, under least-privilege access that is reviewed
+quarterly.
+
+**Retention.** We keep personal information only as long as necessary for the purpose, unless the law requires
+longer. Our schedule:
+
+| Information | How long we keep it | Why |
+|---|---|---|
+| Account and user information | For the life of the account, then **deleted within 90 days** of account closure | No purpose survives the account |
+| Assessment results and evidence (including any personal information inside them) | **Per the customer's contract and instruction**, since we are processor; deleted or returned on their instruction and at the end of the contract | The customer decides; we execute and evidence it |
+| Access and security logs | 12 months, then deleted | Security investigation and legal need |
+| Support and complaint records | 3 years from closure | To handle disputes and to review themes |
+| Billing and financial records | As required by tax and company law in each jurisdiction (typically 7 years) | Legal obligation |
+| Marketing contact details | Until you unsubscribe or object, and then only a suppression record so we do not contact you again | To honour your choice |
+| Unsuccessful job applications | 12 months, or longer only with your explicit talent-pool consent | Recruitment record and legal defence |
+| Employment records | For the duration of employment and then per statutory limitation periods in your jurisdiction | Legal obligation |
+| Screening outcomes | The outcome and its date only — **not the underlying detail**, which we do not retain | Minimization |
+| Cookies | Session cookies expire when you close your browser; persistent cookies have the lifetimes stated in "Cookie settings" | Transparency |
+| Prior versions of this notice | Indefinitely | So you can see what you were told, and when (§B4) |
+
+**Disposal.** When a retention period ends, or when you ask us to delete information we hold as controller and
+we have no overriding obligation to keep it, we delete or irreversibly anonymize it — including **in our
+backups as those backups age out on their own schedule, and at our providers and their sub-processors, from
+whom we obtain written confirmation.** Devices holding personal information are wiped, and disposal of any
+device is evidenced by a certificate. Paper is not used for personnel files at all.
+
+**We check this rather than assume it.** A quarterly retention conformance check tests what we actually hold
+against this schedule. In the current period that check **found personal information held past its period.** We
+deleted it, obtained evidence of the deletion including from a sub-processor, tightened the technical
+enforcement so it does not recur, and recorded the finding in our compliance register. We tell you this because
+a retention statement that has never been tested is not worth much.
+
+## A7. Access to your information, and your other rights
+
+**You can find out whether we hold personal information about you, and get a copy of it.** Depending on where
+you are and which law applies, you have some or all of these rights — and where a right exists in your
+jurisdiction we honour it, without charge, in a form you can understand:
+
+| Right | What it means in practice |
+|---|---|
+| **Confirmation and access** | We tell you whether we hold personal information about you, and give you a copy, in a **commonly used electronic format that a person can read** (or paper if you ask). We also tell you the categories, the purposes, the sources, the recipients, and the retention period |
+| **Correction** | We correct information that is inaccurate, and complete information that is incomplete — see §A8 |
+| **Deletion** | We delete information where we have no continuing lawful reason to keep it, and tell you if an obligation requires us to keep some of it and which |
+| **Portability** | Where applicable, a machine-readable copy of information you gave us |
+| **Objection and restriction** | You can object to processing based on legitimate interests — including marketing, which we always honour — and ask us to restrict processing while a dispute is resolved |
+| **Withdraw consent** | At any time, as described in §A3 |
+| **No discrimination** | We do not treat you worse for exercising a right |
+| **Complain** | To us (§A10), and to your data protection authority — you do not have to come to us first |
+
+**How to exercise a right:** contact us at the address in §A10. **How we handle it:**
+
+1. We **verify your identity** proportionately to the sensitivity of what you are asking for, using information
+   we already hold. We do not ask for more information than we need to verify you, and we never ask for a new
+   identity document where an existing account authentication will do.
+2. We respond **within the period your law requires**, and our internal target is **60% of that period**. Our
+   system escalates a request to the DPO automatically at **75% of the period elapsed**, so a deadline is not
+   missed by inattention. In the current period **every request was completed within the statutory period, and
+   none reached the escalation threshold**.
+3. **There is no charge**, except where a law allows a fee for a manifestly excessive or repetitive request —
+   in which case we tell you the amount and the basis before doing the work.
+4. We give you the information **in an understandable form** — plain field labels rather than internal codes,
+   with an explanation of anything that needs it.
+5. **If we deny a request, in whole or in part, we tell you in writing:** what we denied, **the reason**, the
+   **legal provision we rely on** to deny it, and **how to challenge the denial** — including your right to
+   complain to your data protection authority and any statutory appeal route. The same applies if we deny a
+   correction request: we give the reason and how to appeal it.
+6. **If we hold the information as processor for a customer** — the case for personal information inside
+   evidence documents — we cannot decide the request ourselves. We tell you that promptly, tell you who the
+   controller is if we may lawfully do so, and forward your request to them, and we are contractually obliged
+   to assist them in time for them to meet their own deadline.
+
+**Accounting of what we hold and to whom we disclosed it.** On request we provide an accounting of the personal
+information we hold about you, the categories of recipients we disclosed it to, and the purposes — drawn from
+our data inventory and our disclosure record (§A9), not assembled from memory.
+
+## A8. Quality of information — and your part in it
+
+We keep personal information **accurate, complete, up to date and relevant** for the purpose we use it for,
+because a decision or a communication based on wrong information harms you as well as us. We do this by
+collecting only what we need; taking most information **directly from you**; validating formats at entry;
+letting you see and edit your own profile; re-confirming information at defined points (annually for personnel
+records, at renewal for billing contacts, and when a message to you bounces); correcting promptly when told;
+and reviewing at each retention cycle whether the information is still **relevant** — deleting what is no
+longer needed rather than keeping it because we have it.
+
+**Your responsibilities for quality.** You know your information better than we do. Please:
+
+- Keep your profile and contact details current, and update them yourself where you can;
+- Tell us promptly if anything we hold about you is wrong, out of date or incomplete — using §A10;
+- Give us accurate information when you provide it, and tell us if something changes (a new work email, a
+  changed name, a new billing contact);
+- If your organization's administrator manages your account, tell **them** as well, since their record feeds
+  ours.
+
+If you tell us something we hold is wrong, we correct it, and **we pass the correction (or a deletion) on to
+any third party we previously gave that information to**, so a mistake does not live on somewhere else.
+
+## A9. Who we disclose personal information to
+
+We disclose personal information only for the purposes it was collected for, only to recipients who are
+contractually bound to protect it consistently with this notice, and only where consent or another lawful
+basis applies. **We do not sell it, and we do not disclose it for anyone else's marketing.**
+
+| Recipient | What they get, and why | Their obligations |
+|---|---|---|
+| **Cloud infrastructure provider** (our processing region is stated in the product documentation) | Hosts the service; the data is encrypted | Data processing agreement; audited controls |
+| **Model provider** (for the AI processing at the core of the service) | Only the content necessary to perform an assessment | DPA; **contractually prohibited from using our or our customers' data to train models** |
+| **Managed security monitoring provider** | Log data, with personal information minimized | DPA; confidentiality; assessed annually |
+| **Identity provider** | Authentication data | DPA |
+| **HR, payroll and benefits providers** | Personnel data | DPA |
+| **Screening provider** | What is needed to conduct lawful screening | DPA; retention minimized |
+| **Payment provider** | Billing data | DPA; PCI-scoped for card data, which we do not hold |
+| **Professional advisers and auditors** | Only what is necessary, under confidentiality | NDA; professional duties, which we verify rather than assume |
+| **Your own organization** | Your account, role and usage within its tenant — your employer administers your access | Their own notice governs what they do with it |
+| **Authorities**, where legally compelled | Only what the process requires, after legal review | We assess every request, disclose the minimum, and **tell you unless we are legally prohibited from doing so** |
+| **A buyer**, if the business is sold or reorganized | Under confidentiality, with notice to you and no change of purpose without a new basis | Contractual |
+
+**We publish the list of the third parties we use, keep it current, and require each of them:** to protect the
+information consistently with this notice and with their agreement; to use it **only** for the service they
+provide us; not to disclose it onward without our prior approval; **to notify us promptly of any actual or
+suspected unauthorized disclosure**; and to delete or return it at the end of the engagement, including at
+their own sub-processors, with written evidence. We assess their compliance periodically, and where we find a
+deficiency we require corrective action, restrict their scope, or end the relationship — all of which we have
+done at least once in the current period.
+
+**New purposes for disclosure:** if we ever want to disclose your information to a third party for a purpose
+beyond those above, we obtain your consent first.
+
+**International transfers.** Personal information may be processed in a country other than yours. Where we
+transfer it out of the EEA or UK we use a lawful transfer mechanism, recorded per recipient and per location,
+and we do not add a new processing location without our DPO first confirming a valid mechanism.
+
+**We keep a record of the disclosures we make** — who received what, when, for what purpose, and under which
+basis or consent — and of any unauthorized disclosure we detect or are told about (§A10 and the register
+described in Part B).
+
+## A10. Security, monitoring and enforcement, and how to contact us
+
+**Security for privacy.** We protect personal information with encryption in transit and at rest;
+least-privilege access reviewed quarterly; separation of each customer's data from every other's; logging of
+access, including denied attempts; monitoring and alerting for unusual access; secure development with
+automated code, dependency and credential scanning; vulnerability management with defined remediation times;
+staff screening, training and confidentiality obligations; and an incident response procedure with defined
+severities and notification timers. Security is not perfect anywhere, and we say so: our own testing has
+identified weaknesses in our environment — including multi-factor authentication not yet enforced on all
+administrative identities, and network access rules that are broader than they should be. **Each has an
+identified owner, a date, and interim compensating controls, and each is reported to our Audit Committee until
+it is closed.** We would rather tell you that than imply a clean state.
+
+**If a breach happens.** We have a defined process for deciding whether a breach requires notification, who
+must be told, by what method and by when. Where the legal threshold is met we notify the relevant authority
+**within 72 hours of becoming aware**, and affected individuals without undue delay, in clear language — what
+happened, what information was involved, what we are doing, and what you can do. Where we hold the information
+as processor, we notify our customer so that they can meet their own obligations. **We record every decision,
+including a decision that notification is not required, with our reasons.**
+
+**Monitoring and enforcement — how we hold ourselves to this notice.**
+
+| Mechanism | What it does |
+|---|---|
+| **A Data Protection Officer** who reports to a **Board committee, not to management**, and who can **veto a launch** on privacy grounds — and has exercised that veto | Independent internal accountability |
+| Annual privacy compliance review, with the results documented and reported to management and the Audit Committee | Verifies practice against this notice |
+| Quarterly retention conformance checks, quarterly access reviews, annual data subject rights tests, and privacy impact assessments before new or changed processing | Ongoing monitoring of the controls that protect your information |
+| Independent internal audit, and external audit of our control environment | Checks us, not our self-assessment |
+| A register of privacy non-compliances, with owners, dates and remediation tracked to verified closure — **including items that are overdue** | Turns a finding into a fix |
+| Disciplinary consequences for misuse of personal information, applied to **anyone, including management** | In the current period we sanctioned a member of management under our conduct process, and we sanctioned retaliation against a person who reported a concern |
+| Assessment of our providers' privacy compliance, with corrective action, scope restriction or termination | Extends enforcement past our own boundary |
+
+**Contact us — for any question, request, complaint or dispute about privacy:**
+
+- **Email:** the privacy address published with this notice on our website (monitored by the DPO's team)
+- **Post:** the registered address of the relevant entity, published with this notice, marked "Data Protection
+  Officer"
+- **In the EEA/UK:** the European subsidiary's DPO contact, published with this notice
+- **In product:** the "Privacy request" link in the help menu
+- **Anonymously:** our ethics reporting channel, which accepts anonymous reports and is monitored
+
+**We acknowledge every inquiry, complaint or dispute, tell you who is handling it, resolve it within the
+timeframe published with this notice, and tell you the outcome and our reasoning in writing — including when
+the answer is no, in which case we tell you how to challenge it.** You may also complain to your data
+protection authority at any time; we will tell you which one applies if you ask.
+
+## A11. Personnel, contractors and candidates
+
+If you work for us, apply to work for us, or work for a vendor and have access to our systems, everything above
+applies to you, and in addition: the categories in §A4 include employment, payroll, screening, training,
+access and (where relevant) conduct case records; screening is a condition of access to systems holding
+customers' confidential information, and **access is suspended if a periodic re-screening lapses** — this has
+happened, and access was restored only on clearance; training completion is a condition of continued access;
+we monitor systems for security, not for productivity surveillance; and conduct investigations are conducted
+independently of the unit concerned, with matters involving management going to the Audit Committee without
+management present. A fuller internal notice is provided at hire and annually.
+
+## A12. Changes to this notice
+
+We keep this notice **current and dated** — the version and effective date are at the top. When we change it:
+
+- **We update the notice at or before the change takes effect**, never afterwards;
+- We **tell data subjects that it changed and what changed**, in a summary of changes published with the
+  notice and by direct notification (email to account users and, for material changes, an in-product notice)
+  **at or before the effective date**;
+- Where a change means using information you already gave us for a **new purpose, we obtain your consent
+  before that use begins**;
+- We give **at least 30 days' notice of a material change** before it takes effect, so you have time to
+  respond;
+- We keep **every prior version, dated, in a public archive** so you can see what you were told at any point
+  in time.
+
+**Change history:**
+
+| Version | Effective | What changed, in plain terms |
+|---|---|---|
+| 4.1 | **2026-01-20** | Added the sources-other-than-you table (§A5) and the statement that we tell you when we derive information about you; added the consequences column to the choices table; stated the escalation of rights requests at 75% of the deadline; added the disclosure of open security weaknesses in §A10 |
+| 4.0 | 2025-11-20 | Restructured for plain language after readability testing; separated our **controller** and **processor** roles explicitly, with routing of requests where we are processor; added the retention schedule as a table with the results of our own conformance checks |
+| 3.2 | 2025-06-04 | Added the international transfer mechanism statement and the no-new-location-without-DPO-check rule |
+| 3.1 | 2025-02-10 | Added the commitment that customer data and personal information are not used to train models |
+| 3.0 | 2024-10-15 | First version covering both legal entities, including the European subsidiary as EEA/UK controller |
+
+*Prior versions, with their effective dates, are available in the archive linked from this notice.*
+
+---
+
+# Part B — Notice governance (internal)
+
+## B1. Notice content requirements and where each is satisfied
+
+The notice is drafted against a content checklist so that a rewrite cannot silently drop a required element.
+Each row is verified at every revision by the DPO and evidenced in the revision record:
+
+| Required content | Notice section |
+|---|---|
+| Purpose for collecting personal information | A2 |
+| Choice and consent | A3 (with the consequences of each choice, and the documented basis for implicit consent held in the Choice and Consent Procedure) |
+| Types of personal information collected | A4 |
+| Methods of collection, including cookies and tracking technologies | A4 |
+| Use, retention and disposal | A6 |
+| Access | A7 |
+| Disclosure to third parties | A9 |
+| Security for privacy | A10 |
+| Quality, **including the data subject's own responsibilities** | A8 |
+| Monitoring and enforcement | A10 |
+| **Sources other than the individual**, described | A5 |
+| Objective description of the entities and activities covered | A1 |
+| Current, dated, clear language, easily found | Header, A12, and the publication locations above |
+| Notice at or before collection; at or before a notice change; before a new purpose | A12 and the at-collection links |
+| Change communication, including the nature of the changes | A12 |
+| Retention of prior versions | A12 and B4 |
+
+## B2. When notice is given
+
+| Trigger | When notice is given | How it is enforced |
+|---|---|---|
+| **At or before collection** | The notice is linked from **every form and interface that collects personal information**, and from account creation, before submission | A build-time check fails the release if a collection form has no notice link — added after a form was found without one |
+| Collection from a source other than the individual | The individual is notified when we begin processing, or at first contact where we have contact details; where we act as processor, the customer's own notice applies and our DPA requires them to have given it | Procedure, checked at each processing-record review |
+| **At or before a change to the notice** | Published on or before the effective date, with **30 days' advance notice for material changes** | Release checklist; the DPO holds the sign-off |
+| **Before a new purpose** | Notice **and consent** before the new use begins; the new purpose is documented first | The DPIA trigger criteria route any new purpose to the DPO, who holds a **launch veto** |
+| Personnel and contractors | At hire, at engagement start, and annually with the Code of Conduct acknowledgement | Acknowledgement tracked — 48 of 48 for the current period |
+| Marketing contacts sourced from third parties | The source is disclosed in the first message, with a one-click objection | Template control |
+
+## B3. Periodic review of the notice
+
+**A defined process reviews the notice's content periodically and implements identified updates.**
+
+| Review | Owner | Cadence | What is checked | Result this period |
+|---|---|---|---|---|
+| **Annual notice review** | DPO with the General Counsel | Annually | Every row of the B1 checklist; accuracy against the **actual** processing record and data map, not against the previous notice; readability | Produced v4.0 (restructure) and v4.1 |
+| **Processing-change trigger review** | DPO | Within 30 days of any new or changed processing, purpose, category, recipient, provider, retention period or transfer | Whether the notice must change, and whether consent is needed | Triggered 4 times; 2 resulted in notice changes, 1 in a DPIA, 1 in the decision **not to implement** an analytics purpose |
+| **Legal-change review** | General Counsel with external privacy counsel | On any change to applicable law, tracked in the obligation inventory across two legal entities and five geographies (**R-047**) | Whether new disclosures or rights statements are required | One review triggered and completed |
+| **Readability testing** | Customer Operations with the DPO | At each material revision | Plain language, structure, findability; tested with people who did not draft it | Drove the v4.0 restructure |
+| **Findability check** | Customer Operations | Quarterly | That the notice is reachable in one click from every page, from the sign-in page, and from every collection form | A form was found without a link → corrected, and a **build-time check** added so it cannot recur |
+| **Complaint- and request-driven review** | DPO | On any complaint or request that reveals an unclear or missing statement | The specific wording | An inquiry about sources led directly to the §A5 table in v4.1 |
+| **Independent check** | Internal audit | Annually | The notice against the processing record and the data inventory | Reviewed; no discrepancy found in the current period |
+
+**Reviews produce dated updates or a recorded conclusion that no update is needed** — a review with no output
+and no recorded conclusion is treated as not performed.
+
+## B4. Communicating changes, and retaining prior versions
+
+**Communicating changes:** every revision is accompanied by a **summary of changes in plain language** (the
+table in A12), published with the notice; direct email notification to all account users; an in-product notice
+for material changes; **at least 30 days' advance notice for material changes**; and, where a change involves a
+new purpose for information already collected, **consent obtained before the new use** rather than notice
+alone. Personnel are notified through the internal channel and re-acknowledge annually. The notification
+itself is recorded — recipient set, date, method — so that "we told people" is evidenced.
+
+**Retaining prior versions:** every version of the notice is retained **indefinitely** in a public dated
+archive linked from the current notice, and internally with its approval record, the summary of changes, the
+list of B1 checklist confirmations, the DPO's sign-off, the notification record and the readability-test
+result. This is a deliberate internal requirement: to answer a question or a complaint about what someone was
+told in the past, the entity must be able to produce the exact text that was in force at that date. Five
+versions are currently archived (3.0, 3.1, 3.2, 4.0, 4.1) with their effective dates and change summaries.
+
+## B5. Review history of this document
+
+| Version | Date | Change |
+|---|---|---|
+| 3.0 | 2024-10-15 | Notice v3.0 issued covering both legal entities |
+| 4.0 | 2025-11-20 | Notice restructured for plain language; controller/processor roles separated with request routing; retention schedule published with conformance results |
+| 4.1 | 2026-01-20 | Sources-other-than-you and derived-information disclosures added; consequences of each choice stated; open security weaknesses disclosed in §A10; build-time check added for collection-form notice links; 30-day advance notice for material changes formalized |

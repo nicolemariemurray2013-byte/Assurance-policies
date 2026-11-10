@@ -1,0 +1,398 @@
+# External Communication and Stakeholder Engagement Procedure
+
+**Document ID:** GOV-PRO-007
+**Version:** 3.3
+**Owner:** Chief Executive Officer, operated jointly by the General Counsel (regulatory, legal,
+fiduciary), the Director of Customer Operations (customers and users) and the DPO (privacy)
+**Approved by:** CEO 2026-08-14; reviewed by the Board 2026-02-19 (v3.2) and 2026-08-14 (v3.3)
+**Next scheduled review:** 2026-12-31 (Annually, and on any change to the entity's commitments, its system)
+boundary, or applicable legal or regulatory requirements
+**Scope:** All communication with parties outside the entity concerning the compliance-evaluation
+service operated in AWS account 471885797689, us-west-2 — customers and authorized external users,
+shareholders and owners, partners and business partners, vendors, sub-processors and outsourced
+providers, regulators and supervisory authorities, external auditors, data subjects, financial
+analysts, and security researchers.
+
+---
+
+## 1. Processes to communicate relevant and timely information to external parties
+
+**Processes are in place to communicate relevant and timely information to external parties**,
+including shareholders, partners, owners, regulators, customers, financial analysts and others. Each
+process below has a named owner, a defined trigger or cadence, and a retained record — an outbound
+communication that is not recorded cannot be shown to have happened.
+
+| # | External party | Information communicated | Owner | Trigger / cadence | Record retained |
+|---|---|---|---|---|---|
+| E-1 | **Customers / user entities** | Service description and boundary; the entity's commitments; the trust services objectives; security, availability, confidentiality and privacy responsibilities; change notices; the annual assurance report | Director, Customer Operations | On onboarding; on change; assurance report annually | Customer communication log; portal version history |
+| E-2 | Customers — incident notification | Nature of the incident, systems and data affected, actions taken, customer actions required, remediation | Incident Commander with the CEO | **Severity 1: within 24 hours of confirmation**; Severity 2: within 72 hours | Incident record with timestamps of each notice |
+| E-3 | Customers — availability and SLA | Live status, planned maintenance, degradation, SLA attainment | VP Engineering | Status page real-time; maintenance ≥ 10 business days ahead; SLA quarterly | Status page history; SLA statements |
+| E-4 | **Shareholders and owners** | Financial and operating results, material risks, the internal control report, material control failures and incidents, changes in objectives | CEO / CFO | Quarterly; materially significant matters without delay | Shareholder reporting pack; minutes |
+| E-5 | **Regulators and supervisory authorities** | Registrations and notifications; personal data breach notification; responses to inquiries; DPO contact details | General Counsel with the DPO | On statutory trigger — **breach notification within 72 hours of becoming aware**; otherwise per the applicable deadline | Regulatory correspondence file with dispatch evidence |
+| E-6 | **External auditors** | System description, control descriptions, evidence, management assertion, representations | Compliance Manager | Per the engagement plan; annually | Audit request log; evidence delivery record |
+| E-7 | **Business partners and integrators** | Interface specifications, the shared-responsibility split, security and confidentiality requirements, change notices | VP Engineering | On onboarding; ≥ 30 days before a breaking change | Partner agreements; change notices |
+| E-8 | **Vendors, sub-processors and outsourced providers** | The entity's security, confidentiality and privacy objectives and requirements; the DPA and its annexes; incident reporting duties; changes to requirements | Third-Party Risk Manager | On contracting; on requirement change; reaffirmed annually | Supplier record; countersigned terms |
+| E-9 | **Data subjects** | The privacy notice; changes to it; rights and how to exercise them; breach notification where required | DPO | On collection; on notice change; breach notice **without undue delay** | Notice version history; DSR and notification log |
+| E-10 | **Financial analysts and prospective customers** | Public service description, security posture summary, certifications, the public trust page | CEO / Marketing, reviewed by General Counsel | On publication; refreshed quarterly | Published page with version history; review sign-off |
+| E-11 | **Security researchers** | The vulnerability disclosure policy, scope, safe-harbour terms and expected response times | AI Security Lead | Published continuously; acknowledgement within 3 business days | Disclosure register |
+| E-12 | Insurers and, where contractually required, customers' regulators | Risk and control information, incident information | General Counsel | Per policy or contract | Correspondence file |
+
+**Accuracy control on outbound communication.** Any statement about the service's capability,
+security posture or compliance status requires review by the accountable owner before release, and a
+statement about compliance status additionally requires Compliance Manager sign-off. This exists
+because misrepresenting the service externally is treated as a Severe conduct deviation
+(GOV-STD-001 S-4); the recorded 2026-01-09 correction of published results (GOV-STD-001 §2) is the
+instance where this process was used against the entity's own interest.
+
+## 2. Open channels enabling inbound communication
+
+**Open communication channels allow input from customers, consumers, suppliers, external auditors,
+regulators, financial analysts and others, providing management and the Board with relevant
+information.** Inbound is treated as a control input, not as correspondence: every channel routes to a
+named owner, carries a response commitment, and is reported upward.
+
+| Inbound channel | Open to | Routed to | Response commitment | Reported to |
+|---|---|---|---|---|
+| Customer support and escalation | Customers, authorized users | Customer Operations | Acknowledged within 1 business day; Sev-1 immediately | Monthly management review |
+| **Customer complaint register** | Customers, users | Director, Customer Operations | Logged same day; substantive response within 10 business days | Quarterly to management **and the Board** |
+| Assessment accuracy / dispute channel | Customers, users | Responsible AI Lead | Triage within 2 business days; re-assessment where warranted | AI Governance Oversight Committee, quarterly |
+| **Data subject request channel** (web form, email, postal) | Data subjects, incl. non-customers | DPO | Acknowledged within 5 days; fulfilled within the statutory period | Quarterly privacy report to the Board |
+| Privacy inquiries and objections | Data subjects | DPO | Within 30 days | Quarterly privacy report |
+| **Vulnerability disclosure** | Security researchers, anyone | AI Security Lead | Acknowledged within 3 business days; triaged within 5 | Quarterly security report to the Board |
+| Supplier and partner channel | Suppliers, sub-processors, partners | Third-Party Risk Manager | Within 5 business days | Semi-annual third-party report |
+| Regulator inquiries | Supervisory authorities, regulators | General Counsel | Per the deadline stated; acknowledged within 2 business days | **Immediately to the Board Chair** |
+| External auditor requests | Auditors | Compliance Manager | Per the engagement plan | Audit Committee each meeting |
+| Investor and analyst inquiries | Shareholders, analysts | CEO / CFO | Within 5 business days | Board |
+| **Third-party ethics hotline** (see §4) | Anyone external, including anonymously | Ethics Officer **and** Audit Committee Chair | Triage within 1 business day | Audit Committee, quarterly and immediately for Severe |
+| Public contact address and trust page form | Anyone | Triaged by Customer Operations to the right owner | Within 5 business days | Monthly management review |
+
+Channels are **published where the party will look**: in the customer agreement and in-product for
+customers, in the privacy notice for data subjects, on the public trust page and `security.txt` for
+researchers, in supplier contracts for suppliers, and on the public website for everyone else.
+
+Inbound information is analysed, not merely answered: complaint and dispute themes are reviewed
+quarterly against the risk register, and two changes in the current period originated externally — a
+customer's report of an ambiguous assessment rationale changed the output template, and a researcher's
+disclosure changed the transport-security configuration standard.
+
+## 3. Communicating the results of external assessments to the Board
+
+**Relevant information resulting from assessments conducted by external parties is communicated to the
+Board of Directors.** External assessment results go to the Board directly and are not summarized by
+the management being assessed; where an assessment concerns management itself, the provider reports to
+the Audit Committee in camera.
+
+| External assessment | Provider | Result reported to | Route and timing |
+|---|---|---|---|
+| SOC 2 examination | Independent service auditor | Audit Committee, then the full Board | Auditor presents **directly**, in camera without management present for part of the session; on issuance |
+| Internal audit engagements | Outsourced internal audit provider | Audit Committee | Provider presents directly each quarter; reports to the Committee, not to management (GOV-STR-003 §2) |
+| Penetration test | External security testing firm | Security & Privacy Committee | Full report plus remediation status, quarterly |
+| ISO/IEC 42001 certification audit and surveillance | Certification body | AI Governance Oversight Committee and the Board | On issuance, with all findings including minor nonconformities |
+| Third-party risk assessments of the entity by customers | Customer security teams | Board, in aggregate | Semi-annual, with any adverse finding reported immediately |
+| Privacy assessment / DPIA review by external counsel | Retained privacy counsel | Security & Privacy Committee | On completion; counsel reports to the Committee |
+| AI assurance advisory review | Independent AI assurance advisor | AI Governance Oversight Committee | Semi-annual |
+| Financial audit | External accountants | Audit Committee | Annual, in camera |
+| Regulatory examination or inquiry outcome | Authority | **Board Chair immediately**, then the Board | Within 24 hours of receipt |
+
+**All findings are reported, including those management disputes** — a disputed finding is presented
+with both the provider's position and management's response, so the Board is not given a
+pre-reconciled view. In the current period the Board received: the internal audit provider's four
+findings, the penetration test's two high findings, the certification body's two minor
+nonconformities, and one adverse customer assessment finding on boundary protection which is tracked
+in the CAP register.
+
+## 4. Separate external communication lines as fail-safe mechanisms
+
+**Separate communication channels, such as whistle-blower hotlines, are in place and serve as
+fail-safe mechanisms to enable anonymous or confidential communication when normal channels are
+inoperative or ineffective.** The normal external channel is customer support or the account owner;
+each channel below bypasses a specific failure mode of that path.
+
+| Channel | Open to | Anonymous | Bypasses | Routed to |
+|---|---|---|---|---|
+| **Third-party ethics hotline** — independent operator, 24/7, phone and web, published on the public website | Customers, suppliers, partners, vendor staff, anyone | **Yes** | The entire management chain, including the CEO | Ethics Officer **and** the Audit Committee Chair simultaneously |
+| **Direct line to the Audit Committee Chair**, published on the public governance page | Anyone external | **Yes** | Management entirely | Audit Committee Chair |
+| Confidential customer escalation to an executive sponsor | Customers | No, but confidential | The account team, when the account team is the problem | Named executive sponsor |
+| **Responsible-AI and assessment-integrity concerns procedure** | Customers, users, researchers, the public | **Yes** | The delivery chain that owns the model | Responsible AI Lead, with a copy to the Committee |
+| Vulnerability disclosure with safe harbour | Security researchers | Pseudonymous accepted | Ordinary support triage and its queue | Security on-call, paged |
+| Privacy channel direct to the DPO, published in the notice | Data subjects, anyone | Optional | The operational chain, so a privacy matter is not triaged as a support ticket | DPO |
+| Supplier escalation to the Third-Party Risk Manager and, above that, to the Audit Committee | Suppliers, sub-processors | Optional | The engagement owner who may be applying the pressure | Third-Party Risk Manager / Audit Committee |
+
+**The fail-safe property is tested, and protection is stated publicly.** The hotline is tested
+semi-annually with a seeded external report — 2 tests in the current period, both reaching the Audit
+Committee Chair within one business day without passing through management. Non-retaliation extends
+explicitly to external reporters: the entity commits publicly not to pursue researchers acting within
+the disclosure policy, and not to penalize a supplier or customer for raising a concern. Volumes are
+reported to the Audit Committee quarterly, and **a quarter with zero external reports is investigated
+as a possible channel failure rather than accepted as good news**.
+
+## 5. Selecting the method of external communication
+
+**The method of communication considers the timing, audience and nature of the communication and
+legal, regulatory and fiduciary requirements and expectations.** Method is prescribed per class, and
+the legal, regulatory and fiduciary constraints are named alongside it because those constraints — not
+convenience — determine the choice.
+
+| Nature of communication | Timing | Audience | Method | Legal / regulatory / fiduciary driver |
+|---|---|---|---|---|
+| Personal data breach notification to a supervisory authority | **Within 72 hours of becoming aware** | Authority | The authority's prescribed form or portal, signed by the DPO; General Counsel reviews | Statutory deadline and prescribed form; a non-conforming method does not discharge the obligation |
+| Breach notification to data subjects | **Without undue delay** where the risk threshold is met | Affected data subjects | Direct written notice; public notice where direct contact is disproportionate | Statutory; content elements are prescribed |
+| Security incident notice to customers | Within 24h of confirmation (Sev-1) | Affected customers | Direct notice to the named security contact + status page + a call for material impact | Contractual notification clauses; the duty not to mislead |
+| Regulatory inquiry response | By the stated deadline | Authority | Written, through General Counsel, legally reviewed, with privilege considered | Legal; a single controlled channel prevents inconsistent statements |
+| Material matter for owners | Without delay | Shareholders, owners | Written report; board-authorized statement | **Fiduciary duty**; equal and simultaneous disclosure so no owner is advantaged |
+| Financial and operating results | Quarterly | Shareholders | Reporting pack + meeting | Fiduciary; constitutional documents |
+| Change to a customer commitment or the system boundary | **≥ 30 days before effect** | Customers, partners | Written notice to the contract contact + portal + release notes | Contractual change-notice terms |
+| Change to the privacy notice | Before the change takes effect; **prior consent where the new purpose requires it** | Data subjects, customers | Updated notice with a version history and change summary; direct notice for a material change | Statutory transparency; consent cannot be retrospective |
+| Change to confidentiality objectives or requirements | ≥ 30 days, or immediately if it raises protection | Customers, vendors, partners | Written notice + updated requirements annex | Contract and NDA terms |
+| Sub-processor addition or change | **Per the DPA notice period, before the change** | Customers acting as controllers | Written notice + sub-processor list update, preserving the customer's objection right | DPA obligation; the objection right is meaningless if notice is late |
+| Planned maintenance | ≥ 10 business days | Customers | Status page + email | SLA terms |
+| Assurance report issuance | Annually, on issuance | Customers, prospects under NDA | Report delivered under NDA through the portal | Confidentiality of the report; auditor's distribution restrictions |
+| Public security-posture information | On publication | Public | Public trust page, reviewed by General Counsel and Compliance | Duty not to misrepresent; avoid disclosing exploitable detail |
+| System design and operational detail | On change | **Authorized** external users only | Access-controlled documentation portal | Confidentiality commitments; a boundary description is not public information |
+| Vulnerability disclosure response | Acknowledge in 3 business days | Researcher | Direct, coordinated; public detail only after remediation | Safe-harbour terms; the duty not to expose customers before a fix |
+
+Three standing rules resolve conflicts: **a statutory deadline overrides internal convenience and
+overrides an incomplete investigation** (notify on what is known, then supplement); **fiduciary equality
+overrides selective briefing** (no owner or analyst is briefed ahead of the others); and
+**confidentiality constrains breadth, never truthfulness** — where detail cannot be shared, the entity
+says that it cannot be shared rather than giving a partial impression.
+
+## 6. Communicating confidentiality objectives and changes to them
+
+**The entity communicates, to external users, vendors, business partners and others whose products or
+services are part of the system, its objectives related to confidentiality and the protection of
+confidential information, as well as changes to those objectives.**
+
+**The confidentiality objectives communicated externally.** Information designated Confidential or
+Restricted — customer assessment inputs, findings, evidence documents, the resulting compliance
+verdicts, and customer environment configuration data — is (a) used only to deliver and support the
+service and for no other purpose, in particular not for model training or for benchmarking that could
+identify a customer; (b) disclosed only to those with a defined need, to named sub-processors under
+equivalent obligations, and where legally compelled, with notice to the customer where lawful;
+(c) protected in transit and at rest by encryption; (d) retained only for the defined period and then
+destroyed per C1.2; and (e) returned or destroyed on termination on the customer's instruction. Each
+objective is stated as an obligation the entity can be held to, not as an aspiration.
+
+| Audience | Where the confidentiality objectives are stated | Change communication |
+|---|---|---|
+| **Customers and authorized external users** | The customer agreement and its confidentiality and security annexes; the public trust page; the system description; in-product notices on classification and sharing; the onboarding pack | ≥ 30 days written notice before an objective changes; immediately where a change increases protection; annual reaffirmation with the assurance report |
+| **Vendors, sub-processors, outsourced providers** | Contract confidentiality clauses; the security requirements annex flowing these objectives down; the DPA; the vendor onboarding briefing; the Code of Conduct annex | Written notice with a countersignature required before the change takes effect; annual reaffirmation and attestation |
+| **Business partners and integrators** | Partner agreement; the interface specification stating what may and may not be transmitted, logged or retained | ≥ 30 days notice; the interface specification is versioned |
+| **External auditors and consultants** | Engagement letter with confidentiality terms; NDA | On engagement and on change |
+| Prospective customers and the public | Public trust page; the confidentiality summary in the service description | On publication, with version history |
+| Individual vendor personnel with access | Personal NDA plus the confidentiality module of the entity's training, completed before access | On change, with re-acknowledgement |
+
+**Changes communicated in the current period:** the addition of a sub-processor with its
+confidentiality terms (notified 2025-11-24 with the objection right preserved); a tightening of the
+retention objective for evidence documents (notified 2026-01-20 — a change increasing protection, so
+communicated immediately and applied); and a revision to the requirements annex flowed down to all
+seven outsourced providers, with countersignature obtained from all seven before it took effect.
+
+## 7. Communicating privacy objectives and changes to them
+
+**The entity communicates, to external users, vendors, business partners and others whose products or
+services are part of the system, its objectives related to privacy and the protection of personal
+information, as well as changes to those objectives.**
+
+**The privacy objectives communicated externally.** Personal information is collected only for the
+identified, disclosed purposes and limited to what those purposes require; processed on a stated lawful
+basis; not used for a new, incompatible purpose without a lawful basis and, where required, consent;
+disclosed only to identified categories of recipients and to named sub-processors under equivalent
+obligations; transferred across borders only under a lawful mechanism; retained only for the defined
+period and then deleted or de-identified; kept accurate and correctable; protected by defined security
+measures; and subject to the data subject's rights of access, correction, deletion, objection,
+restriction and portability. The entity does not sell personal information and does not use customer
+personal data to train models.
+
+| Audience | Where stated | Change communication |
+|---|---|---|
+| **Data subjects** | The privacy notice — layered, plain-language, versioned, with an effective date and a change summary; collection-point notices; the rights page | Notice updated before the change takes effect; **direct notice for a material change**; **prior consent obtained where a new purpose requires it** — never applied retrospectively |
+| **Customers / user entities** (as controllers) | The DPA and its annexes: purposes, categories, sub-processors, transfer mechanism, retention, security measures, assistance with rights; the trust page | ≥ 30 days written notice; sub-processor changes notified per the DPA with the objection right preserved |
+| **Vendors, sub-processors, providers** | DPA and standard contractual clauses; the privacy requirements annex flowing these objectives down; instruction-only processing terms; the vendor privacy briefing | Written notice and countersignature before effect; annual attestation |
+| **Business partners** | Partner agreement privacy terms; the interface specification stating what personal data may cross the interface | ≥ 30 days notice |
+| Regulators and supervisory authorities | Registrations; DPO contact details published in the notice and filed with the authority | On change, filed within the statutory period |
+| Public | Public trust and privacy pages, with the notice archive so a prior version can be retrieved | On publication |
+
+**Changes in the current period:** notice v4.0 (2025-11-20) added the EU subsidiary as a joint
+establishment and the transfer mechanism, communicated by direct notice to all data subjects and to
+customers 34 days before effect; notice v4.1 (2026-01-20) narrowed a retention period, communicated
+with the notice update; and one proposed change — a new analytics purpose — was **not made**, because
+the DPO concluded it required consent that had not been obtained, and the decision was recorded rather
+than the purpose being quietly added.
+
+## 8. Communicating the privacy incident reporting process to external parties
+
+**The entity communicates to user entities, third parties, data subjects and others the process used to
+report a suspected privacy incident.**
+
+| Audience | Where the process is communicated | The process communicated |
+|---|---|---|
+| **Data subjects** | The privacy notice, in a section headed how to report a privacy concern or incident; the rights page; the DPO contact block | Email the DPO or use the web form; report on suspicion without needing to confirm anything; DPO acknowledges within 1 business day; report anonymously if preferred; the DPO's identity and address are given, as is the right to complain to a supervisory authority instead of or in addition to the entity |
+| **User entities / customers** | The DPA incident annex; the onboarding pack; the in-product support menu; the named security and privacy contact list exchanged at onboarding | Report to the 24/7 security channel and to the DPO; report suspected incidents affecting personal data even where the cause may lie with the customer; the entity acknowledges within 1 hour and provides the information the customer needs to meet its own controller obligations |
+| **Third parties, vendors, sub-processors** | Contract incident clause; the vendor onboarding briefing | **Notify the entity within 24 hours of becoming aware of a suspected incident**, with the prescribed content, to the named channel; do not delay to complete an internal investigation; a late notification is a contractual breach and is recorded in the supplier record |
+| **Business partners** | Partner agreement; interface specification | Same 24-hour channel and content |
+| **Security researchers** | The public vulnerability disclosure policy and `security.txt` | Report through the disclosure channel; if personal data was accessible, say so explicitly so the DPO is engaged; safe harbour applies; do not download or retain personal data encountered |
+| **Anyone, including anonymously** | The public trust page, the ethics hotline, and the direct line to the Audit Committee Chair | Any of these channels reaches the DPO; anonymity is preserved; the entity commits not to retaliate |
+
+**What is published for every audience:** a single named recipient (the DPO) with direct contact
+details; the instruction to report on suspicion rather than after confirmation; the acknowledgement
+commitment; the availability of anonymous reporting; the commitment not to retaliate; and the fact that
+the entity will notify authorities and affected individuals where the legal thresholds are met, so a
+reporter knows the report leads somewhere. One external report was received in the current period,
+through the hotline, and was routed to the DPO within one business day.
+
+## 9. Communicating system design, operation and boundaries to authorized external users
+
+**The entity prepares and communicates information about the design and operation of the system and its
+boundaries to authorized external users to permit them to understand their role in the system and the
+results of system operation.**
+
+| Artefact | Content | Audience | Access | Maintained |
+|---|---|---|---|---|
+| **System description** | Purpose; the five-node assessment pipeline; components; data flows; **what is inside the boundary** (the evaluation service, its data stores and pipeline in account 471885797689 / us-west-2) and **what is outside and therefore not the entity's responsibility** (the customer's own AWS environments under assessment, AWS-managed infrastructure, the customer's identity provider, corporate IT) | Customers, authorized users, auditors | Customer portal, authenticated | Reviewed quarterly and on architectural change |
+| **Shared-responsibility matrix** — the "your role in the system" document | Line by line: what the entity does, what the customer must do (grant and maintain the assessment role, keep the evidence documents current, act on findings, manage its own users), and what neither party does | Customers, partners | Portal + the onboarding pack, walked through in the onboarding session | On change |
+| Integration and interface specification | APIs, authentication, data formats, what may be transmitted | Partners, integrators | Access-controlled | Versioned |
+| **Results of system operation** | Live status and incident history; SLA attainment; assessment completion and quality metrics; the customer's own assessment history and evidence coverage; post-incident reviews for incidents that affected them | Customers, authorized users | Status page (public) + in-product dashboard (authenticated) | Continuous |
+| Assurance report and certifications | The SOC 2 report, the ISO/IEC 42001 certificate, the penetration test summary | Customers and prospects under NDA | On request, under NDA | Annually |
+| Change and release notes | What changed and what it means for the customer's role | Customers | Portal + email for responsibility-affecting changes | Per release |
+
+**Boundary and authorization discipline.** Detailed design information is provided to **authorized**
+external users only — it is confidential and, in parts, security-relevant. The public trust page
+carries the summary; the authenticated portal carries the system description and the responsibility
+matrix; detailed architecture is provided to auditors and to customers under NDA on request. What is
+never published is the detail that would help an attacker without helping a user understand their role.
+
+## 10. Communicating system objectives to external users
+
+**The entity communicates its system objectives to appropriate external users.** The objectives are
+stated as commitments with measures attached, so an external user can tell whether they were met.
+
+| Objective category | Communicated as | Where | To whom |
+|---|---|---|---|
+| **Security** | The entity's security commitments: access is restricted to authorized users and processes; data is encrypted in transit and at rest; vulnerabilities are remediated within defined SLAs; incidents are detected, responded to and notified | System description §3; agreement security annex; trust page | Customers, users, partners, vendors |
+| **Availability** | The availability commitment and its measurement window; the recovery time and recovery point objectives; the maintenance-window terms | SLA; system description; status page | Customers, users |
+| **Processing integrity** | Assessments are complete, valid, accurate, timely and authorized; the evaluation logic and its inputs are controlled and change-managed; results are traceable to the evidence and the scan data behind them; the stated limitations of automated assessment | System description; the service documentation; the limitations statement in the product | Customers, users |
+| **Confidentiality** | The objectives in §6 | Agreement confidentiality annex; trust page | Customers, vendors, partners |
+| **Privacy** | The objectives in §7 | Privacy notice; DPA | Data subjects, customers, vendors |
+| Objectives the entity does **not** undertake | Explicit non-objectives: the service does not certify compliance, does not replace an independent audit, and does not assess resources outside the granted scope | The limitations statement in the system description and in-product | Customers, users, prospects |
+
+Stating the non-objectives is part of communicating the objectives: an external user who believes the
+service certifies compliance has misunderstood their own role in it. Objectives are communicated at
+onboarding, restated with each annual assurance report, and re-communicated within 30 days of any
+change; the availability commitment change of 2026-01-20 followed that path.
+
+## 11. Communicating responsibilities to external users who design, develop, operate or monitor controls
+
+**External users with responsibility for designing, developing, implementing, operating, maintaining and
+monitoring system controls receive information about those responsibilities and have the information
+necessary to carry them out.**
+
+| External party | Control responsibility held | How the responsibility is communicated | Information provided to carry it out |
+|---|---|---|---|
+| **Customer / user entity** | Operating the complementary user-entity controls: managing its own users and their access to the service; granting and maintaining the assessment IAM role with least privilege; keeping evidence documents accurate and current; reviewing findings and acting on them; notifying the entity of suspected incidents; keeping contact details current | The **complementary user entity controls (CUEC) schedule** in the agreement and in the assurance report, plus the onboarding walkthrough and an annual reaffirmation | The CUEC schedule with each control stated as an action; the shared-responsibility matrix; role-configuration guidance with the exact policy; in-product prompts when a CUEC is not being met (stale evidence, over-broad role) |
+| **Sub-processor / outsourced provider operating a control for the entity** (managed SIEM, backup provider, managed identity components) | Operating the specific control named in its requirements annex, to the entity's standard, and evidencing it | Contract requirements annex naming each control, its frequency and its evidence; onboarding briefing; the annual reaffirmation and countersignature | The control specification; the entity's standards and runbooks; escalation contacts; the evidence format required; the monitoring the entity will perform (CC9.2) |
+| **Outsourced internal audit provider** — monitoring controls | The internal audit plan, the testing standard, the reporting route to the Audit Committee rather than to management | Engagement letter and the audit plan approved by the Audit Committee | The control register; the criteria; access to evidence; independence protections |
+| **External security testing firm** — monitoring controls | Scope, rules of engagement, the reporting route and timing | Engagement letter and rules of engagement | System description, boundary, credentials for authenticated testing, escalation path for a critical finding mid-test |
+| **Business partner / integrator** — designing and developing to the interface | Implementing the interface's security requirements: authentication, transport security, what must not be logged or retained | Partner agreement and the versioned interface specification | The interface specification with the security requirements; test environment; a conformance checklist |
+| **Vendor personnel with system access** — operating controls | Individual duties: credential and MFA handling, change process, incident reporting, confidentiality | Personal NDA, the entity's onboarding and training, and the access agreement — all completed **before access is granted** | Runbooks, access to the standards, the reporting channels; access is provisioned only after completion (HR-POL-004 §2) |
+| **Certification body / service auditor** | Assessing the controls | Engagement letter | The system description, control descriptions, evidence, management assertion |
+
+**Changes to external responsibilities** are communicated with at least 30 days notice — or before the
+change takes effect where a contract sets a longer period — and requirement changes to providers
+require countersignature before they apply. In the current period the CUEC schedule was revised once
+(2026-01-20, adding the evidence-currency responsibility) and communicated to all customers with the
+30-day notice; the provider requirements annex was revised once and countersigned by all seven
+providers.
+
+## 12. Providing external users information on how to report failures, incidents and complaints
+
+**External users are provided with information on how to report system failures, incidents, concerns and
+other complaints to appropriate entity personnel.** The reporting matrix below is published in the
+customer portal, in the in-product help and support menu, in the onboarding pack, in the agreement, on
+the public trust page and in `security.txt` — so it is available at the moment something goes wrong,
+including to someone who cannot log in.
+
+| What the external user observed | How to report it | Who receives it | Commitment |
+|---|---|---|---|
+| Service unavailable, degraded or erroring | Support portal, in-product report button, or the 24/7 phone line for Sev-1 | Customer Operations; pages on-call for Sev-1 | Acknowledged within 1 business day; **Sev-1 within 1 hour, 24/7** |
+| Suspected security incident or unauthorized access | 24/7 security channel published in the agreement and on the trust page; also the named security contact | Security on-call, paged | Acknowledged within 1 hour |
+| Security vulnerability found in the service | Vulnerability disclosure channel; `security.txt` | AI Security Lead | Acknowledged within 3 business days; triaged within 5; safe harbour applies |
+| **Suspected privacy incident** | DPO email or web form — report on suspicion, do not wait to confirm | DPO | Acknowledged within 1 business day; 1 hour for a customer report |
+| Assessment result appears wrong, incomplete or unfair | In-product dispute channel, or the responsible-AI concerns procedure (anonymous accepted) | Responsible AI Lead | Triage within 2 business days; re-assessment where warranted; a written explanation either way |
+| Data subject exercising a right, or with a privacy concern | Privacy web form, DPO email, or postal address in the notice | DPO | Acknowledged within 5 days; fulfilled within the statutory period |
+| Complaint about the service, the account team, or the entity's conduct | Complaint register via support; escalation to the executive sponsor; the ethics hotline for conduct | Director, Customer Operations; Ethics Officer for conduct | Logged same day; substantive response within 10 business days; complaints reported to the Board quarterly |
+| Concern the external user does not want management to see | **Ethics hotline (anonymous) or the direct line to the Audit Committee Chair** | Ethics Officer + Audit Committee Chair | Triage within 1 business day |
+| Billing or contractual issue | Account manager; finance mailbox | Finance | 5 business days |
+| Anything, from someone with no account | The public contact form and the published address on the trust page | Triaged to the right owner within 1 business day | 5 business days |
+
+Every entry states **who receives it, what happens next and what protection applies**, and each channel
+is reachable without a login for at least one route, because an external user locked out by the very
+failure they want to report must still be able to report it. Escalation paths are published too: if a
+report is not acknowledged within the commitment, the next contact is named, and above that the
+executive sponsor and the Audit Committee line.
+
+## 13. Contact with special interest groups, security forums and professional associations
+
+Everything above concerns parties the entity has a commercial, legal or contractual relationship with.
+This section concerns a different kind of contact, and it exists for a different reason: a small entity
+cannot generate enough of its own threat experience to stay current. Membership of specialist
+communities is how the entity learns about an attack technique before it meets one, receives an
+advisory before an exploit is public, and gets a second opinion from someone with no stake in the
+answer.
+
+**Ownership.** The CISO owns the entity's participation in these communities and is accountable for
+keeping it live. The AI Security Lead owns the AI-specific communities. Membership is reviewed at each
+annual review of this procedure, and a lapsed membership is a deficiency, not a dormant subscription —
+because a membership nobody attends produces none of the benefit above while still appearing on a list.
+
+### 13.1 The groups the entity belongs to, and its named contacts
+
+| Group / forum / association | What it is | The entity's status | Named contact | Participation obligation the entity actually performs | Last engagement |
+|---|---|---|---|---|---|
+| **FS-ISAC** (Financial Services Information Sharing and Analysis Centre) — via the entity's sector affiliation | Cross-sector threat intelligence sharing community | **Member, paid, current** (renewed 2026-01-15, expires 2027-01-14) | CISO (primary), AI Security Lead (alternate) | Reads the daily intelligence feed; attends the monthly members' call (9 of 12 attended this period); contributes indicators from the entity's own incidents where sharing is permitted | 2026-08-11 (monthly call) |
+| **Cloud Security Alliance** | Cloud-security practice body; publishes the Cloud Controls Matrix and cloud-architecture guidance | **Corporate member, current** (renewed 2025-12-01) | CISO | Uses the CCM as a cross-reference in control design; participates in the CCM working-group review cycle; two personnel hold CSA credentials maintained through it | 2026-07-29 (working-group comment submission) |
+| **(ISC)² professional association** | Professional body; certification maintenance and continuing education | **Two individual members** (CISO, AI Security Lead), both current | Individual | Certification maintenance; chapter events count toward the §8 external continuing-education hours of the awareness programme | 2026-06-17 (chapter event) |
+| **OWASP** — local chapter and the AI Security & Privacy project | Application- and AI-security practitioner community | **Active participant** (no paid membership required) | AI Security Lead | Attends the local chapter meetings (4 this period); tracks the OWASP Top 10 for LLM Applications and maps it to the entity's own AI threat model | 2026-08-06 (chapter meeting) |
+| **AWS security bulletins and the AWS Security Hub advisory channel** | Provider security advisory channel | **Subscribed, verified current** | AI Operations Lead | Reads every bulletin; triages within 1 business day against the entity's own footprint | Continuous |
+| **CISA advisories and the KEV catalogue** (and the national CERT of the primary geography) | National authority advisory and known-exploited-vulnerability catalogue | **Subscribed; KEV ingested automatically into the vulnerability process** | Head of Security Engineering | KEV entries drive the accelerated remediation clock in the vulnerability procedure | Continuous |
+| **A peer CISO forum of 11 comparably sized SaaS entities** (invitation-based, under a mutual NDA) | Practitioner peer group for candid exchange | **Member, current** | CISO | Monthly video meeting (11 of 12 attended); the entity hosted the June session on AI-assessment assurance | 2026-08-04 |
+| **The entity's managed detection provider's customer intelligence community** | Vendor-operated detection-community channel | **Included in the service** | AI Security Lead | Receives detection-content updates and campaign write-ups; raises questions on observed activity | Continuous |
+| **IAPP** (International Association of Privacy Professionals) | Privacy professional association | **One individual member** (DPO), current | DPO | Certification maintenance; privacy-regulatory tracking that feeds the obligations register | 2026-05-22 |
+
+**Groups the entity deliberately does not join**, recorded so the list above is not read as the whole
+universe: no paid commercial threat-intelligence subscription beyond the managed detection service
+(the sector and national channels plus the provider's feed are judged sufficient at the entity's size
+and are re-evaluated annually), and no industry lobbying or standards-drafting body (no capacity, and
+no relevance to the control set). Both decisions are the CISO's, recorded, and revisited each year.
+
+### 13.2 What the entity gets from these groups, and how it is used
+
+| Purpose | How the contact is used | Evidence from the current period |
+|---|---|---|
+| **Improving knowledge of best practice, and staying current** | CCM and OWASP guidance are read against the entity's own control design and secure-development standard; peer-forum practice is compared with the entity's own; the monthly internal threat-landscape briefing in the awareness programme is written largely from what these channels produced that month | 12 internal briefings, each citing its sources; the secure-development standard's v4 threat-model section was rewritten after the OWASP LLM Top 10 update; 3 control-design changes traceable to CCM cross-referencing |
+| **Receiving early warning of advisories, alerts and patches** | The advisory channels are the entity's inbound early-warning path. Every advisory is triaged within 1 business day against the asset and dependency inventory; a match becomes a vulnerability record with the accelerated clock | 214 advisories triaged; **9 matched the entity's footprint**; mean time from advisory publication to entity triage 6.2 hours; 2 patched inside 24 hours under the KEV clock. One FS-ISAC advisory arrived **4 days before** the corresponding public CVE disclosure and is the clearest instance of the early-warning benefit this period |
+| **Gaining insight into new technologies, products, threats and vulnerabilities** | New-technique write-ups are assessed for applicability to an AI-assessment service specifically — prompt-injection and evidence-poisoning patterns in particular — and applicable ones become threat-model entries, detection content or test cases | 4 new threat-model entries (2 prompt-injection variants, 1 evidence-poisoning pattern, 1 OAuth device-code phishing technique); 6 new detection rules; 3 new adversarial test cases in the verification plan |
+| **Exchanging information — the entity contributing, not only consuming** | The entity shares sanitised indicators and write-ups where sharing is permitted, and answers peer questions. Sharing is governed: nothing customer-identifying, nothing that reveals a live weakness in the entity's own environment, and General Counsel review before any external write-up | **3 indicator submissions to FS-ISAC**; 1 sanitised write-up shared with the peer forum (the June hosted session); 1 CSA working-group comment submission; **1 proposed submission withheld** on GC advice because it could have identified a customer — recorded, because the restraint is part of the control |
+| **Obtaining specialist advice** | Where a question exceeds the entity's own expertise, the CISO seeks advice through the peer forum, the association's practitioner network, or a member introduction — distinct from engaging a paid provider, which is covered by §3 | 3 instances: (a) tuning the intrusion-response arrangements at the HQ suite, via a peer with the same landlord model; (b) validating the entity's approach to time-source traceability for evidentiary records; (c) a second opinion on the vulnerability-disclosure policy's safe-harbour wording before publication |
+| **Liaison during an incident** | Named in the incident runbook as an escalation avenue: the sector ISAC for a campaign that appears to affect more than the entity, the peer forum for practical containment advice under NDA, the national CERT where an obligation or a national-interest threshold is engaged, and the provider channels for a platform-level event. **Liaison is a runbook step with a named owner and a stated threshold, not an improvised phone call** | 1 activation this period: a phishing campaign against the entity's customers using a look-alike domain — reported to FS-ISAC (which confirmed two other members were targeted by the same infrastructure), to the registrar for takedown, and to the affected customers; the ISAC confirmation is what established it as a campaign rather than an isolated attempt |
+
+### 13.3 Governance of this participation
+
+| Control | Cadence | Evidence |
+|---|---|---|
+| Membership register reviewed — status, expiry, named contact, and whether the participation obligation was actually performed | Annually, at this procedure's review | Register with the table in §13.1 as its current state |
+| Lapsed or dormant membership raised as a deficiency | On detection | **D-2026-023: the OWASP local-chapter attendance lapsed for one quarter (Q1 2026); corrective action assigned to the AI Security Lead, and attendance has resumed (4 meetings since)** |
+| Advisory-triage timeliness | Monthly | Mean 6.2 h against a 1-business-day target; 0 breaches |
+| Contribution obligation met (the entity gives as well as takes) | Annually | 5 contributions this period against a target of at least 4 |
+| Sharing reviewed before release | Per instance | 5 reviews, 1 withholding |
+| Value review — is each membership still worth its cost and time? | Annually | All retained; the paid commercial-feed question re-evaluated and again declined |
+
+## 14. Review history
+
+| Version | Date | Change |
+|---|---|---|
+| 2.0 | 2024-11-20 | Established the external communication matrix, inbound channels and the disclosure policy |
+| 3.0 | 2025-09-11 | Added the CUEC schedule, the shared-responsibility matrix and external control responsibilities |
+| 3.1 | 2025-12-03 | Added the external ethics hotline and the published Audit Committee line as fail-safe channels; added external assessment reporting directly to the Board in camera |
+| 3.2 | 2026-02-19 | Added confidentiality and privacy objective communication with change notice periods; added the external privacy incident reporting process; added system objectives and non-objectives |
+| 3.3 | 2026-08-14 | Added §13: contact with special interest groups, security forums and professional associations — the named groups and contacts with current membership status, what each contact is used for (best practice, early warning, new-technique insight, two-way exchange, specialist advice, incident liaison) with the current period's operating record, the deliberate non-memberships, and the governance that keeps participation live (D-2026-023 raised on a lapsed chapter attendance) |
